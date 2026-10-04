@@ -10,6 +10,13 @@ if [ ${#archivos[@]} -eq 0 ]; then
   exit 0
 fi
 
+# Las semillas no son re-ejecutables (claves naturales unicas): sobre una base
+# ya cargada se avisa en lugar de fallar a mitad de camino.
+if [ "$(psql_super -At -c "SELECT count(*) FROM taller")" != "0" ]; then
+  echo "seed: la base ya tiene datos; para recargar: bash db/scripts/reset.sh && bash db/scripts/migrate.sh" >&2
+  exit 1
+fi
+
 for archivo in "${archivos[@]}"; do
   nombre="$(basename "$archivo")"
   echo "==> $nombre"

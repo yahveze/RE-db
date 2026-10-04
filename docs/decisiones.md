@@ -1,8 +1,8 @@
 # Decisiones de diseño — Repuestos Exactos (Fase 0)
 
-> Estado: **Fases 0 y 1 aprobadas; Fase 2 cerrada, esperando revisión** (ver sección 7). El esquema
-> está implementado en `db/migrations/` y verificado sobre PostgreSQL 16.15; faltan semillas, consultas,
-> pruebas formales, rendimiento y operación (Fases 3 a 7).
+> Estado: **Fases 0 a 3 completas** (ver secciones 7 y 8). Esquema en `db/migrations/`, semillas en
+> `db/seeds/` y consultas y transacciones en `db/queries/`, verificado sobre PostgreSQL 16.15; faltan
+> pruebas formales, rendimiento y operación (Fases 4 a 7).
 
 Clasificación usada: **[OBLIGATORIA]** la exige el enunciado o la integridad del modelo ·
 **[RECOMENDADA]** se implementa porque el costo es bajo y el beneficio defendible ·
@@ -388,3 +388,102 @@ permitir que nadie —ni el superusuario— antedate un cierre. Las semillas rec
 - **Rendimiento de las políticas con subconsulta** (`vehiculo`, `consentimiento_titular`) y utilidad real
   de cada índice: se miden en la Fase 5.
 - La prueba de humo **no** es la suite formal: no imprime PASS/FAIL ni corta la ejecución. Eso es la Fase 4.
+
+---
+
+## 8. Fase 3: semillas, consultas y transacciones
+
+### 8.1 Qué se construyó
+
+| Entregable | Dónde | Detalle |
+|---|---|---|
+| Semillas | `db/seeds/01`–`04`, `99_resumen.sql`, `incluir/flujo_atencion.sql` | catálogos, 2 talleres, usuarios, operación y derechos del titular |
+| Consultas de lectura | `db/queries/q01`–`q08` | 23 sentencias `PREPARE`; contrato en `docs/consultas.md` |
+| Sentencias de escritura | `db/queries/t01`–`t03` | 15 sentencias `PREPARE`; `docs/transacciones.md` |
+| Demostraciones | `db/queries/demo_consultas.sql`, `demo_transacciones.sql` | ejecutadas con `app_backend_user`; no modifican la base |
+| Evidencia | `db/scripts/evidencia_fase3.sh` → `docs/evidencia/fase3_*.txt` | falla si aparece un error no esperado |
+
+### 8.2 Decisiones de implementación
+
+Ninguna reabre una decisión tomada.
+
+| # | Decisión | Motivo |
+|---|---|---|
+| 1 | Las semillas operativas se cargan **asumiendo el rol de taller** (`SET LOCAL ROLE` + contexto) dentro de la sesión de superusuario | Pasan por los `GRANT`, las políticas RLS y los triggers reales; la auditoría queda con `taller_mecanico` / `taller_admin` y no con `postgres`. Solo los catálogos y el alta del taller con su primer administrador se hacen como plataforma. |
+| 2 | Las atenciones de las semillas recorren el flujo real (`incluir/flujo_atencion.sql`) | Consecuencia de T-34: ninguna fila se inserta en estado final. Solo `iniciada_en` se antedata. |
+| 3 | Las semillas se enlazan por clave natural y **no son re-ejecutables**; `seed.sh` se niega a cargar sobre una base con datos | `make all` siempre parte de `reset`. Evita una carga a medias. |
+| 4 | `99_resumen.sql` verifica la carga y aborta si falla | Comprueba que toda línea cotizada sea compatible con el vehículo y responda a un DTC de la sesión, que todo usuario tenga credencial y que la auditoría no contenga columnas enmascaradas. |
+| 5 | Toda consulta es un `PREPARE` con parámetros `$n` | Es el texto exacto que enviará el backend; las pruebas (Fase 4) y la medición (Fase 5) ejecutan las mismas sentencias, no copias. |
+| 6 | Las consultas **no** filtran por `taller_id` | El aislamiento es de RLS; duplicar el filtro distorsiona las estimaciones del planificador y no agrega protección. Sin contexto devuelven cero filas. |
+| 7 | Los padres se resuelven por `id_publico` dentro de la sentencia de escritura | Un `id_publico` de otro taller no se encuentra: cero filas, sin revelar si existe. `taller_id` y `usuario_id` nunca vienen del cliente. |
+| 8 | Crear sesión con sus fallas es **una** sentencia (CTE con dos `INSERT`) | Atómica aunque el backend olvide abrir la transacción. |
+| 9 | Nivel `READ COMMITTED` + bloqueos explícitos, no `SERIALIZABLE` | Las reglas multi-fila ya están cubiertas por `FOR UPDATE`/`FOR SHARE` e índices únicos; se evitan reintentos por fallo de serialización. |
+
+### 8.3 Temas nuevos
+
+Si no dices nada, queda como está. ⚠ marca lo que conviene leer.
+
+**T-35 ⚠ La base no impide una sesión sin fallas.**
+El dominio dice que una sesión sin DTC no tiene sentido (§1.7 del modelo), pero ninguna restricción lo
+exige: `tx_crear_sesion` con un arreglo vacío crearía la sesión y devolvería `fallas_registradas = 0`
+(deducido de la sentencia; no se ejecutó ese caso). Propuesta: lo valida la API, que rechaza el arreglo
+vacío antes de llamar. Alternativa en la base: un *constraint trigger* diferido sobre `sesion_diagnostico`;
+no lo propongo porque complica la carga de datos.
+
+**T-36 ⚠ La auditoría es la única respuesta con ids internos.**
+`q_auditoria` devuelve `id`, `registro_id` y los JSON `datos_*`, que contienen `id` y `taller_id`
+secuenciales. Es inherente a una bitácora forense y solo la leen el administrador y el auditor del taller.
+Para cumplir "la API nunca expone ids secuenciales" también aquí habría que traducir cada JSON tabla por
+tabla; propongo declararlo como excepción.
+
+**T-37 Una línea de cotización puede ser de un repuesto que la matriz no ofreció.**
+La matriz filtra por compatibilidad y por DTC; `cotizacion_detalle` solo exige que el repuesto exista y
+esté disponible. Propuesta: no restringir (el mecánico puede agregar un repuesto por criterio propio); las
+semillas sí lo verifican.
+
+**T-38 Para el mecánico, la matriz de una sesión con vehículo oculto queda vacía.**
+Si el titular fue bloqueado o anonimizado, el mecánico no ve el vehículo y la matriz no puede filtrar por
+modelo y año: devuelve cero filas en lugar de una matriz sin filtro. Coherente con T-16.
+
+**T-39 Los mensajes de error de la base contienen ids internos.**
+Por ejemplo `el repuesto 32 no esta disponible`. La API debe decidir por `SQLSTATE` y redactar su propio
+mensaje (`docs/consultas.md` §4).
+
+**T-40 `identificador_hmac` en las semillas.**
+Se simula con `hmac()` de `pgcrypto` y la clave de demostración sobre identificadores ficticios, para no
+escribir ningún secreto. En producción lo calcula el backend con una clave propia que la base no conoce.
+
+**T-41 La prueba de humo de la Fase 2 exige una base sin semillas.**
+Inserta sus propios datos mínimos (por ejemplo la marca `Toyota`), que chocan con los de las semillas. Queda
+como registro histórico; la suite de la Fase 4 se escribe sobre las semillas.
+
+**T-42 Las rutas HTTP son orientativas.**
+El repositorio no contiene una especificación de la API; `docs/consultas.md` fija parámetros, columnas y
+roles de cada sentencia, que es lo que compete a la base. Si existe un contrato de rutas del frontend,
+conviene contrastarlo.
+
+### 8.4 Verificación de la Fase 3
+
+| Comprobación | Resultado | Evidencia |
+|---|---|---|
+| `reset` → `migrate` → `seed` → `test` sobre base vacía | código 0 (9 migraciones, 5 archivos de semillas; aún sin pruebas) | salida de la ejecución |
+| Catálogos | 6 marcas, 11 modelos, 12 DTC, 10 componentes, 42 repuestos (19 genuinos, 12 OEM, 11 genéricos; 1 no disponible), 297 compatibilidades | `fase3_semillas.txt` |
+| Operación | 2 talleres, 8 usuarios, 7 titulares, 11 vehículos, 16 sesiones en los cuatro estados, 14 cotizaciones (10 vigentes, 3 borradores) | `fase3_semillas.txt` |
+| Privacidad en las semillas | 1 titular bloqueado y 1 anonimizado (sin nombre); auditoría sin columnas enmascaradas | `fase3_semillas.txt` y verificación de `99_resumen.sql` |
+| Las 38 sentencias se preparan con `app_backend_user`; las de lectura se ejecutan sin errores | 0 errores | `fase3_consultas.txt` |
+| Aislamiento en lectura y escritura con ids públicos de otro taller | cero filas en todas | `fase3_consultas.txt` §10, `fase3_transacciones.txt` TX-10 |
+| Transacciones con sus errores de negocio | 18 errores, todos esperados | `fase3_transacciones.txt` |
+| La demostración de transacciones no deja cambios | conteos idénticos antes y después | `fase3_transacciones.txt`, sección final |
+| Secretos en archivos versionados y en la evidencia | ninguno | búsqueda de los valores de `.env` |
+
+**Riesgos que la ejecución no cubrió:**
+- **Concurrencia real.** Las demostraciones usan una sola conexión (Fase 4, `db/tests/concurrencia.sh`).
+- **Planes de ejecución.** Ninguna consulta se midió: con 16 sesiones cualquier plan es instantáneo. Que
+  `q_historial` use sus índices con los parámetros opcionales, y el costo de `q_matriz` y del dashboard con
+  volumen, se mide en la Fase 5.
+- **Roles por sentencia.** La tabla de roles de `docs/consultas.md` se deduce de los `GRANT`; cada sentencia
+  se ejecutó con un rol permitido y solo hay un caso denegado (TX-9a). La matriz completa rol × sentencia es
+  de la suite de la Fase 4.
+- **Sentencias de escritura no ejercitadas** por la demostración: `tx_cambiar_activo_usuario` y
+  `tx_registrar_dispositivo` (solo se comprobó que se preparan).
+- **`make`** sigue sin instalarse (T-1): se verificó con los scripts.

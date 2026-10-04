@@ -3,7 +3,7 @@
 Base de datos PostgreSQL 16 del sistema **Repuestos Exactos** (diagnóstico OBD-II y matriz comparativa de
 repuestos para talleres mecánicos). Proyecto universitario de Ingeniería en Computación e Informática.
 
-> Estado: **Fase 2** (esquema y seguridad implementados; faltan semillas, consultas y pruebas). Este README se completa en la Fase 7.
+> Estado: **Fase 3** (esquema, seguridad, semillas, consultas y transacciones; faltan pruebas formales, rendimiento y operación). Este README se completa en la Fase 7.
 
 ## Requisitos
 
@@ -33,10 +33,28 @@ bash db/scripts/psql.sh -c "SELECT version();"
 
 La base queda publicada solo en `127.0.0.1:5433`. `.env` nunca se versiona.
 
+## Datos de demostración
+
+`bash db/scripts/seed.sh` carga dos talleres con usuarios, vehículos y atenciones en todos los estados.
+Todos los usuarios comparten la clave `CLAVE_DEMO` de `.env`. Las semillas no son re-ejecutables: para
+recargar, `reset` + `migrate` + `seed`.
+
+| Taller | Usuarios |
+|---|---|
+| Taller Mecánico Los Aromos (margen 30 %) | `admin@`, `mecanico1@`, `mecanico2@`, `auditor@losaromos.example` |
+| Servicio Automotriz Ñuble (margen 45,5 %) | `admin@`, `mecanico@`, `auditor@nuble.example` |
+
+```bash
+bash db/scripts/psql.sh -f /db/queries/demo_consultas.sql       # consultas de lectura
+bash db/scripts/psql.sh -f /db/queries/demo_transacciones.sql   # transacciones (termina en ROLLBACK)
+bash db/scripts/evidencia_fase3.sh                              # regenera docs/evidencia/fase3_*.txt
+```
+
 ## Documentación
 
 - `docs/decisiones.md` — resumen ejecutivo, decisiones abiertas, supuestos y temas para conversar.
 - `docs/modelo/` — dominio y reglas de negocio, modelo conceptual (Mermaid), modelo lógico, normalización y diccionario de datos (generado).
 - `docs/seguridad.md`, `docs/privacidad.md` — roles, RBAC y RLS, autenticación, auditoría, supresión y anonimización.
+- `docs/consultas.md`, `docs/transacciones.md` — contrato de las consultas del frontend (`db/queries/`) y transacciones atómicas.
 - `docs/operacion.md` — Fase 6.
 - `docs/evidencia/` — salidas reales de las ejecuciones.

@@ -126,8 +126,26 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
 - En Git Bash no pasar rutas de Windows (`$TEMP`) a `awk -v`: las barras invertidas se interpretan como
   escapes. Usar heredoc o la herramienta de edición.
 
+## Notas de implementación (Fase 3)
+
+- Semillas (`db/seeds/`): `01` catálogos y el alta de talleres de `02` como superusuario; el resto asume el
+  rol de taller (`SET LOCAL ROLE` + `set_config`) para pasar por GRANT, RLS y auditoría reales. No son
+  re-ejecutables: `seed.sh` se niega si `taller` tiene filas. `99_resumen.sql` verifica y aborta si falla.
+- `db/seeds/incluir/flujo_atencion.sql` es un `DO` que lee `semilla.atenciones` (JSON) y recorre el flujo
+  real; se incluye con `\ir`. psql no interpola variables dentro de `DO`: usar `set_config` o claves naturales.
+- `db/queries/`: toda sentencia del backend es un `PREPARE` (`q_*` lectura, `tx_*` escritura, `ctx` contexto).
+  `\ir preparar.sql` las carga todas. Entran y salen `id_publico`; no filtran por `taller_id` (lo hace RLS).
+- Una función que devuelve `void` dentro de un `SELECT`: envolverla en `WITH ... AS MATERIALIZED`.
+- Demostraciones: `demo_consultas.sql` (sin errores, `ON_ERROR_STOP`) y `demo_transacciones.sql` (errores
+  esperados, cada uno seguido de `\echo ... :LAST_ERROR_SQLSTATE`; todo en una transacción con `ROLLBACK`).
+  Tras cambiarlas: `bash db/scripts/evidencia_fase3.sh` (cuenta que los errores sean los esperados).
+- La prueba de humo de la Fase 2 solo corre sobre una base **sin** semillas.
+- Temas T-35 a T-42 en `docs/decisiones.md` §8.3.
+
 ## Estado
 
-- Fases 0, 1 y 2 completas. Esquema en `db/migrations/` (V000–V008), verificado desde cero.
-- Documentos: `docs/decisiones.md`, `docs/modelo/` (01–05), `docs/seguridad.md`, `docs/privacidad.md`.
-- Siguiente: Fase 3 (semillas, consultas del frontend con su contrato, transacciones).
+- Fases 0, 1, 2 y 3 completas. Esquema en `db/migrations/` (V000–V008), semillas en `db/seeds/`, consultas
+  y transacciones en `db/queries/`; `reset → migrate → seed → test` verificado desde cero con código 0.
+- Documentos: `docs/decisiones.md`, `docs/modelo/` (01–05), `docs/seguridad.md`, `docs/privacidad.md`,
+  `docs/consultas.md`, `docs/transacciones.md`.
+- Siguiente: Fase 4 (suite formal PASS/FAIL en `db/tests/*.sql` sobre las semillas y `db/tests/concurrencia.sh`).

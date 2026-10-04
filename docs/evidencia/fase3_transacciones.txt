@@ -1,0 +1,287 @@
+# Transacciones de escritura (generado por db/scripts/evidencia_fase3.sh)
+# Fecha: 2026-10-04T06:07Z
+
+=== TX-1. Alta de usuario con contrasena (administradora, taller 1) ===
+-- 1a. usuario creado, contrasena fuera de limites (se espera RE011) -> la peticion completa se revierte
+psql:/db/queries/demo_transacciones.sql:45: ERROR:  la contrasena debe tener entre 8 caracteres y 72 bytes
+   SQLSTATE RE011
+ usuarios_con_ese_email 
+------------------------
+                      0
+(1 row)
+
+-- 1b. usuario y contrasena en la misma transaccion
+creado: mecanico3@losaromos.example rol=mecanico activo=t
+-- 1c. email repetido (se espera 23505)
+psql:/db/queries/demo_transacciones.sql:60: ERROR:  duplicate key value violates unique constraint "uq_usuario_email"
+   SQLSTATE 23505
+-- 1d. el usuario nuevo se autentica
+autenticado=t rol=mecanico nombre=Andrea Lagos
+
+=== TX-2. Titular, consentimiento y vehiculo (mecanica nueva) ===
+titular: Rosa Molina Paz estado=activo
+      finalidad      | version_terminos |   canal    |          otorgado_en          
+---------------------+------------------+------------+-------------------------------
+ prestacion_servicio | v1.0             | presencial | 2026-10-04 06:07:56.191091+00
+(1 row)
+
+vehiculo: patente=RSTV45 anio=2019
+-- 2a. patente ya registrada en el taller (se espera 23505)
+psql:/db/queries/demo_transacciones.sql:82: ERROR:  duplicate key value violates unique constraint "uq_vehiculo_taller_patente"
+   SQLSTATE 23505
+-- 2b. patente con formato invalido (se espera 23514)
+psql:/db/queries/demo_transacciones.sql:85: ERROR:  new row for relation "vehiculo" violates check constraint "ck_vehiculo_patente_formato"
+   SQLSTATE 23514
+-- 2c. titular inexistente: cero filas, no crea un vehiculo "sin titular"
+ id_publico | patente | vin | anio | motor | creado_en 
+------------+---------+-----+------+-------+-----------
+(0 rows)
+
+
+=== TX-3. Crear sesion con sus fallas (una sola sentencia) ===
+-- 3a. un DTC que no esta en el catalogo (se espera 23502): no queda ni la sesion ni la otra falla
+psql:/db/queries/demo_transacciones.sql:99: ERROR:  null value in column "dtc_id" of relation "falla_sesion" violates not-null constraint
+   SQLSTATE 23502
+-- 3b. dispositivo inactivo con ingreso OBD (se espera 23514)
+psql:/db/queries/demo_transacciones.sql:102: ERROR:  new row for relation "sesion_diagnostico" violates check constraint "ck_sesion_diagnostico_dispositivo_segun_metodo"
+   SQLSTATE 23514
+ id_publico | estado | iniciada_en | kilometraje | usuario_nombre | fallas | cotizacion_total | cotizacion_moneda 
+------------+--------+-------------+-------------+----------------+--------+------------------+-------------------
+(0 rows)
+
+-- 3c. sesion valida: nace pendiente, version 1, con 2 fallas
+sesion: estado=pendiente metodo=obd_bluetooth version=1 fallas_registradas=2
+ codigo |                           descripcion                            | severidad | severidad_sugerida |            freeze_frame             |           creado_en           
+--------+------------------------------------------------------------------+-----------+--------------------+-------------------------------------+-------------------------------
+ P0335  | Circuito del sensor de posición del cigüeñal                     | critica   | critica            | {"rpm": 0, "voltaje_bateria": 11.8} | 2026-10-04 06:07:56.191091+00
+ C0035  | Circuito del sensor de velocidad de la rueda delantera izquierda | media     | alta               |                                     | 2026-10-04 06:07:56.191091+00
+(2 rows)
+
+-- 3d. matriz de la sesion (Corolla 2019, margen 30 %)
+        componente_id_publico         |        componente_nombre        | dtc_codigos | severidad_maxima |              id_publico              |  perfil  |  marca  |           nombre            | codigo_fabricante | durabilidad_estimada_km | riesgo | precio_venta | moneda 
+--------------------------------------+---------------------------------+-------------+------------------+--------------------------------------+----------+---------+-----------------------------+-------------------+-------------------------+--------+--------------+--------
+ a3306584-dec6-4268-aa54-eef39414feaf | Sensor de posición del cigüeñal | {P0335}     | critica          | 62ea2cc1-35ce-499f-a665-b20cc742932b | genuino  | Toyota  | Sensor de cigüeñal Toyota   | 90919-05057       |                  200000 | bajo   |        76687 | CLP
+ a3306584-dec6-4268-aa54-eef39414feaf | Sensor de posición del cigüeñal | {P0335}     | critica          | b37e031e-000f-4f6e-84d0-d5ecd8125083 | oem      | Bosch   | Sensor de cigüeñal Bosch    | 0261210170        |                  160000 | bajo   |        42887 | CLP
+ a3306584-dec6-4268-aa54-eef39414feaf | Sensor de posición del cigüeñal | {P0335}     | critica          | 9546bcd3-696c-4dae-bed7-bcbe072d0129 | generico | Autolab | Sensor de cigüeñal genérico | GEN-CKP-01        |                   70000 | alto   |        16887 | CLP
+ c381518b-d307-43db-b2b9-8852e12bbfba | Sensor de velocidad de rueda    | {C0035}     | media            | 3626f060-9bac-422f-98ae-4926e4192068 | genuino  | Toyota  | Sensor ABS Toyota           | 89543-0K020       |                  180000 | bajo   |       110487 | CLP
+ c381518b-d307-43db-b2b9-8852e12bbfba | Sensor de velocidad de rueda    | {C0035}     | media            | fa4a104d-74c1-41dd-ab13-8ff19e4aa055 | oem      | Bosch   | Sensor ABS Bosch            | 0265007905        |                  150000 | bajo   |        58487 | CLP
+ c381518b-d307-43db-b2b9-8852e12bbfba | Sensor de velocidad de rueda    | {C0035}     | media            | df4b2c3f-d2a9-4d13-b577-4546a0fdeb1a | generico | Autolab | Sensor ABS genérico         | GEN-ABS-01        |                   60000 | medio  |        24687 | CLP
+(6 rows)
+
+
+=== TX-4. Cotizacion: borrador idempotente y lineas ===
+-- 4a. cotizado sin cotizacion cerrada (se espera RE002)
+psql:/db/queries/demo_transacciones.sql:120: ERROR:  el estado cotizado exige una cotizacion vigente cerrada
+   SQLSTATE RE002
+-- 4b. crear cotizacion; el reintento con la misma clave devuelve la misma
+cotizacion: revision=1 vigente=f moneda=CLP version=1
+ misma_cotizacion | cotizaciones_de_la_sesion 
+------------------+---------------------------
+ t                |                         1
+(1 row)
+
+-- 4c. segundo borrador con otra clave (se espera 23505: un solo borrador por sesion)
+psql:/db/queries/demo_transacciones.sql:130: ERROR:  duplicate key value violates unique constraint "uq_cotizacion_sesion_abierta"
+   SQLSTATE 23505
+-- 4d. lineas: el cliente envia repuesto y cantidad; el precio lo pone el trigger
+         repuesto_id_publico          |      nombre_snapshot      | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
+--------------------------------------+---------------------------+----------------+-----------------+----------+-----------------+----------
+ 62ea2cc1-35ce-499f-a665-b20cc742932b | Sensor de cigüeñal Toyota | Toyota         | genuino         |        1 |           76687 |    76687
+(1 row)
+
+         repuesto_id_publico          | nombre_snapshot  | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
+--------------------------------------+------------------+----------------+-----------------+----------+-----------------+----------
+ fa4a104d-74c1-41dd-ab13-8ff19e4aa055 | Sensor ABS Bosch | Bosch          | oem             |        2 |           58487 |   116974
+(1 row)
+
+         repuesto_id_publico          |       nombre_snapshot       | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
+--------------------------------------+-----------------------------+----------------+-----------------+----------+-----------------+----------
+ 9546bcd3-696c-4dae-bed7-bcbe072d0129 | Sensor de cigüeñal genérico | Autolab        | generico        |        1 |           16887 |    16887
+(1 row)
+
+-- 4e. repetir un repuesto reemplaza la cantidad (2 -> 1); quitar una linea
+         repuesto_id_publico          | nombre_snapshot  | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
+--------------------------------------+------------------+----------------+-----------------+----------+-----------------+----------
+ fa4a104d-74c1-41dd-ab13-8ff19e4aa055 | Sensor ABS Bosch | Bosch          | oem             |        1 |           58487 |    58487
+(1 row)
+
+         repuesto_id_publico          | cantidad 
+--------------------------------------+----------
+ 9546bcd3-696c-4dae-bed7-bcbe072d0129 |        1
+(1 row)
+
+-- 4f. repuesto no disponible (se espera RE010) y cantidad 0 (se espera 23514)
+psql:/db/queries/demo_transacciones.sql:145: ERROR:  el repuesto 30 no esta disponible
+   SQLSTATE RE010
+psql:/db/queries/demo_transacciones.sql:147: ERROR:  new row for relation "cotizacion_detalle" violates check constraint "ck_cotizacion_detalle_cantidad_positiva"
+   SQLSTATE 23514
+              id_publico              | numero_revision | vigente | cerrada_en | total | moneda | version |           creado_en           | lineas | total_calculado 
+--------------------------------------+-----------------+---------+------------+-------+--------+---------+-------------------------------+--------+-----------------
+ 4eafbfb8-41af-47ae-80ce-5218b708e5e0 |               1 | f       |            |       | CLP    |       1 | 2026-10-04 06:07:56.191091+00 |      2 |          135174
+(1 row)
+
+
+=== TX-5. Cerrar la cotizacion y pasar la sesion a cotizado (una transaccion) ===
+-- 5a. cerrar con una version antigua (se espera RE007)
+psql:/db/queries/demo_transacciones.sql:158: ERROR:  conflicto de version en la cotizacion 15: esperada 99, actual 1
+   SQLSTATE RE007
+-- 5b. cerrar: total = 76687 + 58487 = 135174, vigente, hora del servidor
+cerrada: revision=1 vigente=t total=135174 version=2
+sesion: estado=cotizado version=2
+-- 5c. reintento del cierre: devuelve la misma cotizacion, sin cambios
+              id_publico              | numero_revision | vigente |          cerrada_en           | total  | moneda | version 
+--------------------------------------+-----------------+---------+-------------------------------+--------+--------+---------
+ 4eafbfb8-41af-47ae-80ce-5218b708e5e0 |               1 | t       | 2026-10-04 06:07:56.191091+00 | 135174 | CLP    |       2
+(1 row)
+
+-- 5d. la cotizacion cerrada es inmutable (se esperan 2 errores RE003)
+psql:/db/queries/demo_transacciones.sql:168: ERROR:  la cotizacion 15 esta cerrada: su detalle es inmutable
+   SQLSTATE RE003
+psql:/db/queries/demo_transacciones.sql:170: ERROR:  la cotizacion 15 esta cerrada: su detalle es inmutable
+   SQLSTATE RE003
+
+=== TX-6. Nueva revision: reemplaza a la vigente ===
+         repuesto_id_publico          |     nombre_snapshot      | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
+--------------------------------------+--------------------------+----------------+-----------------+----------+-----------------+----------
+ b37e031e-000f-4f6e-84d0-d5ecd8125083 | Sensor de cigüeñal Bosch | Bosch          | oem             |        1 |           42887 |    42887
+(1 row)
+
+         repuesto_id_publico          | nombre_snapshot  | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
+--------------------------------------+------------------+----------------+-----------------+----------+-----------------+----------
+ fa4a104d-74c1-41dd-ab13-8ff19e4aa055 | Sensor ABS Bosch | Bosch          | oem             |        1 |           58487 |    58487
+(1 row)
+
+              id_publico              | numero_revision | vigente |          cerrada_en           | total  | moneda | version 
+--------------------------------------+-----------------+---------+-------------------------------+--------+--------+---------
+ f588c432-b1ea-4e76-b7d7-0fe3a106fc95 |               2 | t       | 2026-10-04 06:07:56.191091+00 | 101374 | CLP    |       2
+(1 row)
+
+-- una sola vigente: la revision 2; la 1 conserva su total
+              id_publico              | numero_revision | vigente |          cerrada_en           | total  | moneda | version |           creado_en           | lineas | total_calculado 
+--------------------------------------+-----------------+---------+-------------------------------+--------+--------+---------+-------------------------------+--------+-----------------
+ f588c432-b1ea-4e76-b7d7-0fe3a106fc95 |               2 | t       | 2026-10-04 06:07:56.191091+00 | 101374 | CLP    |       2 | 2026-10-04 06:07:56.191091+00 |      2 |          101374
+ 4eafbfb8-41af-47ae-80ce-5218b708e5e0 |               1 | f       | 2026-10-04 06:07:56.191091+00 | 135174 | CLP    |       3 | 2026-10-04 06:07:56.191091+00 |      2 |          135174
+(2 rows)
+
+
+=== TX-7. El administrador cambia el margen: lo cotizado no cambia ===
+ moneda | tema  | margen_pct | retencion_anios |        actualizado_en         
+--------+-------+------------+-----------------+-------------------------------
+ CLP    | claro |      35.00 |               6 | 2026-10-04 06:07:56.191091+00
+(1 row)
+
+-- 7a. margen fuera de rango (se espera 23514)
+psql:/db/queries/demo_transacciones.sql:194: ERROR:  new row for relation "taller_configuracion" violates check constraint "ck_taller_configuracion_margen_rango"
+   SQLSTATE 23514
+-- 7b. detalle de la revision vigente: sigue con el snapshot del 30 %
+         repuesto_id_publico          |     nombre_snapshot      | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal | moneda 
+--------------------------------------+--------------------------+----------------+-----------------+----------+-----------------+----------+--------
+ fa4a104d-74c1-41dd-ab13-8ff19e4aa055 | Sensor ABS Bosch         | Bosch          | oem             |        1 |           58487 |    58487 | CLP
+ b37e031e-000f-4f6e-84d0-d5ecd8125083 | Sensor de cigüeñal Bosch | Bosch          | oem             |        1 |           42887 |    42887 | CLP
+(2 rows)
+
+-- 7c. la matriz ya usa el 35 %
+        componente_id_publico         |        componente_nombre        | dtc_codigos | severidad_maxima |              id_publico              |  perfil  |  marca  |           nombre            | codigo_fabricante | durabilidad_estimada_km | riesgo | precio_venta | moneda 
+--------------------------------------+---------------------------------+-------------+------------------+--------------------------------------+----------+---------+-----------------------------+-------------------+-------------------------+--------+--------------+--------
+ a3306584-dec6-4268-aa54-eef39414feaf | Sensor de posición del cigüeñal | {P0335}     | critica          | 62ea2cc1-35ce-499f-a665-b20cc742932b | genuino  | Toyota  | Sensor de cigüeñal Toyota   | 90919-05057       |                  200000 | bajo   |        79637 | CLP
+ a3306584-dec6-4268-aa54-eef39414feaf | Sensor de posición del cigüeñal | {P0335}     | critica          | b37e031e-000f-4f6e-84d0-d5ecd8125083 | oem      | Bosch   | Sensor de cigüeñal Bosch    | 0261210170        |                  160000 | bajo   |        44537 | CLP
+ a3306584-dec6-4268-aa54-eef39414feaf | Sensor de posición del cigüeñal | {P0335}     | critica          | 9546bcd3-696c-4dae-bed7-bcbe072d0129 | generico | Autolab | Sensor de cigüeñal genérico | GEN-CKP-01        |                   70000 | alto   |        17537 | CLP
+ c381518b-d307-43db-b2b9-8852e12bbfba | Sensor de velocidad de rueda    | {C0035}     | media            | 3626f060-9bac-422f-98ae-4926e4192068 | genuino  | Toyota  | Sensor ABS Toyota           | 89543-0K020       |                  180000 | bajo   |       114737 | CLP
+ c381518b-d307-43db-b2b9-8852e12bbfba | Sensor de velocidad de rueda    | {C0035}     | media            | fa4a104d-74c1-41dd-ab13-8ff19e4aa055 | oem      | Bosch   | Sensor ABS Bosch            | 0265007905        |                  150000 | bajo   |        60737 | CLP
+ c381518b-d307-43db-b2b9-8852e12bbfba | Sensor de velocidad de rueda    | {C0035}     | media            | df4b2c3f-d2a9-4d13-b577-4546a0fdeb1a | generico | Autolab | Sensor ABS genérico         | GEN-ABS-01        |                   60000 | medio  |        25637 | CLP
+(6 rows)
+
+
+=== TX-8. Completar con control optimista ===
+-- 8a. el cliente envia la version que vio antes de cotizar (se espera RE007)
+psql:/db/queries/demo_transacciones.sql:211: ERROR:  conflicto de version en la sesion 19: esperada 1, actual 2
+   SQLSTATE RE007
+-- 8b. con la version actual
+              id_publico              |   estado   |          cotizada_en          |         completada_en         | cancelada_en | version |        actualizado_en         
+--------------------------------------+------------+-------------------------------+-------------------------------+--------------+---------+-------------------------------
+ 944bb8ef-b13e-4a72-9f22-c9446e19145b | completado | 2026-10-04 06:07:56.191091+00 | 2026-10-04 06:07:56.191091+00 |              |       3 | 2026-10-04 06:07:56.191091+00
+(1 row)
+
+-- 8c. estado terminal: ni otro estado (se espera RE001) ni otra cotizacion (se espera RE004)
+psql:/db/queries/demo_transacciones.sql:216: ERROR:  transicion de estado invalida: completado -> cancelado
+   SQLSTATE RE001
+psql:/db/queries/demo_transacciones.sql:218: ERROR:  la sesion 19 esta en estado completado y no admite cotizaciones nuevas
+   SQLSTATE RE004
+
+=== TX-9. Supresion del titular ===
+-- 9a. el mecanico no puede solicitarla (se espera 42501)
+psql:/db/queries/demo_transacciones.sql:228: ERROR:  permission denied for function fn_solicitar_supresion_titular
+   SQLSTATE 42501
+-- 9b. la administradora: hay una atencion completada hoy -> bloqueado por retencion
+              id_publico              | estado_tratamiento 
+--------------------------------------+--------------------
+ 9d56cd3e-33c3-4518-a0bd-427509a470f9 | bloqueado
+(1 row)
+
+-- 9c. el mecanico ya no encuentra el vehiculo; la sesion sigue en el historial sin patente
+ id_publico | patente | vin | anio | motor | modelo_id_publico | modelo_nombre | marca_nombre | titular_id_publico | titular_nombre | ultima_sesion_en 
+------------+---------+-----+------+-------+-------------------+---------------+--------------+--------------------+----------------+------------------
+(0 rows)
+
+              id_publico              |   estado   |          iniciada_en          | metodo_ingreso | kilometraje | version | vehiculo_id_publico | vehiculo_patente | vehiculo_anio | modelo_nombre | marca_nombre | usuario_nombre | fallas | severidad_maxima | cotizacion_total | cotizacion_moneda 
+--------------------------------------+------------+-------------------------------+----------------+-------------+---------+---------------------+------------------+---------------+---------------+--------------+----------------+--------+------------------+------------------+-------------------
+ 944bb8ef-b13e-4a72-9f22-c9446e19145b | completado | 2026-10-04 06:07:56.191091+00 | obd_bluetooth  |       52300 |       3 |                     |                  |               |               |              | Andrea Lagos   |      2 | critica          |           101374 | CLP
+(1 row)
+
+
+=== TX-10. Aislamiento en escritura: mecanica del taller 2 con ids publicos del taller 1 ===
+-- cada sentencia devuelve cero filas: los padres no son visibles
+ id_publico | estado | metodo_ingreso | kilometraje | iniciada_en | version | fallas_registradas 
+------------+--------+----------------+-------------+-------------+---------+--------------------
+(0 rows)
+
+ id_publico | estado | cotizada_en | completada_en | cancelada_en | version | actualizado_en 
+------------+--------+-------------+---------------+--------------+---------+----------------
+(0 rows)
+
+ id_publico | numero_revision | vigente | cerrada_en | total | moneda | version | sesion_id_publico 
+------------+-----------------+---------+------------+-------+--------+---------+-------------------
+(0 rows)
+
+ repuesto_id_publico | nombre_snapshot | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
+---------------------+-----------------+----------------+-----------------+----------+-----------------+----------
+(0 rows)
+
+ id_publico | numero_revision | vigente | cerrada_en | total | moneda | version 
+------------+-----------------+---------+------------+-------+--------+---------
+(0 rows)
+
+
+=== Auditoria generada por la demostracion (administradora, taller 1) ===
+ request_id |       rol        | operacion |           tabla           | resultado | registros 
+------------+------------------+-----------+---------------------------+-----------+-----------
+            | app_backend_user | LOGIN     |                           | exito     |         2
+ demo-tx-1b | taller_admin     | INSERT    | usuario                   | exito     |         1
+ demo-tx-1b | taller_admin     | UPDATE    | usuario_credencial        | exito     |         1
+ demo-tx-2  | taller_mecanico  | INSERT    | titular                   | exito     |         1
+ demo-tx-2  | taller_mecanico  | INSERT    | consentimiento_titular    | exito     |         1
+ demo-tx-2  | taller_mecanico  | INSERT    | vehiculo                  | exito     |         1
+ demo-tx-3  | taller_mecanico  | INSERT    | sesion_diagnostico        | exito     |         1
+ demo-tx-3  | taller_mecanico  | INSERT    | falla_sesion              | exito     |         2
+ demo-tx-4  | taller_mecanico  | INSERT    | cotizacion                | exito     |         1
+ demo-tx-4  | taller_mecanico  | INSERT    | cotizacion_detalle        | exito     |         3
+ demo-tx-4  | taller_mecanico  | UPDATE    | cotizacion_detalle        | exito     |         1
+ demo-tx-4  | taller_mecanico  | DELETE    | cotizacion_detalle        | exito     |         1
+ demo-tx-5  | taller_mecanico  | UPDATE    | cotizacion                | exito     |         1
+ demo-tx-5  | taller_mecanico  | UPDATE    | sesion_diagnostico        | exito     |         1
+ demo-tx-6  | taller_mecanico  | INSERT    | cotizacion                | exito     |         1
+ demo-tx-6  | taller_mecanico  | INSERT    | cotizacion_detalle        | exito     |         2
+ demo-tx-6  | taller_mecanico  | UPDATE    | cotizacion                | exito     |         2
+ demo-tx-7  | taller_admin     | UPDATE    | taller_configuracion      | exito     |         1
+ demo-tx-8  | taller_mecanico  | UPDATE    | sesion_diagnostico        | exito     |         1
+ demo-tx-9  | taller_admin     | INSERT    | solicitud_derecho_titular | exito     |         1
+ demo-tx-9  | taller_admin     | UPDATE    | titular                   | exito     |         1
+(21 rows)
+
+
+=== Tras el ROLLBACK: la base queda como la dejaron las semillas ===
+ usuarios_igual | titulares_igual | vehiculos_igual | sesiones_igual | cotizaciones_igual | auditoria_igual | margen_taller_1 
+----------------+-----------------+-----------------+----------------+--------------------+-----------------+-----------------
+ t              | t               | t               | t              | t                  | t               |           30.00
+(1 row)
+

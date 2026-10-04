@@ -1,0 +1,65 @@
+# Semillas: verificacion y resumen (generado por db/scripts/evidencia_fase3.sh)
+# Fecha: 2026-10-04T06:07Z
+
+--- Catalogos globales ---
+ marcas | modelos | dtc | componentes | dtc_componente | repuestos | compatibilidades 
+--------+---------+-----+-------------+----------------+-----------+------------------
+      6 |      11 |  12 |          10 |             21 |        42 |              297
+(1 row)
+
+--- Repuestos por perfil ---
+  perfil  | repuestos | no_disponibles 
+----------+-----------+----------------
+ genuino  |        19 |              0
+ oem      |        12 |              0
+ generico |        11 |              1
+(3 rows)
+
+--- Por taller ---
+           taller           | margen_pct | usuarios | dispositivos | titulares | vehiculos | sesiones | fallas | cotizaciones | lineas | auditoria 
+----------------------------+------------+----------+--------------+-----------+-----------+----------+--------+--------------+--------+-----------
+ Taller Mecánico Los Aromos |      30.00 |        5 |            3 |         5 |         8 |       12 |     16 |           11 |     17 |       128
+ Servicio Automotriz Ñuble  |      45.50 |        3 |            1 |         2 |         3 |        4 |      5 |            3 |      4 |        38
+(2 rows)
+
+--- Sesiones por taller y estado ---
+           taller           |   estado   | sesiones 
+----------------------------+------------+----------
+ Taller Mecánico Los Aromos | pendiente  |        3
+ Taller Mecánico Los Aromos | cotizado   |        3
+ Taller Mecánico Los Aromos | completado |        4
+ Taller Mecánico Los Aromos | cancelado  |        2
+ Servicio Automotriz Ñuble  | pendiente  |        2
+ Servicio Automotriz Ñuble  | cotizado   |        1
+ Servicio Automotriz Ñuble  | completado |        1
+(7 rows)
+
+--- Cotizaciones ---
+           taller           | cotizaciones | vigentes | borradores | total_vigente 
+----------------------------+--------------+----------+------------+---------------
+ Taller Mecánico Los Aromos |           11 |        8 |          2 |       1732666
+ Servicio Automotriz Ñuble  |            3 |        2 |          1 |        611040
+(2 rows)
+
+--- Titulares por estado de tratamiento ---
+           taller           | estado_tratamiento | titulares | sin_nombre 
+----------------------------+--------------------+-----------+------------
+ Taller Mecánico Los Aromos | activo             |         3 |          0
+ Taller Mecánico Los Aromos | bloqueado          |         1 |          0
+ Taller Mecánico Los Aromos | anonimizado        |         1 |          1
+ Servicio Automotriz Ñuble  | activo             |         2 |          0
+(4 rows)
+
+--- Auditoria por operacion, rol y resultado ---
+   operacion   |       rol       | resultado | registros 
+---------------+-----------------+-----------+-----------
+ INSERT        | postgres        | exito     |        48
+ INSERT        | taller_admin    | exito     |        13
+ INSERT        | taller_mecanico | exito     |       100
+ UPDATE        | taller_admin    | exito     |        12
+ UPDATE        | taller_mecanico | exito     |        30
+ LOGIN         | postgres        | exito     |         3
+ LOGIN_FALLIDO | postgres        | fallo     |         2
+ LOGIN_FALLIDO | postgres        | denegado  |         1
+(8 rows)
+
