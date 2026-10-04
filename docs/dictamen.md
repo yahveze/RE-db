@@ -25,7 +25,8 @@ ninguna limitación oculta de ese tipo.
 
 La revisión encontró **un defecto técnico**, que se corrigió y quedó cubierto por pruebas (`V010`, §4.1), y
 **cuatro reglas que la base no hace cumplir**, que no se corrigieron porque decidirlas es del negocio y no
-de la base (§4.2 a §4.5; temas T-63 a T-66 de `docs/decisiones.md`).
+de la base (§4.2 a §4.5). Quedaron resueltas como responsabilidad de la API y de la configuración de
+producción (`docs/decisiones.md` §12.6): la base sigue aceptando esas operaciones por SQL directo.
 
 ## 2. Alcance y método
 
@@ -90,10 +91,10 @@ dispositivos o repuestos.
 | # | Hallazgo | Gravedad | Estado |
 |---|---|---|---|
 | H-1 | Una tabla temporal podía suplantar a una real dentro de las funciones definidoras | alta en potencia; no explotable hoy | **corregido** (`V010`) |
-| H-2 | Una sesión `completado` o `cancelado` sigue admitiendo cambios en su diagnóstico | media | abierto: T-63 |
-| H-3 | El mecánico puede fijar la fecha de inicio de una sesión | media | abierto: T-64 |
-| H-4 | El rol de conexión no tiene tiempos de espera ni límite de conexiones | media (operación) | abierto: T-65 |
-| H-5 | El administrador puede anular la retención y dejar al taller sin administrador | baja | abierto: T-66 |
+| H-2 | Una sesión `completado` o `cancelado` sigue admitiendo cambios en su diagnóstico | media | en la API (T-63) |
+| H-3 | El mecánico puede fijar la fecha de inicio de una sesión | media | en la API (T-64) |
+| H-4 | El rol de conexión no tiene tiempos de espera ni límite de conexiones | media (operación) | configuración de producción (T-65) |
+| H-5 | El administrador puede anular la retención y dejar al taller sin administrador | baja | en la API (T-66) |
 
 ### 4.1 H-1: sombra de `pg_temp` en las funciones definidoras (corregido)
 

@@ -164,6 +164,6 @@ Es un prototipo. Los principales (lista completa en `docs/dictamen.md` §4 y §6
 - La contraseña del usuario llega en claro al motor (`crypt()` en la base); en producción el hash lo calcula el backend.
 - Sin TLS, sin PgBouncer real, sin recuperación a un punto en el tiempo y con respaldos sin cifrar.
 - Las tareas periódicas (respaldo, anonimización de vencidos) tienen script pero no están programadas.
-- Cuatro reglas que la base no hace cumplir y esperan una decisión del negocio (temas T-63 a T-66).
+- Cuatro reglas que la base no hace cumplir y quedan a cargo de la API y de la configuración de producción (temas T-63 a T-66, `docs/decisiones.md` §12.6).
 - Los supuestos legales (Ley N° 21.719, plazos de retención) están marcados **validar**: no es asesoría legal.
 - `make` no se probó literalmente en este equipo; la evidencia ejecuta las recetas del `Makefile`.

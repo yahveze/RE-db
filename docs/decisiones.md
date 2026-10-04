@@ -852,3 +852,20 @@ documento conservan las cifras de su fase.
 **Riesgos que la ejecución no cubrió:** los de `docs/dictamen.md` §8 (`make` literal, medición de
 rendimiento no repetida, suplantación de `usuario` ante el login solo deducida, diagramas sin renderizar,
 ausencia de un revisor independiente) y todo lo que cada documento declara en su sección "lo que no cubre".
+
+### 12.6 Resolución final
+
+Decisiones del usuario al recibir el cierre. Con ellas el desarrollo de la base de datos queda concluido.
+
+| Tema | Resolución |
+|---|---|
+| `V010` y las 4 pruebas de `pg_temp` | **Aprobadas**: se mantienen |
+| T-63 (sesión terminal modificable) | **Resuelto**: la base no cambia; impedir cambios sobre una sesión `completado` o `cancelado` es validación de la API |
+| T-64 (fechas fijadas por el cliente) | **Resuelto**: la base no cambia; la API no acepta `iniciada_en`, `otorgado_en` ni `recibida_en` del cliente (las sentencias `tx_*` ya no las envían) |
+| T-65 (tiempos de espera del rol de conexión) | **Resuelto**: configuración de producción (`ALTER ROLE app_backend_user SET ...` y `CONNECTION LIMIT`), con valores acordados con el backend |
+| T-66 (retención y cuenta del administrador) | **Resuelto**: validación de la API (plazo mínimo de retención; no desactivar al último administrador) |
+
+**Lo que esta resolución implica.** La base sigue aceptando esas operaciones si alguien ejecuta SQL directo
+con un rol de taller (`fase7_dictamen.txt` B1 a B4): la protección pasa a depender del backend, que el
+modelo ya trata como componente de confianza (`docs/seguridad.md` §13). Es una excepción declarada al
+principio de que las reglas se sostienen "aunque se use SQL directo", limitada a estos cuatro puntos.

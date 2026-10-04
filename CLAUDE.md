@@ -226,7 +226,8 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
   las cifras que citan `docs/operacion.md` y `docs/pruebas.md` (cambian entre corridas).
 - En la herramienta Bash, un heredoc con comillas simples y acentos graves dentro puede fallar al analizarse:
   para ediciones largas de Markdown usar la herramienta de edición.
-- Temas T-63 a T-69 en `docs/decisiones.md` §12.4. T-63 a T-66 esperan una decisión del negocio.
+- Temas T-63 a T-69 en `docs/decisiones.md` §12.4. T-63 a T-66 resueltos en §12.6: los valida la API
+  (T-65: configuración de producción); la base no cambia.
 
 ## Estado
 
@@ -237,5 +238,5 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
 - Documentos: `docs/dictamen.md`, `docs/decisiones.md`, `docs/modelo/` (01–05), `docs/seguridad.md`,
   `docs/privacidad.md`, `docs/consultas.md`, `docs/transacciones.md`, `docs/pruebas.md`, `docs/operacion.md`,
   `docs/evidencia/rendimiento.md`.
-- Pendiente fuera del alcance: decidir T-63 a T-66; `make` sigue sin instalar (T-1, T-67); la medición de
+- Desarrollo concluido. Fuera del alcance de la base: T-63 a T-66 (API y producción, §12.6); `make` sigue sin instalar (T-1, T-67); la medición de
   rendimiento no se repitió tras `V010` (T-60).
