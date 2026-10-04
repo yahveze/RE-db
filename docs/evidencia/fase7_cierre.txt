@@ -1,0 +1,77 @@
+# Cierre: criterio de aceptacion (make all) y estado final (generado por db/scripts/evidencia_fase7.sh)
+# Fecha: 2026-10-04T15:52Z
+
+## 1. Entorno
+commit de partida: 78d0268 (Fase 6: operacion (respaldo y restauracion probados, pg_hba, logs, auditoria))
+docker: 29.8.1   bash: 5.2.37(1)-release
+make: NO instalado en este equipo (T-1)
+
+## 2. make all = reset -> migrate -> seed -> test, desde una base vacia
+Makefile: all: reset migrate seed test
+$ bash db/scripts/reset.sh        # receta de 'reset' en el Makefile
+reset: base vacia lista
+$ bash db/scripts/migrate.sh        # receta de 'migrate' en el Makefile
+==> V000__bootstrap_roles_y_extensiones.sql
+==> V001__tipos.sql
+==> V002__tablas_catalogos.sql
+==> V003__tablas_operativas.sql
+==> V004__comentarios.sql
+==> V005__funciones_y_triggers.sql
+==> V006__indices.sql
+==> V007__grants.sql
+==> V008__rls.sql
+==> V009__ajustes_rendimiento.sql
+==> V010__search_path_pg_temp.sql
+migrate: 11 migraciones aplicadas
+$ bash db/scripts/seed.sh        # receta de 'seed' en el Makefile
+==> 01_catalogos.sql
+==> 02_talleres_y_usuarios.sql
+==> 03_operacion.sql
+==> 04_privacidad_y_accesos.sql
+==> 99_resumen.sql
+seed: 5 archivos cargados
+$ bash db/tests/run_all.sh        # receta de 'test' en el Makefile
+==> 01_esquema.sql: 31 PASS, 0 FAIL, 0 errores esperados [ok]
+==> 02_restricciones.sql: 63 PASS, 0 FAIL, 54 errores esperados [ok]
+==> 03_estados_y_cotizaciones.sql: 42 PASS, 0 FAIL, 25 errores esperados [ok]
+==> 04_rbac.sql: 137 PASS, 0 FAIL, 78 errores esperados [ok]
+==> 05_aislamiento_rls.sql: 75 PASS, 0 FAIL, 22 errores esperados [ok]
+==> 06_autenticacion.sql: 33 PASS, 0 FAIL, 6 errores esperados [ok]
+==> 07_auditoria.sql: 26 PASS, 0 FAIL, 5 errores esperados [ok]
+==> 08_privacidad.sql: 24 PASS, 0 FAIL, 4 errores esperados [ok]
+==> 09_consultas.sql: 45 PASS, 0 FAIL, 0 errores esperados [ok]
+==> 10_operacion.sql: 17 PASS, 0 FAIL, 6 errores esperados [ok]
+==> concurrencia.sh: 12 PASS, 0 FAIL [ok]
+==> operacion.sh: 13 PASS, 0 FAIL [ok]
+test: todo PASS (518 pruebas en 12 archivos)
+codigo de salida de 'make all': 0
+
+## 3. Estado final del esquema
+                                                       version                                                        
+----------------------------------------------------------------------------------------------------------------------
+ PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+(1 row)
+
+ tablas | vistas | enums | funciones | definidoras | triggers | politicas | indices | indices_ix 
+--------+--------+-------+-----------+-------------+----------+-----------+---------+------------
+     21 |      1 |    14 |        21 |           6 |       32 |        49 |      68 |         14
+(1 row)
+
+ talleres | usuarios | repuestos | vehiculos | sesiones | cotizaciones 
+----------+----------+-----------+-----------+----------+--------------
+        2 |        8 |        42 |        11 |       16 |           14
+(1 row)
+
+migraciones: 11   semillas: 5   sentencias PREPARE en db/queries/: 43
+
+## 4. La suite se puede repetir sobre la misma base (no deja cambios que la afecten)
+$ bash db/tests/run_all.sh
+test: todo PASS (518 pruebas en 12 archivos)
+
+## 5. Secretos: valores de .env en archivos versionados o por versionar (solo conteos)
+POSTGRES_PASSWORD: 0 de 135 archivos
+APP_BACKEND_PASSWORD: 0 de 135 archivos
+CLAVE_DEMO: 0 de 135 archivos
+.env ignorado por Git: si   backups/ ignorada: si
+
+# codigo de salida: 0

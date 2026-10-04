@@ -1,9 +1,10 @@
-# Decisiones de diseño — Repuestos Exactos (Fase 0)
+# Decisiones de diseño — Repuestos Exactos
 
-> Estado: **Fases 0 a 6 completas** (ver secciones 7 a 11). Esquema en `db/migrations/` (V000–V009),
-> semillas en `db/seeds/`, consultas y transacciones en `db/queries/`, suite de 514 pruebas en `db/tests/`,
-> medición con volumen en `db/perf/` y operación en `db/scripts/` y `db/ops/` (respaldo y restauración
-> probados), verificado sobre PostgreSQL 16.15; falta el cierre (Fase 7).
+> Estado: **proyecto cerrado (Fases 0 a 7)**. Esquema en `db/migrations/` (V000–V010), semillas en
+> `db/seeds/`, consultas y transacciones en `db/queries/`, suite de 518 pruebas en `db/tests/`, medición
+> con volumen en `db/perf/` y operación en `db/scripts/` y `db/ops/` (respaldo y restauración probados),
+> verificado sobre PostgreSQL 16.15. Dictamen final en `docs/dictamen.md`. Las secciones 5 a 11 registran
+> lo que se verificó en cada fase, con las cifras de ese momento; el estado final es el de la sección 12.
 
 Clasificación usada: **[OBLIGATORIA]** la exige el enunciado o la integridad del modelo ·
 **[RECOMENDADA]** se implementa porque el costo es bajo y el beneficio defendible ·
@@ -750,3 +751,104 @@ verificaron ejecutando el script en que delega cada uno, no con `make`.
 **Riesgos que la ejecución no cubrió:** los de `docs/operacion.md` §10 (recuperación a un punto en el
 tiempo, cifrado y copia externa de respaldos, TLS, tiempos con volumen, programación real de las tareas) y
 todo lo marcado **[NO EJECUTADO]** en ese documento. `make` sigue sin instalarse (T-1, T-62).
+
+---
+
+## 12. Fase 7: cierre
+
+Dictamen completo en `docs/dictamen.md`. A diferencia de lo previsto, el cierre **sí cambió el esquema**:
+la revisión final encontró un defecto en la configuración de las funciones y se corrigió con una migración
+nueva (`V010`). Ninguna decisión tomada se reabrió.
+
+### 12.1 Resolución de los temas pendientes
+
+| Tema | Resolución |
+|---|---|
+| T-55 (parámetros del log en el `command` del compose) | **Aprobado** por el usuario: se mantienen los cinco parámetros agregados y las pruebas que los vigilan |
+| T-58 (purga de la auditoría condicionada a `retencion_anios`) | **Aprobado**: sin plazo por defecto; se rechaza un plazo menor que la mayor retención de un taller. El plazo sigue siendo una decisión legal a validar |
+| T-60 (cifras de rendimiento de la Fase 5) | **Aprobado**: se conservan `fase5_*.txt` y `fase6_perf.txt`; la medición no se repitió en esta fase |
+| T-56, T-57, T-59, T-61 | Sin objeción: quedan como están |
+| T-1, T-62 (`make`) | **Sigue sin instalarse.** La evidencia de cierre ejecuta las recetas del `Makefile` tal como están escritas (T-67) |
+
+### 12.2 Qué se construyó
+
+| Entregable | Dónde |
+|---|---|
+| Dictamen final | `docs/dictamen.md` |
+| Comprobaciones de catálogo y experimentos del dictamen | `db/tests/humo/fase7_dictamen.sql` |
+| Corrección del `search_path` de las 21 funciones | `db/migrations/V010__search_path_pg_temp.sql` |
+| 4 pruebas nuevas (518 en total) | `ESQ-30`, `ESQ-31` en `01_esquema.sql`; sombra de `pg_temp` en `07_auditoria.sql` |
+| Evidencia | `db/scripts/evidencia_fase7.sh` → `docs/evidencia/fase7_cierre.txt`, `fase7_dictamen.txt`; `fase7_antes.txt` (captura única) |
+| README final y revisión de coherencia entre documentos | `README.md`; lista de correcciones en `docs/dictamen.md` §7 |
+
+### 12.3 Hallazgos de la ejecución
+
+| # | Hallazgo | Qué se hizo |
+|---|---|---|
+| 1 | Con `search_path = pg_catalog, public`, `pg_temp` se busca primero para tablas: con el privilegio `TEMPORARY`, una tabla temporal `auditoria_operacion` recibía los registros de auditoría en lugar de la real (`fase7_antes.txt` B5) | `V010`: `pg_temp` explícito y al final en las 21 funciones; `ESQ-30`, `ESQ-31` y dos pruebas en `07_auditoria.sql` |
+| 2 | Una sesión `completado` admite cambios de kilometraje y de fallas (B1) | No se corrigió: regla de negocio (T-63) |
+| 3 | El mecánico puede fijar `iniciada_en`, de la que depende la retención (B2) | No se corrigió: afecta a las semillas (T-64) |
+| 4 | `app_backend_user` no tiene tiempos de espera ni límite de conexiones (A6) | No se corrigió: los valores dependen del backend (T-65) |
+| 5 | El administrador puede poner la retención en 0 antes de suprimir, y dejar al taller sin administrador (B3, B4) | No se corrigió: coherente con el modelo (T-66) |
+| 6 | La primera versión de la consulta de claves foráneas sin índice del dictamen daba por cubierta `vehiculo.modelo_vehiculo_id` con un índice encabezado por `taller_id` | Se corrigió la consulta: son 11, todas deliberadas o medidas (`docs/dictamen.md` §3) |
+
+### 12.4 Temas nuevos
+
+Si no dices nada, quedan como están. ⚠ marca lo que conviene leer.
+
+**T-63 ⚠ Una sesión en estado terminal sigue admitiendo cambios en su diagnóstico.**
+El trigger protege el estado, no el resto: como mecánico, sobre una sesión completada se aceptan un cambio
+de kilometraje, una falla nueva y un cambio de severidad (`fase7_dictamen.txt` B1). Quedan auditados.
+Propuesta: un trigger en `falla_sesion` y `sesion_diagnostico` que rechace con `RE004` cuando la sesión es
+terminal. No lo apliqué porque el enunciado no lo fija y puede ser legítimo corregir un DTC mal digitado
+después de entregar el vehículo.
+
+**T-64 ⚠ El cliente puede fijar `iniciada_en`, `otorgado_en` y `recibida_en`.**
+El privilegio de columna existe porque las semillas antedatan atenciones con el rol del taller (T-34). Una
+sesión con fecha de 2099 se acepta (B2), y de esa fecha depende el plazo de retención del titular.
+Propuesta para producción: quitar esas columnas de los `GRANT INSERT` y cargar lo histórico como
+plataforma. Obliga a reescribir las semillas; por eso no lo apliqué.
+
+**T-65 ⚠ El rol de conexión no tiene tiempos de espera.**
+`statement_timeout`, `lock_timeout` e `idle_in_transaction_session_timeout` valen 0 y `app_backend_user` no
+tiene `CONNECTION LIMIT` (A6). Una transacción abandonada con un `FOR UPDATE` deja esperando sin plazo a
+quien toque esa sesión. Propuesta: `ALTER ROLE app_backend_user SET ...` en una migración, con valores
+acordados con el backend (por encima de los 4 segundos de la prueba de concurrencia).
+
+**T-66 El administrador es el único control de la retención y de su propia cuenta.**
+Con `retencion_anios = 0` la supresión anonimiza de inmediato aunque haya una atención reciente (B3), y un
+administrador puede desactivarse y dejar al taller sin ninguno (B4). Es coherente con que el taller sea el
+responsable de sus datos. Si la retención es una obligación legal, el mínimo debería fijarlo la
+plataforma: **validar legalmente**.
+
+**T-67 `make all` se evidenció sin `make`.**
+`evidencia_fase7.sh` lee del `Makefile` las dependencias de `all` y la receta de cada objetivo, y las
+ejecuta literalmente. Prueba que las recetas funcionan en ese orden; no prueba el programa `make`. Con
+`make` instalado, el mismo script ejecuta `make all`.
+
+**T-68 Otorgar `TEMPORARY` a un rol de taller pasa a ser una decisión a revisar.**
+Con `V010` ya no permite evadir la auditoría, pero `ESQ-31` falla si alguien lo otorga: es deliberado.
+`09_consultas.sql` lo sigue otorgando dentro de su transacción (T-47).
+
+**T-69 La evidencia de las fases 3, 4 y 6 se regeneró sobre el esquema final.**
+Sus archivos muestran ahora 518 pruebas y las cifras de esta corrida; `docs/operacion.md` y
+`docs/pruebas.md` se actualizaron con ellas. Las tablas de verificación de las secciones 9 a 11 de este
+documento conservan las cifras de su fase.
+
+### 12.5 Verificación de la Fase 7
+
+| Comprobación | Resultado | Evidencia |
+|---|---|---|
+| `reset` → `migrate` (V000–V010) → `seed` → `test`, con las recetas del `Makefile` | código 0; 518 PASS, 0 FAIL | `fase7_cierre.txt` §2 |
+| Suite repetida sobre la misma base | 518 PASS | `fase7_cierre.txt` §4 |
+| Objetos del esquema | 21 tablas, 1 vista, 14 enums, 21 funciones (6 definidoras), 32 triggers, 49 políticas, 68 índices | `fase7_cierre.txt` §3 |
+| Sombra de `pg_temp`, antes y después de `V010` | antes: 1 registro desviado, 0 en la auditoría real; después: 0 y 1 | `fase7_antes.txt` y `fase7_dictamen.txt`, B5 |
+| El guion del dictamen no deja cambios | kilometraje, fallas y privilegios intactos | `fase7_dictamen.txt` C |
+| Respaldo → eliminación del volumen → restauración, con el esquema final | datos y esquema idénticos; 518 PASS sobre la base restaurada | `fase6_respaldo.txt` |
+| Control negativo de CON-01 | detecta el defecto; restaurada la función (con su `search_path` de `V010`), pasa | `fase4_control_negativo.txt` |
+| Consultas y transacciones de la Fase 3 | sin errores; 18 errores esperados | `fase3_*.txt` regenerados |
+| Secretos en archivos versionados y en la evidencia | ninguno | `fase7_cierre.txt` §5 |
+
+**Riesgos que la ejecución no cubrió:** los de `docs/dictamen.md` §8 (`make` literal, medición de
+rendimiento no repetida, suplantación de `usuario` ante el login solo deducida, diagramas sin renderizar,
+ausencia de un revisor independiente) y todo lo que cada documento declara en su sección "lo que no cubre".

@@ -178,4 +178,27 @@ SELECT count(*) = 0 AS ok FROM auditoria_operacion a WHERE a.tabla = 'repuesto' 
 SELECT count(*) >= 8 AS ok FROM auditoria_operacion a WHERE a.request_id = 'req-auditoria-1' AND a.usuario_id = :mec_1 \gset
 \ir incluir/afirmar.sql
 
+-- ------------------------------------- sombra de pg_temp (Fase 7, V010)
+-- Aunque un rol de taller llegara a tener TEMPORARY, una tabla temporal llamada
+-- auditoria_operacion no puede desviar los registros: las funciones nombran
+-- pg_temp al final de su search_path. Sin V010 el registro iba a la temporal
+-- (docs/evidencia/fase7_antes.txt, B5). El GRANT lo revierte el ROLLBACK.
+\ir incluir/rol_plataforma.sql
+GRANT TEMPORARY ON DATABASE :"DBNAME" TO taller_mecanico;
+\ir incluir/rol_mecanico_1.sql
+EXECUTE ctx(:'taller_1', :'mec_1', '203.0.113.7', 'req-auditoria-sombra') \gset ctx_
+CREATE TEMP TABLE auditoria_operacion (
+  taller_id bigint, usuario_id bigint, rol text, operacion text, tabla text, registro_id bigint,
+  datos_anteriores jsonb, datos_nuevos jsonb, ip_origen inet, resultado text, request_id text);
+GRANT INSERT ON pg_temp.auditoria_operacion TO PUBLIC;
+UPDATE sesion_diagnostico SET kilometraje = kilometraje + 1 WHERE id = :ses_id;
+\set prueba 'V010 una tabla temporal homonima no recibe el registro de auditoria'
+SELECT count(*) = 0 AS ok FROM pg_temp.auditoria_operacion \gset
+\ir incluir/afirmar.sql
+\ir incluir/rol_plataforma.sql
+\set prueba 'V010 la escritura queda en la auditoria real aunque exista la tabla temporal'
+SELECT count(*) = 1 AND bool_and(a.tabla = 'sesion_diagnostico' AND a.operacion = 'UPDATE' AND a.usuario_id = :mec_1) AS ok
+FROM   public.auditoria_operacion a WHERE a.request_id = 'req-auditoria-sombra' \gset
+\ir incluir/afirmar.sql
+
 ROLLBACK;

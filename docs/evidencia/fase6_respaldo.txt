@@ -1,16 +1,16 @@
 # Respaldo y restauracion probados (db/scripts/prueba_restauracion.sh) (generado por db/scripts/evidencia_fase6.sh)
-# Fecha: 2026-10-04T07:35Z
+# Fecha: 2026-10-04T15:47Z
 
 ### 1. Base de origen
 roles de la aplicacion: 6 | tablas: 21 | politicas RLS: 49 | funciones: 21 | triggers: 32
-tablas: 21 | filas: 1083
-huella de datos (sha256 de db/ops/huella.sql): 44f27417eba4d5092ad42fe2d546e43279dc62241db698d5f160c13aaedeca56
-huella de esquema (sha256 de pg_dump --schema-only): 25dacc2037f0de55899781372be29d9bce2862e91703f4be7e3262efaee830aa
+tablas: 21 | filas: 822
+huella de datos (sha256 de db/ops/huella.sql): 4cd3720d81832d90595298ffae30cae2e23dc18a04f2020321a621d4a0198a16
+huella de esquema (sha256 de pg_dump --schema-only): e937cae9e0652f3e7eb34ba5ed5b3b54893fb1ef16ffe61d80f7be317515f9b3
 titulares activos: 5 | bloqueados: 1 | anonimizados: 1 | solicitudes de derechos: 3
 
 ### 2. Respaldo
-respaldo: repuestos_exactos_20261004T073600Z.dump (286928 bytes, 660 objetos, 2 s)
-respaldo: repuestos_exactos_20261004T073600Z.globales.sql (7 roles, sin claves)
+respaldo: repuestos_exactos_20261004T154703Z.dump (278194 bytes, 660 objetos, 1 s)
+respaldo: repuestos_exactos_20261004T154703Z.globales.sql (7 roles, sin claves)
 
 ### 3. Cambio posterior al respaldo: el administrador solicita la supresion de un titular
 titulares activos: 4 | bloqueados: 2 | anonimizados: 1 | solicitudes de derechos: 4
@@ -21,16 +21,16 @@ roles de la aplicacion: 0 | tablas: 0 | politicas RLS: 0 | funciones: 0 | trigge
 
 ### 5. Restauracion desde el respaldo
 restaurar: suma sha256 correcta
-restaurar: roles creados desde repuestos_exactos_20261004T073600Z.globales.sql
-restaurar: base 'repuestos_exactos' restaurada desde repuestos_exactos_20261004T073600Z.dump
+restaurar: roles creados desde repuestos_exactos_20261004T154703Z.globales.sql
+restaurar: base 'repuestos_exactos' restaurada desde repuestos_exactos_20261004T154703Z.dump
 restaurar: titulares con bloqueo vencido anonimizados tras restaurar: 0
 restaurar: terminado en 5 s
 restaurar: PENDIENTE MANUAL - reaplicar las supresiones de titulares solicitadas despues de la fecha del respaldo
 
 ### 6. Comparacion con la base de origen
 roles de la aplicacion: 6 | tablas: 21 | politicas RLS: 49 | funciones: 21 | triggers: 32
-huella de datos: 44f27417eba4d5092ad42fe2d546e43279dc62241db698d5f160c13aaedeca56
-huella de esquema: 25dacc2037f0de55899781372be29d9bce2862e91703f4be7e3262efaee830aa
+huella de datos: 4cd3720d81832d90595298ffae30cae2e23dc18a04f2020321a621d4a0198a16
+huella de esquema: e937cae9e0652f3e7eb34ba5ed5b3b54893fb1ef16ffe61d80f7be317515f9b3
 DATOS: IDENTICOS (mismas filas y mismo md5 en las 21 tablas; mismas secuencias)
 ESQUEMA: IDENTICO (tablas, restricciones, indices, funciones, triggers, privilegios y politicas)
 conexion del backend con la clave de .env: app_backend_user
@@ -38,36 +38,36 @@ el cambio del paso 3 no esta en la base restaurada (la solicitud de supresion de
 titulares activos: 5 | bloqueados: 1 | anonimizados: 1 | solicitudes de derechos: 3
 
 ### 7. Suite completa sobre la base restaurada
-==> 01_esquema.sql: 29 PASS, 0 FAIL, 0 errores esperados [ok]
+==> 01_esquema.sql: 31 PASS, 0 FAIL, 0 errores esperados [ok]
 ==> 02_restricciones.sql: 63 PASS, 0 FAIL, 54 errores esperados [ok]
 ==> 03_estados_y_cotizaciones.sql: 42 PASS, 0 FAIL, 25 errores esperados [ok]
 ==> 04_rbac.sql: 137 PASS, 0 FAIL, 78 errores esperados [ok]
 ==> 05_aislamiento_rls.sql: 75 PASS, 0 FAIL, 22 errores esperados [ok]
 ==> 06_autenticacion.sql: 33 PASS, 0 FAIL, 6 errores esperados [ok]
-==> 07_auditoria.sql: 24 PASS, 0 FAIL, 5 errores esperados [ok]
+==> 07_auditoria.sql: 26 PASS, 0 FAIL, 5 errores esperados [ok]
 ==> 08_privacidad.sql: 24 PASS, 0 FAIL, 4 errores esperados [ok]
 ==> 09_consultas.sql: 45 PASS, 0 FAIL, 0 errores esperados [ok]
 ==> 10_operacion.sql: 17 PASS, 0 FAIL, 6 errores esperados [ok]
 ==> concurrencia.sh: 12 PASS, 0 FAIL [ok]
 ==> operacion.sh: 13 PASS, 0 FAIL [ok]
-test: todo PASS (514 pruebas en 12 archivos)
+test: todo PASS (518 pruebas en 12 archivos)
 codigo de salida de la suite: 0
 
 prueba de restauracion: CORRECTA
 
 ### 8. Verificacion no destructiva: respaldo nuevo, restaurado en una base temporal (debe ser identico)
-respaldo: repuestos_exactos_20261004T073646Z.dump (290080 bytes, 660 objetos, 2 s)
-respaldo: repuestos_exactos_20261004T073646Z.globales.sql (7 roles, sin claves)
+respaldo: repuestos_exactos_20261004T154750Z.dump (281240 bytes, 660 objetos, 1 s)
+respaldo: repuestos_exactos_20261004T154750Z.globales.sql (7 roles, sin claves)
 verificar: suma sha256 correcta
-verificar: repuestos_exactos_20261004T073646Z.dump restaurado en repuestos_exactos_verif (2 s)
-verificar: el respaldo contiene 21 tablas y 1170 filas
+verificar: repuestos_exactos_20261004T154750Z.dump restaurado en repuestos_exactos_verif (2 s)
+verificar: el respaldo contiene 21 tablas y 909 filas
 verificar: la huella del respaldo es IDENTICA a la de la base principal
 
 ### 9. La misma verificacion con el respaldo del paso 2, anterior a la suite del paso 7:
 ###    detecta lo que la suite cambio despues (auditoria, secuencias, contador de inicios de sesion)
 verificar: suma sha256 correcta
-verificar: repuestos_exactos_20261004T073600Z.dump restaurado en repuestos_exactos_verif (2 s)
-verificar: el respaldo contiene 21 tablas y 1083 filas
+verificar: repuestos_exactos_20261004T154703Z.dump restaurado en repuestos_exactos_verif (2 s)
+verificar: el respaldo contiene 21 tablas y 822 filas
 verificar: el respaldo DIFIERE de la base principal (cambio despues del respaldo) en:
   - auditoria_operacion
   - secuencia auditoria_operacion_id_seq
@@ -99,6 +99,12 @@ verificar: el respaldo DIFIERE de la base principal (cambio despues del respaldo
   repuestos_exactos_20261004T073646Z.dump
   repuestos_exactos_20261004T073646Z.globales.sql
   repuestos_exactos_20261004T073646Z.sha256
+  repuestos_exactos_20261004T154703Z.dump
+  repuestos_exactos_20261004T154703Z.globales.sql
+  repuestos_exactos_20261004T154703Z.sha256
+  repuestos_exactos_20261004T154750Z.dump
+  repuestos_exactos_20261004T154750Z.globales.sql
+  repuestos_exactos_20261004T154750Z.sha256
 git check-ignore backups/: ignorada
 
 # codigo de salida: 0

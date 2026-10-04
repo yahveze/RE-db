@@ -1,8 +1,8 @@
 # 3. Modelo lógico
 
-Especificación relacional que implementarán las migraciones `V001`–`V003`. Los tipos son de PostgreSQL 16.
-Este documento es además el **borrador del diccionario de datos**: el definitivo se genera en la Fase 2
-desde el catálogo del motor (`COMMENT ON` de `V004`), para que no pueda desalinearse del esquema real.
+Especificación relacional que implementan las migraciones `V001`–`V003`. Los tipos son de PostgreSQL 16.
+Este documento fue el **borrador del diccionario de datos**: el definitivo es `05_diccionario_datos.md`, que
+se genera desde el catálogo del motor (`COMMENT ON` de `V004`) para que no pueda desalinearse del esquema real.
 
 ## 3.1 Convenciones aplicadas
 

@@ -1,5 +1,5 @@
 # Operacion: acceso, registro, secretos, privacidad, auditoria y mantenimiento (generado por db/scripts/evidencia_fase6.sh)
-# Fecha: 2026-10-04T07:36Z
+# Fecha: 2026-10-04T15:48Z
 
 ## 1. pg_hba.conf efectivo (pg_hba_file_rules)
  line_number | type  |   database    | user_name |  address  |  auth_method  | error 
@@ -51,10 +51,10 @@ rotacion del log (docker inspect): json-file map[max-file:5 max-size:10m]
 
 ## 4. Log del servidor: esperas de bloqueo registradas (log_lock_waits) durante la prueba de concurrencia
 lineas 'still waiting for': 10
-2026-10-04 07:36:29.974 UTC [346] app_backend_user@repuestos_exactos LOG:  process 346 still waiting for ShareLock on transaction 1867 after 1000.058 ms
-2026-10-04 07:36:29.974 UTC [346] app_backend_user@repuestos_exactos DETAIL:  Process holding the lock: 345. Wait queue: 346.
+2026-10-04 15:47:33.398 UTC [347] app_backend_user@repuestos_exactos LOG:  process 347 still waiting for ShareLock on transaction 1872 after 1000.103 ms
+2026-10-04 15:47:33.398 UTC [347] app_backend_user@repuestos_exactos DETAIL:  Process holding the lock: 340. Wait queue: 347.
 --
-2026-10-04 07:36:30.267 UTC [360] app_backend_user@repuestos_exactos LOG:  process 360 still waiting for ShareLock on transaction 1868 after 1000.092 ms
+2026-10-04 15:47:33.634 UTC [361] app_backend_user@repuestos_exactos LOG:  process 361 still waiting for ShareLock on transaction 1873 after 1000.093 ms
 lineas STATEMENT (texto de sentencias) en todo el log: 0
 lineas ERROR en todo el log (mensaje sin sentencia): 206
 
@@ -64,37 +64,36 @@ APP_BACKEND_PASSWORD en el log: 0 linea(s)
 CLAVE_DEMO en el log: 0 linea(s)
  sentencias_con_clave_backend | sentencias_con_clave_demo | sentencias_registradas 
 ------------------------------+---------------------------+------------------------
-                            0 |                         0 |                   2311
+                            0 |                         0 |                   2319
 (1 row)
 
 ## 6. Proceso periodico de privacidad (db/scripts/anonimizar_vencidos.sh)
-anonimizar: 2026-10-04T07:37Z titulares anonimizados: 0; vencidos pendientes: 0; proximo vencimiento: 2032-08-25
+anonimizar: 2026-10-04T15:48Z titulares anonimizados: 0; vencidos pendientes: 0; proximo vencimiento: 2032-08-25
 
 ## 7. Retencion de la auditoria (db/scripts/purgar_auditoria.sh)
 # simulacion con 6 anios:
-purga: corte 2020-10-04 00:00:00+00 (6 anios); registros anteriores al corte: 0 de 644
+purga: corte 2020-10-04 00:00:00+00 (6 anios); registros anteriores al corte: 0 de 383
 purga: SIMULACION - no se elimino nada (repetir con CONFIRMAR=1 para archivar y purgar)
 # plazo menor que la retencion de datos de un taller (debe rechazarse):
 purga: rechazada - 2 anios es menos que la mayor retencion de datos de un taller (6 anios)
 (codigo de salida 1)
 # registros que las purgas reales de la suite (OPE-29 a OPE-31) dejaron en la auditoria:
-  id  |      ocurrido_en       |   rol    | operacion |        tabla        |                                                                             datos                                                                              | resultado 
-------+------------------------+----------+-----------+---------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------
-  413 | 2026-10-04 07:34:53+00 | postgres | DELETE    | auditoria_operacion | {"corte": "1996-10-04 00:00:00+00", "archivo": "auditoria_anterior_a_1996-10-04_20261004T073451Z.csv", "purga_por_retencion": true, "registros_eliminados": 3} | exito
-  617 | 2026-10-04 07:35:23+00 | postgres | DELETE    | auditoria_operacion | {"corte": "1996-10-04 00:00:00+00", "archivo": "auditoria_anterior_a_1996-10-04_20261004T073522Z.csv", "purga_por_retencion": true, "registros_eliminados": 3} | exito
- 1029 | 2026-10-04 07:36:44+00 | postgres | DELETE    | auditoria_operacion | {"corte": "1996-10-04 00:00:00+00", "archivo": "auditoria_anterior_a_1996-10-04_20261004T073643Z.csv", "purga_por_retencion": true, "registros_eliminados": 3} | exito
-(3 rows)
+ id  |      ocurrido_en       |   rol    | operacion |        tabla        |                                                                             datos                                                                              | resultado 
+-----+------------------------+----------+-----------+---------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------
+ 414 | 2026-10-04 15:46:08+00 | postgres | DELETE    | auditoria_operacion | {"corte": "1996-10-04 00:00:00+00", "archivo": "auditoria_anterior_a_1996-10-04_20261004T154606Z.csv", "purga_por_retencion": true, "registros_eliminados": 3} | exito
+ 636 | 2026-10-04 15:47:48+00 | postgres | DELETE    | auditoria_operacion | {"corte": "1996-10-04 00:00:00+00", "archivo": "auditoria_anterior_a_1996-10-04_20261004T154746Z.csv", "purga_por_retencion": true, "registros_eliminados": 3} | exito
+(2 rows)
 
 ## 8. Mantenimiento manual (db/scripts/mantenimiento.sh)
-mantenimiento: antes   -> tablas: 21 | filas muertas: 177 | sin analyze: 0 | base: 12 MB
+mantenimiento: antes   -> tablas: 21 | filas muertas: 178 | sin analyze: 0 | base: 11 MB
 mantenimiento: despues -> tablas: 21 | filas muertas: 0 | sin analyze: 0 | base: 11 MB
 mantenimiento: VACUUM (ANALYZE) en 2 s
 
 ## 9. Experimento: log_connections activado durante 10 segundos (se revierte al terminar)
-lineas 'connection received' en esos segundos: 6
+lineas 'connection received' en esos segundos: 5
 lineas 'connection authorized' (conexiones autenticadas): 2
-2026-10-04 07:37:05.665 UTC [959] [unknown]@[unknown] LOG:  connection received: host=127.0.0.1 port=35518
-2026-10-04 07:37:05.898 UTC [966] [unknown]@[unknown] LOG:  connection received: host=[local]
+2026-10-04 15:48:12.468 UTC [974] [unknown]@[unknown] LOG:  connection received: host=[local]
+2026-10-04 15:48:14.901 UTC [982] [unknown]@[unknown] LOG:  connection received: host=127.0.0.1 port=54766
 log_connections tras revertir: off
 
 # codigo de salida: 0

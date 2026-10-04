@@ -189,7 +189,7 @@ a los tres grupos.
 | `usuario_credencial`: RLS activo y **ninguna** política | denegado para todos salvo `app_funciones` |
 
 Comprobado en [humo §6]: tras bloquear a un titular, el mecánico ve 0 titulares y 0 vehículos, pero la
-sesión sigue en su historial (por eso `/history` usará `LEFT JOIN` hacia `vehiculo`).
+sesión sigue en su historial (por eso `/history` usa `LEFT JOIN` hacia `vehiculo`).
 
 **Qué no cubre RLS.** Las comprobaciones de claves foráneas omiten RLS siempre: una FK puede "ver" una
 fila que el usuario no ve. Por eso el aislamiento entre talleres no descansa solo en RLS sino en las FK
@@ -206,8 +206,8 @@ las políticas.
 
 ## 8. Funciones `SECURITY DEFINER`
 
-Las 6 pertenecen a `app_funciones`, fijan `SET search_path = pg_catalog, public` y no tienen `EXECUTE`
-para `PUBLIC` (`esquema.txt` §5 y §6).
+Las 6 pertenecen a `app_funciones`, fijan `SET search_path = pg_catalog, public, pg_temp` y no tienen
+`EXECUTE` para `PUBLIC` (`esquema.txt` §5 y §6).
 
 | Función | Quién la ejecuta | Qué valida explícitamente |
 |---|---|---|
@@ -223,6 +223,16 @@ Como saltan RLS, **la función es la política**: por eso cada una comprueba rol
 
 **`search_path` fijo.** Sin él, quien llama a una función definidora podría anteponer un esquema propio
 con una función `crypt()` falsa y ejecutarla con los privilegios del dueño.
+
+**`pg_temp` explícito y al final (`V010`).** Fijar el `search_path` no basta si no nombra `pg_temp`: en ese
+caso PostgreSQL lo busca **primero** para tablas y tipos, y una tabla temporal con el nombre de una real la
+suplanta dentro de la función. El dictamen de cierre lo comprobó (`docs/evidencia/fase7_antes.txt` B5): con
+el privilegio `TEMPORARY`, un mecánico creaba una tabla temporal `auditoria_operacion` y sus escrituras
+dejaban de llegar a la auditoría real. No era explotable —ningún rol de la aplicación tiene `TEMPORARY`
+sobre la base—, pero era la única barrera y nadie la vigilaba. Ahora son dos y ambas están en la suite:
+`pg_temp` al final en las 21 funciones (`ESQ-30`, y la prueba de sombra de `07_auditoria.sql`) y ausencia del
+privilegio (`ESQ-31`). **Otorgar `TEMPORARY` a un rol de taller sigue siendo una decisión a revisar**: sin
+V010 habría bastado para evadir la auditoría.
 
 **Dentro de una función definidora `current_user` es el dueño.** El rol real de la petición se lee con
 `current_setting('role')`, que conserva el valor de `SET LOCAL ROLE` (verificado en

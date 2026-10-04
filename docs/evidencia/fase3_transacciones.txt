@@ -1,5 +1,5 @@
 # Transacciones de escritura (generado por db/scripts/evidencia_fase3.sh)
-# Fecha: 2026-10-04T07:35Z
+# Fecha: 2026-10-04T15:50Z
 
 === TX-1. Alta de usuario con contrasena (administradora, taller 1) ===
 -- 1a. usuario creado, contrasena fuera de limites (se espera RE011) -> la peticion completa se revierte
@@ -22,7 +22,7 @@ autenticado=t rol=mecanico nombre=Andrea Lagos
 titular: Rosa Molina Paz estado=activo
       finalidad      | version_terminos |   canal    |          otorgado_en          
 ---------------------+------------------+------------+-------------------------------
- prestacion_servicio | v1.0             | presencial | 2026-10-04 07:35:51.845061+00
+ prestacion_servicio | v1.0             | presencial | 2026-10-04 15:50:22.877878+00
 (1 row)
 
 vehiculo: patente=RSTV45 anio=2019
@@ -53,19 +53,19 @@ psql:/db/queries/demo_transacciones.sql:102: ERROR:  new row for relation "sesio
 sesion: estado=pendiente metodo=obd_bluetooth version=1 fallas_registradas=2
  codigo |                           descripcion                            | severidad | severidad_sugerida |            freeze_frame             |           creado_en           
 --------+------------------------------------------------------------------+-----------+--------------------+-------------------------------------+-------------------------------
- P0335  | Circuito del sensor de posición del cigüeñal                     | critica   | critica            | {"rpm": 0, "voltaje_bateria": 11.8} | 2026-10-04 07:35:51.845061+00
- C0035  | Circuito del sensor de velocidad de la rueda delantera izquierda | media     | alta               |                                     | 2026-10-04 07:35:51.845061+00
+ P0335  | Circuito del sensor de posición del cigüeñal                     | critica   | critica            | {"rpm": 0, "voltaje_bateria": 11.8} | 2026-10-04 15:50:22.877878+00
+ C0035  | Circuito del sensor de velocidad de la rueda delantera izquierda | media     | alta               |                                     | 2026-10-04 15:50:22.877878+00
 (2 rows)
 
 -- 3d. matriz de la sesion (Corolla 2019, margen 30 %)
         componente_id_publico         |        componente_nombre        | dtc_codigos | severidad_maxima |              id_publico              |  perfil  |  marca  |           nombre            | codigo_fabricante | durabilidad_estimada_km | riesgo | precio_venta | moneda 
 --------------------------------------+---------------------------------+-------------+------------------+--------------------------------------+----------+---------+-----------------------------+-------------------+-------------------------+--------+--------------+--------
- d97136ca-fe8b-4f92-aef6-8266a3d6e318 | Sensor de posición del cigüeñal | {P0335}     | critica          | 8a0f5c27-b49a-4393-b333-fb119b280af4 | genuino  | Toyota  | Sensor de cigüeñal Toyota   | 90919-05057       |                  200000 | bajo   |        76687 | CLP
- d97136ca-fe8b-4f92-aef6-8266a3d6e318 | Sensor de posición del cigüeñal | {P0335}     | critica          | 228f509b-11bb-4e27-930f-9e6aca9843b2 | oem      | Bosch   | Sensor de cigüeñal Bosch    | 0261210170        |                  160000 | bajo   |        42887 | CLP
- d97136ca-fe8b-4f92-aef6-8266a3d6e318 | Sensor de posición del cigüeñal | {P0335}     | critica          | a1edffa2-8c0e-48f1-90f4-fa424a2dbd2f | generico | Autolab | Sensor de cigüeñal genérico | GEN-CKP-01        |                   70000 | alto   |        16887 | CLP
- 6b7ec880-5981-42c1-8f5a-f2da24077b37 | Sensor de velocidad de rueda    | {C0035}     | media            | 3417c957-d1d4-4ef1-bada-7134afd6a009 | genuino  | Toyota  | Sensor ABS Toyota           | 89543-0K020       |                  180000 | bajo   |       110487 | CLP
- 6b7ec880-5981-42c1-8f5a-f2da24077b37 | Sensor de velocidad de rueda    | {C0035}     | media            | 05861f11-f138-4a22-956f-c4b105d999f9 | oem      | Bosch   | Sensor ABS Bosch            | 0265007905        |                  150000 | bajo   |        58487 | CLP
- 6b7ec880-5981-42c1-8f5a-f2da24077b37 | Sensor de velocidad de rueda    | {C0035}     | media            | 239ce2e0-4bba-482a-b98e-9bd2e295d46a | generico | Autolab | Sensor ABS genérico         | GEN-ABS-01        |                   60000 | medio  |        24687 | CLP
+ ec9e4dcc-fe8e-4642-a333-2e273234fd79 | Sensor de posición del cigüeñal | {P0335}     | critica          | c2be6754-a20f-4bc0-8bd1-4b5312db66d6 | genuino  | Toyota  | Sensor de cigüeñal Toyota   | 90919-05057       |                  200000 | bajo   |        76687 | CLP
+ ec9e4dcc-fe8e-4642-a333-2e273234fd79 | Sensor de posición del cigüeñal | {P0335}     | critica          | 47770d6d-036f-41c7-b621-f5f5b4ad5322 | oem      | Bosch   | Sensor de cigüeñal Bosch    | 0261210170        |                  160000 | bajo   |        42887 | CLP
+ ec9e4dcc-fe8e-4642-a333-2e273234fd79 | Sensor de posición del cigüeñal | {P0335}     | critica          | b27d5c11-56df-47b1-8017-41d7c166c5cb | generico | Autolab | Sensor de cigüeñal genérico | GEN-CKP-01        |                   70000 | alto   |        16887 | CLP
+ 216bc1a9-02be-4412-afce-1616a8a537b0 | Sensor de velocidad de rueda    | {C0035}     | media            | 6c75b463-744f-4381-ab5f-3c18053739ae | genuino  | Toyota  | Sensor ABS Toyota           | 89543-0K020       |                  180000 | bajo   |       110487 | CLP
+ 216bc1a9-02be-4412-afce-1616a8a537b0 | Sensor de velocidad de rueda    | {C0035}     | media            | efa66b69-f6cf-432c-a411-f5ca6d4166ff | oem      | Bosch   | Sensor ABS Bosch            | 0265007905        |                  150000 | bajo   |        58487 | CLP
+ 216bc1a9-02be-4412-afce-1616a8a537b0 | Sensor de velocidad de rueda    | {C0035}     | media            | a1b6b446-b36b-4063-adbf-92058e25fbb5 | generico | Autolab | Sensor ABS genérico         | GEN-ABS-01        |                   60000 | medio  |        24687 | CLP
 (6 rows)
 
 
@@ -86,28 +86,28 @@ psql:/db/queries/demo_transacciones.sql:130: ERROR:  duplicate key value violate
 -- 4d. lineas: el cliente envia repuesto y cantidad; el precio lo pone el trigger
          repuesto_id_publico          |      nombre_snapshot      | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
 --------------------------------------+---------------------------+----------------+-----------------+----------+-----------------+----------
- 8a0f5c27-b49a-4393-b333-fb119b280af4 | Sensor de cigüeñal Toyota | Toyota         | genuino         |        1 |           76687 |    76687
+ c2be6754-a20f-4bc0-8bd1-4b5312db66d6 | Sensor de cigüeñal Toyota | Toyota         | genuino         |        1 |           76687 |    76687
 (1 row)
 
          repuesto_id_publico          | nombre_snapshot  | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
 --------------------------------------+------------------+----------------+-----------------+----------+-----------------+----------
- 05861f11-f138-4a22-956f-c4b105d999f9 | Sensor ABS Bosch | Bosch          | oem             |        2 |           58487 |   116974
+ efa66b69-f6cf-432c-a411-f5ca6d4166ff | Sensor ABS Bosch | Bosch          | oem             |        2 |           58487 |   116974
 (1 row)
 
          repuesto_id_publico          |       nombre_snapshot       | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
 --------------------------------------+-----------------------------+----------------+-----------------+----------+-----------------+----------
- a1edffa2-8c0e-48f1-90f4-fa424a2dbd2f | Sensor de cigüeñal genérico | Autolab        | generico        |        1 |           16887 |    16887
+ b27d5c11-56df-47b1-8017-41d7c166c5cb | Sensor de cigüeñal genérico | Autolab        | generico        |        1 |           16887 |    16887
 (1 row)
 
 -- 4e. repetir un repuesto reemplaza la cantidad (2 -> 1); quitar una linea
          repuesto_id_publico          | nombre_snapshot  | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
 --------------------------------------+------------------+----------------+-----------------+----------+-----------------+----------
- 05861f11-f138-4a22-956f-c4b105d999f9 | Sensor ABS Bosch | Bosch          | oem             |        1 |           58487 |    58487
+ efa66b69-f6cf-432c-a411-f5ca6d4166ff | Sensor ABS Bosch | Bosch          | oem             |        1 |           58487 |    58487
 (1 row)
 
          repuesto_id_publico          | cantidad 
 --------------------------------------+----------
- a1edffa2-8c0e-48f1-90f4-fa424a2dbd2f |        1
+ b27d5c11-56df-47b1-8017-41d7c166c5cb |        1
 (1 row)
 
 -- 4f. repuesto no disponible (se espera RE010) y cantidad 0 (se espera 23514)
@@ -117,13 +117,13 @@ psql:/db/queries/demo_transacciones.sql:147: ERROR:  new row for relation "cotiz
    SQLSTATE 23514
               id_publico              | numero_revision | vigente | cerrada_en | total | moneda | version |           creado_en           | lineas | total_calculado 
 --------------------------------------+-----------------+---------+------------+-------+--------+---------+-------------------------------+--------+-----------------
- b74b4e03-803c-4e08-9b3b-78cb5ea0e43c |               1 | f       |            |       | CLP    |       1 | 2026-10-04 07:35:51.845061+00 |      2 |          135174
+ 53c19c5e-a541-41e8-8abb-583d8a968b3e |               1 | f       |            |       | CLP    |       1 | 2026-10-04 15:50:22.877878+00 |      2 |          135174
 (1 row)
 
 
 === TX-5. Cerrar la cotizacion y pasar la sesion a cotizado (una transaccion) ===
 -- 5a. cerrar con una version antigua (se espera RE007)
-psql:/db/queries/demo_transacciones.sql:158: ERROR:  conflicto de version en la cotizacion 79: esperada 99, actual 1
+psql:/db/queries/demo_transacciones.sql:158: ERROR:  conflicto de version en la cotizacion 57: esperada 99, actual 1
    SQLSTATE RE007
 -- 5b. cerrar: total = 76687 + 58487 = 135174, vigente, hora del servidor
 cerrada: revision=1 vigente=t total=135174 version=2
@@ -131,81 +131,81 @@ sesion: estado=cotizado version=2
 -- 5c. reintento del cierre: devuelve la misma cotizacion, sin cambios
               id_publico              | numero_revision | vigente |          cerrada_en           | total  | moneda | version 
 --------------------------------------+-----------------+---------+-------------------------------+--------+--------+---------
- b74b4e03-803c-4e08-9b3b-78cb5ea0e43c |               1 | t       | 2026-10-04 07:35:51.845061+00 | 135174 | CLP    |       2
+ 53c19c5e-a541-41e8-8abb-583d8a968b3e |               1 | t       | 2026-10-04 15:50:22.877878+00 | 135174 | CLP    |       2
 (1 row)
 
 -- 5d. la cotizacion cerrada es inmutable (se esperan 2 errores RE003)
-psql:/db/queries/demo_transacciones.sql:168: ERROR:  la cotizacion 79 esta cerrada: su detalle es inmutable
+psql:/db/queries/demo_transacciones.sql:168: ERROR:  la cotizacion 57 esta cerrada: su detalle es inmutable
    SQLSTATE RE003
-psql:/db/queries/demo_transacciones.sql:170: ERROR:  la cotizacion 79 esta cerrada: su detalle es inmutable
+psql:/db/queries/demo_transacciones.sql:170: ERROR:  la cotizacion 57 esta cerrada: su detalle es inmutable
    SQLSTATE RE003
 
 === TX-6. Nueva revision: reemplaza a la vigente ===
          repuesto_id_publico          |     nombre_snapshot      | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
 --------------------------------------+--------------------------+----------------+-----------------+----------+-----------------+----------
- 228f509b-11bb-4e27-930f-9e6aca9843b2 | Sensor de cigüeñal Bosch | Bosch          | oem             |        1 |           42887 |    42887
+ 47770d6d-036f-41c7-b621-f5f5b4ad5322 | Sensor de cigüeñal Bosch | Bosch          | oem             |        1 |           42887 |    42887
 (1 row)
 
          repuesto_id_publico          | nombre_snapshot  | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal 
 --------------------------------------+------------------+----------------+-----------------+----------+-----------------+----------
- 05861f11-f138-4a22-956f-c4b105d999f9 | Sensor ABS Bosch | Bosch          | oem             |        1 |           58487 |    58487
+ efa66b69-f6cf-432c-a411-f5ca6d4166ff | Sensor ABS Bosch | Bosch          | oem             |        1 |           58487 |    58487
 (1 row)
 
               id_publico              | numero_revision | vigente |          cerrada_en           | total  | moneda | version 
 --------------------------------------+-----------------+---------+-------------------------------+--------+--------+---------
- 8a7adb63-6990-4a12-a109-1a8c01b526ae |               2 | t       | 2026-10-04 07:35:51.845061+00 | 101374 | CLP    |       2
+ ef38246f-7210-42a0-96a2-f5465c03e071 |               2 | t       | 2026-10-04 15:50:22.877878+00 | 101374 | CLP    |       2
 (1 row)
 
 -- una sola vigente: la revision 2; la 1 conserva su total
               id_publico              | numero_revision | vigente |          cerrada_en           | total  | moneda | version |           creado_en           | lineas | total_calculado 
 --------------------------------------+-----------------+---------+-------------------------------+--------+--------+---------+-------------------------------+--------+-----------------
- 8a7adb63-6990-4a12-a109-1a8c01b526ae |               2 | t       | 2026-10-04 07:35:51.845061+00 | 101374 | CLP    |       2 | 2026-10-04 07:35:51.845061+00 |      2 |          101374
- b74b4e03-803c-4e08-9b3b-78cb5ea0e43c |               1 | f       | 2026-10-04 07:35:51.845061+00 | 135174 | CLP    |       3 | 2026-10-04 07:35:51.845061+00 |      2 |          135174
+ ef38246f-7210-42a0-96a2-f5465c03e071 |               2 | t       | 2026-10-04 15:50:22.877878+00 | 101374 | CLP    |       2 | 2026-10-04 15:50:22.877878+00 |      2 |          101374
+ 53c19c5e-a541-41e8-8abb-583d8a968b3e |               1 | f       | 2026-10-04 15:50:22.877878+00 | 135174 | CLP    |       3 | 2026-10-04 15:50:22.877878+00 |      2 |          135174
 (2 rows)
 
 
 === TX-7. El administrador cambia el margen: lo cotizado no cambia ===
  moneda | tema  | margen_pct | retencion_anios |        actualizado_en         
 --------+-------+------------+-----------------+-------------------------------
- CLP    | claro |      35.00 |               6 | 2026-10-04 07:35:51.845061+00
+ CLP    | claro |      35.00 |               6 | 2026-10-04 15:50:22.877878+00
 (1 row)
 
 -- 7a. margen fuera de rango (se espera 23514)
-psql:/db/queries/demo_transacciones.sql:194: ERROR:  new row for relation "taller_configuracion" violates check constraint "ck_taller_configuracion_margen_rango"
    SQLSTATE 23514
+psql:/db/queries/demo_transacciones.sql:194: ERROR:  new row for relation "taller_configuracion" violates check constraint "ck_taller_configuracion_margen_rango"
 -- 7b. detalle de la revision vigente: sigue con el snapshot del 30 %
          repuesto_id_publico          |     nombre_snapshot      | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal | moneda 
 --------------------------------------+--------------------------+----------------+-----------------+----------+-----------------+----------+--------
- 05861f11-f138-4a22-956f-c4b105d999f9 | Sensor ABS Bosch         | Bosch          | oem             |        1 |           58487 |    58487 | CLP
- 228f509b-11bb-4e27-930f-9e6aca9843b2 | Sensor de cigüeñal Bosch | Bosch          | oem             |        1 |           42887 |    42887 | CLP
+ efa66b69-f6cf-432c-a411-f5ca6d4166ff | Sensor ABS Bosch         | Bosch          | oem             |        1 |           58487 |    58487 | CLP
+ 47770d6d-036f-41c7-b621-f5f5b4ad5322 | Sensor de cigüeñal Bosch | Bosch          | oem             |        1 |           42887 |    42887 | CLP
 (2 rows)
 
 -- 7c. la matriz ya usa el 35 %
         componente_id_publico         |        componente_nombre        | dtc_codigos | severidad_maxima |              id_publico              |  perfil  |  marca  |           nombre            | codigo_fabricante | durabilidad_estimada_km | riesgo | precio_venta | moneda 
 --------------------------------------+---------------------------------+-------------+------------------+--------------------------------------+----------+---------+-----------------------------+-------------------+-------------------------+--------+--------------+--------
- d97136ca-fe8b-4f92-aef6-8266a3d6e318 | Sensor de posición del cigüeñal | {P0335}     | critica          | 8a0f5c27-b49a-4393-b333-fb119b280af4 | genuino  | Toyota  | Sensor de cigüeñal Toyota   | 90919-05057       |                  200000 | bajo   |        79637 | CLP
- d97136ca-fe8b-4f92-aef6-8266a3d6e318 | Sensor de posición del cigüeñal | {P0335}     | critica          | 228f509b-11bb-4e27-930f-9e6aca9843b2 | oem      | Bosch   | Sensor de cigüeñal Bosch    | 0261210170        |                  160000 | bajo   |        44537 | CLP
- d97136ca-fe8b-4f92-aef6-8266a3d6e318 | Sensor de posición del cigüeñal | {P0335}     | critica          | a1edffa2-8c0e-48f1-90f4-fa424a2dbd2f | generico | Autolab | Sensor de cigüeñal genérico | GEN-CKP-01        |                   70000 | alto   |        17537 | CLP
- 6b7ec880-5981-42c1-8f5a-f2da24077b37 | Sensor de velocidad de rueda    | {C0035}     | media            | 3417c957-d1d4-4ef1-bada-7134afd6a009 | genuino  | Toyota  | Sensor ABS Toyota           | 89543-0K020       |                  180000 | bajo   |       114737 | CLP
- 6b7ec880-5981-42c1-8f5a-f2da24077b37 | Sensor de velocidad de rueda    | {C0035}     | media            | 05861f11-f138-4a22-956f-c4b105d999f9 | oem      | Bosch   | Sensor ABS Bosch            | 0265007905        |                  150000 | bajo   |        60737 | CLP
- 6b7ec880-5981-42c1-8f5a-f2da24077b37 | Sensor de velocidad de rueda    | {C0035}     | media            | 239ce2e0-4bba-482a-b98e-9bd2e295d46a | generico | Autolab | Sensor ABS genérico         | GEN-ABS-01        |                   60000 | medio  |        25637 | CLP
+ ec9e4dcc-fe8e-4642-a333-2e273234fd79 | Sensor de posición del cigüeñal | {P0335}     | critica          | c2be6754-a20f-4bc0-8bd1-4b5312db66d6 | genuino  | Toyota  | Sensor de cigüeñal Toyota   | 90919-05057       |                  200000 | bajo   |        79637 | CLP
+ ec9e4dcc-fe8e-4642-a333-2e273234fd79 | Sensor de posición del cigüeñal | {P0335}     | critica          | 47770d6d-036f-41c7-b621-f5f5b4ad5322 | oem      | Bosch   | Sensor de cigüeñal Bosch    | 0261210170        |                  160000 | bajo   |        44537 | CLP
+ ec9e4dcc-fe8e-4642-a333-2e273234fd79 | Sensor de posición del cigüeñal | {P0335}     | critica          | b27d5c11-56df-47b1-8017-41d7c166c5cb | generico | Autolab | Sensor de cigüeñal genérico | GEN-CKP-01        |                   70000 | alto   |        17537 | CLP
+ 216bc1a9-02be-4412-afce-1616a8a537b0 | Sensor de velocidad de rueda    | {C0035}     | media            | 6c75b463-744f-4381-ab5f-3c18053739ae | genuino  | Toyota  | Sensor ABS Toyota           | 89543-0K020       |                  180000 | bajo   |       114737 | CLP
+ 216bc1a9-02be-4412-afce-1616a8a537b0 | Sensor de velocidad de rueda    | {C0035}     | media            | efa66b69-f6cf-432c-a411-f5ca6d4166ff | oem      | Bosch   | Sensor ABS Bosch            | 0265007905        |                  150000 | bajo   |        60737 | CLP
+ 216bc1a9-02be-4412-afce-1616a8a537b0 | Sensor de velocidad de rueda    | {C0035}     | media            | a1b6b446-b36b-4063-adbf-92058e25fbb5 | generico | Autolab | Sensor ABS genérico         | GEN-ABS-01        |                   60000 | medio  |        25637 | CLP
 (6 rows)
 
 
 === TX-8. Completar con control optimista ===
 -- 8a. el cliente envia la version que vio antes de cotizar (se espera RE007)
-psql:/db/queries/demo_transacciones.sql:211: ERROR:  conflicto de version en la sesion 85: esperada 1, actual 2
+psql:/db/queries/demo_transacciones.sql:211: ERROR:  conflicto de version en la sesion 68: esperada 1, actual 2
    SQLSTATE RE007
 -- 8b. con la version actual
               id_publico              |   estado   |          cotizada_en          |         completada_en         | cancelada_en | version |        actualizado_en         
 --------------------------------------+------------+-------------------------------+-------------------------------+--------------+---------+-------------------------------
- 39a02a4d-c942-4b29-964e-5c8538ae0d03 | completado | 2026-10-04 07:35:51.845061+00 | 2026-10-04 07:35:51.845061+00 |              |       3 | 2026-10-04 07:35:51.845061+00
+ 7a2843ac-c0b4-4c17-b7b0-b17bb33a3852 | completado | 2026-10-04 15:50:22.877878+00 | 2026-10-04 15:50:22.877878+00 |              |       3 | 2026-10-04 15:50:22.877878+00
 (1 row)
 
 -- 8c. estado terminal: ni otro estado (se espera RE001) ni otra cotizacion (se espera RE004)
 psql:/db/queries/demo_transacciones.sql:216: ERROR:  transicion de estado invalida: completado -> cancelado
    SQLSTATE RE001
-psql:/db/queries/demo_transacciones.sql:218: ERROR:  la sesion 85 esta en estado completado y no admite cotizaciones nuevas
+psql:/db/queries/demo_transacciones.sql:218: ERROR:  la sesion 68 esta en estado completado y no admite cotizaciones nuevas
    SQLSTATE RE004
 
 === TX-9. Supresion del titular ===
@@ -215,7 +215,7 @@ psql:/db/queries/demo_transacciones.sql:228: ERROR:  permission denied for funct
 -- 9b. la administradora: hay una atencion completada hoy -> bloqueado por retencion
               id_publico              | estado_tratamiento 
 --------------------------------------+--------------------
- fbefaaf1-5a08-4c6b-b696-087d821dd815 | bloqueado
+ e64eb1ee-2543-481a-801e-6edecb6006c8 | bloqueado
 (1 row)
 
 -- 9c. el mecanico ya no encuentra el vehiculo; la sesion sigue en el historial sin patente
@@ -225,7 +225,7 @@ psql:/db/queries/demo_transacciones.sql:228: ERROR:  permission denied for funct
 
               id_publico              |   estado   |          iniciada_en          | metodo_ingreso | kilometraje | version | vehiculo_id_publico | vehiculo_patente | vehiculo_anio | modelo_nombre | marca_nombre | usuario_nombre | fallas | severidad_maxima | cotizacion_total | cotizacion_moneda 
 --------------------------------------+------------+-------------------------------+----------------+-------------+---------+---------------------+------------------+---------------+---------------+--------------+----------------+--------+------------------+------------------+-------------------
- 39a02a4d-c942-4b29-964e-5c8538ae0d03 | completado | 2026-10-04 07:35:51.845061+00 | obd_bluetooth  |       52300 |       3 |                     |                  |               |               |              | Andrea Lagos   |      2 | critica          |           101374 | CLP
+ 7a2843ac-c0b4-4c17-b7b0-b17bb33a3852 | completado | 2026-10-04 15:50:22.877878+00 | obd_bluetooth  |       52300 |       3 |                     |                  |               |               |              | Andrea Lagos   |      2 | critica          |           101374 | CLP
 (1 row)
 
 

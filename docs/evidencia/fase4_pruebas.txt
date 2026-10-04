@@ -1,5 +1,5 @@
 # Suite de pruebas (db/tests/run_all.sh) (generado por db/scripts/evidencia_fase4.sh)
-# Fecha: 2026-10-04T07:34Z
+# Fecha: 2026-10-04T15:50Z
 
 ### 01 Esquema
 PASS | ESQ-01 hay 21 tablas y 1 vista en public
@@ -31,7 +31,9 @@ PASS | ESQ-26 servidor: PostgreSQL 16, UTC, READ COMMITTED, scram-sha-256, log_s
 PASS | ESQ-27 la clave de app_backend_user esta guardada como verificador SCRAM
 PASS | ESQ-28 ningun indice de busqueda (no unico) de una tabla con RLS tiene un enum como columna clave (V009)
 PASS | ESQ-29 los estados abiertos de la sesion tienen indice parcial propio (pendiente y cotizado)
-==> 01_esquema.sql: 29 PASS, 0 FAIL, 0 errores esperados [ok]
+PASS | ESQ-30 las 21 funciones fn_ fijan search_path = pg_catalog, public, pg_temp (pg_temp explicito y al final) (V010)
+PASS | ESQ-31 ningun rol de la aplicacion puede crear tablas temporales en la base (segunda barrera de V010)
+==> 01_esquema.sql: 31 PASS, 0 FAIL, 0 errores esperados [ok]
 
 ### 02 Restricciones
 psql:/db/tests/02_restricciones.sql:26: ERROR:  null value in column "taller_id" of relation "sesion_diagnostico" violates not-null constraint
@@ -167,7 +169,7 @@ PASS | RN-50 la cotizacion nace como borrador: revision 1, no vigente, sin total
 PASS | RN-57 reintentar con la misma clave devuelve la misma cotizacion y no crea otra
 psql:/db/tests/03_estados_y_cotizaciones.sql:69: ERROR:  duplicate key value violates unique constraint "uq_cotizacion_sesion_abierta"
 PASS | [E] RN-52 un segundo borrador con otra clave se rechaza -> 23505
-psql:/db/tests/03_estados_y_cotizaciones.sql:74: ERROR:  la cotizacion 38 no tiene detalle y no se puede cerrar
+psql:/db/tests/03_estados_y_cotizaciones.sql:74: ERROR:  la cotizacion 63 no tiene detalle y no se puede cerrar
 PASS | [E] RE008 no se puede cerrar una cotizacion sin detalle -> RE008
 psql:/db/tests/03_estados_y_cotizaciones.sql:80: ERROR:  permission denied for table cotizacion_detalle
 PASS | [E] RN-56 el cliente no puede enviar el precio de una linea -> 42501
@@ -175,43 +177,43 @@ psql:/db/tests/03_estados_y_cotizaciones.sql:85: ERROR:  el repuesto 30 no esta 
 PASS | [E] RE010 un repuesto no disponible no se puede cotizar -> RE010
 PASS | RN-56 el trigger llena el snapshot desde el catalogo y el margen del taller
 PASS | RN-58 repetir un repuesto reemplaza la cantidad en lugar de duplicar la linea
-psql:/db/tests/03_estados_y_cotizaciones.sql:108: ERROR:  conflicto de version en la cotizacion 38: esperada 99, actual 1
+psql:/db/tests/03_estados_y_cotizaciones.sql:108: ERROR:  conflicto de version en la cotizacion 63: esperada 99, actual 1
 PASS | [E] RE007 cerrar con una version distinta de la actual -> RE007
 PASS | RN-54 al cerrar, el trigger fija cerrada_en = hora del servidor y total = suma del detalle
 PASS | Cerrar una cotizacion ya cerrada la devuelve sin cambios (idempotente)
-psql:/db/tests/03_estados_y_cotizaciones.sql:128: ERROR:  la cotizacion 38 esta cerrada: su detalle es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:128: ERROR:  la cotizacion 63 esta cerrada: su detalle es inmutable
 PASS | [E] RN-55 cotizacion cerrada: no admite lineas nuevas -> RE003
-psql:/db/tests/03_estados_y_cotizaciones.sql:133: ERROR:  la cotizacion 38 esta cerrada: su detalle es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:133: ERROR:  la cotizacion 63 esta cerrada: su detalle es inmutable
 PASS | [E] RN-55 cotizacion cerrada: no admite cambiar cantidades -> RE003
-psql:/db/tests/03_estados_y_cotizaciones.sql:138: ERROR:  la cotizacion 38 esta cerrada: su detalle es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:138: ERROR:  la cotizacion 63 esta cerrada: su detalle es inmutable
 PASS | [E] RN-55 cotizacion cerrada: no admite borrar lineas -> RE003
-psql:/db/tests/03_estados_y_cotizaciones.sql:143: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:143: ERROR:  la cotizacion 63 esta cerrada y es inmutable
 PASS | [E] RN-55 cotizacion cerrada: no se puede reabrir -> RE003
-psql:/db/tests/03_estados_y_cotizaciones.sql:148: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:148: ERROR:  la cotizacion 63 esta cerrada y es inmutable
 PASS | [E] RN-55 cotizacion cerrada: no se puede cambiar la fecha de cierre -> RE003
 PASS | RN-33 pendiente -> cotizado fija cotizada_en e incrementa la version
 psql:/db/tests/03_estados_y_cotizaciones.sql:161: ERROR:  transicion de estado invalida: cotizado -> pendiente
 PASS | [E] RN-30 cotizado -> pendiente es una transicion invalida -> RE001
 PASS | RN-50 la segunda revision recibe el numero 2
 PASS | RN-51 al cerrar la revision 2 pasa a ser la unica vigente; la 1 conserva su total
-psql:/db/tests/03_estados_y_cotizaciones.sql:182: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:182: ERROR:  la cotizacion 63 esta cerrada y es inmutable
 PASS | [E] RN-55 la revision reemplazada no puede volver a ser vigente -> RE003
 psql:/db/tests/03_estados_y_cotizaciones.sql:192: ERROR:  los datos de identidad de una cotizacion no se pueden modificar
 PASS | [E] RE012 ni la plataforma puede cambiar la identidad de una cotizacion -> RE012
-psql:/db/tests/03_estados_y_cotizaciones.sql:197: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:197: ERROR:  la cotizacion 63 esta cerrada y es inmutable
 PASS | [E] RN-55 ni la plataforma puede cambiar el total de una cotizacion cerrada -> RE003
 PASS | RN-59 cambiar el precio maestro, el nombre o el margen no altera lo ya cotizado
-psql:/db/tests/03_estados_y_cotizaciones.sql:217: ERROR:  conflicto de version en la sesion 47: esperada 2, actual 3
+psql:/db/tests/03_estados_y_cotizaciones.sql:217: ERROR:  conflicto de version en la sesion 75: esperada 2, actual 3
 PASS | [E] RE007 completar con la version que el cliente vio antes de cotizar -> RE007
 PASS | RN-33 cotizado -> completado fija completada_en y conserva cotizada_en
 psql:/db/tests/03_estados_y_cotizaciones.sql:230: ERROR:  transicion de estado invalida: completado -> cancelado
 PASS | [E] RN-31 completado -> cancelado se rechaza (estado terminal) -> RE001
 psql:/db/tests/03_estados_y_cotizaciones.sql:235: ERROR:  transicion de estado invalida: completado -> cotizado
 PASS | [E] RN-31 completado -> cotizado se rechaza (estado terminal) -> RE001
-psql:/db/tests/03_estados_y_cotizaciones.sql:240: ERROR:  la sesion 47 esta en estado completado y no admite cotizaciones nuevas
+psql:/db/tests/03_estados_y_cotizaciones.sql:240: ERROR:  la sesion 75 esta en estado completado y no admite cotizaciones nuevas
 PASS | [E] RN-34 una sesion completada no admite cotizaciones nuevas -> RE004
 PASS | RN-30 pendiente -> cancelado fija cancelada_en y deja cotizada_en vacio
-psql:/db/tests/03_estados_y_cotizaciones.sql:256: ERROR:  la sesion 48 esta en estado cancelado y su cotizacion no se puede cerrar
+psql:/db/tests/03_estados_y_cotizaciones.sql:256: ERROR:  la sesion 76 esta en estado cancelado y su cotizacion no se puede cerrar
 PASS | [E] RE004 el borrador de una sesion cancelada no se puede cerrar -> RE004
 psql:/db/tests/03_estados_y_cotizaciones.sql:261: ERROR:  transicion de estado invalida: cancelado -> pendiente
 PASS | [E] RN-31 cancelado -> pendiente se rechaza (estado terminal) -> RE001
@@ -624,7 +626,9 @@ PASS | ocurrido_en usa clock_timestamp: avanza dentro de la transaccion y sigue 
 PASS | Un cambio de precio maestro queda auditado con el rol de sesion y sin taller
 PASS | Ese registro sin taller no es visible para el administrador de ningun taller
 PASS | El administrador lee en su bitacora lo que hizo el mecanico de su taller
-==> 07_auditoria.sql: 24 PASS, 0 FAIL, 5 errores esperados [ok]
+PASS | V010 una tabla temporal homonima no recibe el registro de auditoria
+PASS | V010 la escritura queda en la auditoria real aunque exista la tabla temporal
+==> 07_auditoria.sql: 26 PASS, 0 FAIL, 5 errores esperados [ok]
 
 ### 08 Privacidad
 PASS | RN-61 bloqueado: conserva sus datos y vence en (ultima atencion no cancelada + 6 anios)
@@ -762,6 +766,6 @@ PASS | OPE-31 purga: queda un registro en la auditoria con el corte, la cantidad
 PASS | OPE-32 el log del contenedor no contiene ninguna de las tres claves de .env
 ==> operacion.sh: 13 PASS, 0 FAIL [ok]
 
-test: todo PASS (514 pruebas en 12 archivos)
+test: todo PASS (518 pruebas en 12 archivos)
 
 # codigo de salida: 0

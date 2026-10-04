@@ -240,4 +240,21 @@ AND    indexname IN ('ix_sesion_diagnostico_pendiente', 'ix_sesion_diagnostico_c
 AND    indexdef ~ 'WHERE \(estado = ''(pendiente|cotizado)''::tipo_estado_atencion\)' \gset
 \ir incluir/afirmar.sql
 
+-- Resguardo del hallazgo de la Fase 7 (V010): si pg_temp no se nombra en el
+-- search_path de una funcion, se busca PRIMERO para tablas, y una tabla temporal
+-- homonima suplanta a la real incluso dentro de una funcion SECURITY DEFINER.
+\set prueba 'ESQ-30 las 21 funciones fn_ fijan search_path = pg_catalog, public, pg_temp (pg_temp explicito y al final) (V010)'
+SELECT count(*) = 21
+   AND bool_and(EXISTS (SELECT 1 FROM unnest(p.proconfig) x WHERE x = 'search_path=pg_catalog, public, pg_temp')) AS ok
+FROM   pg_proc p
+JOIN   pg_namespace n ON n.oid = p.pronamespace
+WHERE  n.nspname = 'public' AND p.proname LIKE 'fn\_%' \gset
+\ir incluir/afirmar.sql
+
+\set prueba 'ESQ-31 ningun rol de la aplicacion puede crear tablas temporales en la base (segunda barrera de V010)'
+SELECT count(*) = 6 AND bool_and(NOT has_database_privilege(r.rolname, current_database(), 'TEMPORARY')) AS ok
+FROM   pg_roles r
+WHERE  r.rolname IN ('app_owner', 'app_funciones', 'app_backend_user', 'taller_admin', 'taller_mecanico', 'taller_auditor') \gset
+\ir incluir/afirmar.sql
+
 ROLLBACK;

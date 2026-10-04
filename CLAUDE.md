@@ -15,8 +15,9 @@ Responder siempre en **español**. Detalle y justificación de decisiones: `docs
 - Si una prueba falla, se corrige la migración, no se relaja la prueba.
 - No reabrir las decisiones tomadas; los problemas se anotan en "Temas para conversar" de `docs/decisiones.md`.
 - Commit local al final de cada fase. Puntos de parada: fases 0, 1, 2 y 7.
-- Prohibido: `SERIAL`, `now()` en CHECK, CHECK con subconsulta, `SECURITY DEFINER` sin `SET search_path`,
-  `SET` de sesión para el contexto del taller, pseudocódigo u omisiones ("...").
+- Prohibido: `SERIAL`, `now()` en CHECK, CHECK con subconsulta, `SECURITY DEFINER` sin `SET search_path`
+  (y siempre con `pg_temp` al final: `pg_catalog, public, pg_temp`), `SET` de sesión para el contexto del
+  taller, pseudocódigo u omisiones ("...").
 
 ## Comandos
 
@@ -44,7 +45,7 @@ Notas: se usa el `psql` **del contenedor** (el del host es v18). `db/` está mon
 `V000` roles y extensiones (superusuario) → `V001` tipos → `V002` catálogos → `V003` tablas multi-taller,
 operativas, cotización y auditoría → `V004` comentarios → `V005` funciones y triggers → `V006` índices →
 `V007` grants → `V008` RLS (`ENABLE` y `FORCE` solo aquí) → `V009` ajustes de índices (Fase 5) →
-semillas (superusuario) → pruebas.
+`V010` `search_path` con `pg_temp` (Fase 7) → semillas (superusuario) → pruebas.
 
 `V001`+ corren como superusuario con `SET ROLE app_owner` previo (dueño de los objetos = `app_owner`).
 Las funciones `SECURITY DEFINER` pasan a `app_funciones`; para eso `app_owner` es miembro de
@@ -209,14 +210,32 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
   herramienta de escritura de archivos.
 - Temas T-55 a T-62 en `docs/decisiones.md` §11.4.
 
+## Notas de implementación (Fase 7)
+
+- **Una función nueva fija `SET search_path = pg_catalog, public, pg_temp`.** Sin `pg_temp` explícito se busca
+  primero para tablas y una temporal homónima suplanta a la real (`V010`). Lo vigila `ESQ-30`, que además
+  exige que las funciones `fn_` sean exactamente 21: al agregar una, actualizar esa cifra y `ESQ-25`.
+- **No otorgar `TEMPORARY` a un rol de la aplicación** (`ESQ-31`). `09_consultas.sql` y la prueba de sombra de
+  `07_auditoria.sql` lo otorgan dentro de su transacción y el `ROLLBACK` lo revierte.
+- `db/tests/humo/fase7_dictamen.sql` no es parte de la suite: comprobaciones de catálogo y experimentos que
+  cita `docs/dictamen.md`. Termina en `ROLLBACK` y espera exactamente un error (B5a).
+- `evidencia_fase7.sh` **elimina el volumen** (ejecuta las recetas de `make all`). Si `make` existe, lo usa.
+  `fase7_antes.txt` es una captura única sobre `V000`–`V009` y no se regenera.
+- Orden para regenerar toda la evidencia: `evidencia_fase6.sh` → `evidencia_fase7.sh` →
+  `evidencia_esquema.sh` → `diccionario.sh` → `evidencia_fase3.sh` → `evidencia_fase4.sh`. Después, revisar
+  las cifras que citan `docs/operacion.md` y `docs/pruebas.md` (cambian entre corridas).
+- En la herramienta Bash, un heredoc con comillas simples y acentos graves dentro puede fallar al analizarse:
+  para ediciones largas de Markdown usar la herramienta de edición.
+- Temas T-63 a T-69 en `docs/decisiones.md` §12.4. T-63 a T-66 esperan una decisión del negocio.
+
 ## Estado
 
-- Fases 0 a 6 completas. Esquema en `db/migrations/` (V000–V009), semillas en `db/seeds/`, consultas y
-  transacciones en `db/queries/` (43 sentencias), suite en `db/tests/` (514 pruebas), medición en `db/perf/`,
-  operación en `db/scripts/` y `db/ops/`; `reset → migrate → seed → test` verificado desde cero con código 0,
-  y también sobre una base restaurada desde un respaldo.
-- Documentos: `docs/decisiones.md`, `docs/modelo/` (01–05), `docs/seguridad.md`, `docs/privacidad.md`,
-  `docs/consultas.md`, `docs/transacciones.md`, `docs/pruebas.md`, `docs/operacion.md`,
+- **Proyecto cerrado: fases 0 a 7 completas.** Esquema en `db/migrations/` (V000–V010), semillas en
+  `db/seeds/`, consultas y transacciones en `db/queries/` (43 sentencias), suite en `db/tests/` (518 pruebas),
+  medición en `db/perf/`, operación en `db/scripts/` y `db/ops/`; `reset → migrate → seed → test` verificado
+  desde cero con código 0, y también sobre una base restaurada desde un respaldo.
+- Documentos: `docs/dictamen.md`, `docs/decisiones.md`, `docs/modelo/` (01–05), `docs/seguridad.md`,
+  `docs/privacidad.md`, `docs/consultas.md`, `docs/transacciones.md`, `docs/pruebas.md`, `docs/operacion.md`,
   `docs/evidencia/rendimiento.md`.
-- Siguiente: Fase 7 (cierre: README final, revisión de coherencia entre documentos, evidencia de `make all`;
-  T-1 `make` sigue sin instalar). Es punto de parada.
+- Pendiente fuera del alcance: decidir T-63 a T-66; `make` sigue sin instalar (T-1, T-67); la medición de
+  rendimiento no se repitió tras `V010` (T-60).

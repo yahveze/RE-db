@@ -59,8 +59,8 @@ Las 15 de escritura (`tx_*`) se describen en `docs/transacciones.md`.
 
 **Por qué el rol de la tabla no es una convención sino un hecho.** El rol que no figura no puede ejecutar la
 sentencia aunque quiera: las búsquedas de vehículo devuelven `titular.nombre`, columna sobre la que el
-auditor no tiene privilegio; `q_usuarios` devuelve `email`, que el mecánico no puede leer. Lo comprobará la
-suite de la Fase 4.
+auditor no tiene privilegio; `q_usuarios` devuelve `email`, que el mecánico no puede leer. Lo comprueba la
+matriz rol × sentencia de `db/tests/04_rbac.sql`.
 
 ## 3. Consultas que merecen explicación
 

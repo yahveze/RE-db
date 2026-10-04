@@ -1,10 +1,10 @@
 # Observabilidad (db/scripts/estado.sh) (generado por db/scripts/evidencia_fase6.sh)
-# Fecha: 2026-10-04T07:37Z
+# Fecha: 2026-10-04T15:48Z
 
 ## 1. Servidor
              version             |        iniciado        | tamanio_base | conexiones | max_conexiones 
 ---------------------------------+------------------------+--------------+------------+----------------
- 16.15 (Debian 16.15-1.pgdg13+2) | 2026-10-04 07:36:06+00 | 11 MB        |          1 | 100
+ 16.15 (Debian 16.15-1.pgdg13+2) | 2026-10-04 15:47:09+00 | 11 MB        |          1 | 100
 (1 row)
 
 ## 2. Conexiones por rol y estado
@@ -26,27 +26,27 @@
 ## 5. Tablas: tamanio, filas vivas y muertas, ultimo vacuum y analyze
            tabla           | total  | vivas | muertas |     ultimo_vacuum      |     ultimo_analyze     
 ---------------------------+--------+-------+---------+------------------------+------------------------
- auditoria_operacion       | 536 kB |   644 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- vehiculo                  | 160 kB |    11 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- cotizacion                | 152 kB |    14 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- sesion_diagnostico        | 152 kB |    16 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- titular                   | 144 kB |     7 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- dispositivo_diagnostico   | 112 kB |     4 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- usuario                   | 112 kB |     8 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- compatibilidad_repuesto   | 96 kB  |   297 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- componente_repuesto       | 96 kB  |    10 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- consentimiento_titular    | 96 kB  |    10 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- falla_sesion              | 96 kB  |    21 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- marca_vehiculo            | 96 kB  |     6 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- modelo_vehiculo           | 96 kB  |    11 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- repuesto                  | 96 kB  |    42 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- dtc_catalogo              | 80 kB  |    12 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- taller                    | 80 kB  |     2 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- dtc_componente            | 72 kB  |    21 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- solicitud_derecho_titular | 72 kB  |     3 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- cotizacion_detalle        | 64 kB  |    21 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- usuario_credencial        | 64 kB  |     8 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
- taller_configuracion      | 56 kB  |     2 |       0 | 2026-10-04 07:37:04+00 | 2026-10-04 07:37:04+00
+ auditoria_operacion       | 368 kB |   383 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ vehiculo                  | 160 kB |    11 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ cotizacion                | 152 kB |    14 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ sesion_diagnostico        | 152 kB |    16 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ titular                   | 144 kB |     7 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ dispositivo_diagnostico   | 112 kB |     4 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ usuario                   | 112 kB |     8 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ compatibilidad_repuesto   | 96 kB  |   297 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ componente_repuesto       | 96 kB  |    10 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ consentimiento_titular    | 96 kB  |    10 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ falla_sesion              | 96 kB  |    21 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ marca_vehiculo            | 96 kB  |     6 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ modelo_vehiculo           | 96 kB  |    11 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ repuesto                  | 96 kB  |    42 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ dtc_catalogo              | 80 kB  |    12 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ taller                    | 80 kB  |     2 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ dtc_componente            | 72 kB  |    21 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ solicitud_derecho_titular | 72 kB  |     3 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ cotizacion_detalle        | 64 kB  |    21 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ usuario_credencial        | 64 kB  |     8 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
+ taller_configuracion      | 56 kB  |     2 |       0 | 2026-10-04 15:48:10+00 | 2026-10-04 15:48:10+00
 (21 rows)
 
 ## 6. Indices de rendimiento (ix_) sin recorridos desde el ultimo reinicio de estadisticas
@@ -64,16 +64,16 @@
 ## 7. Sentencias con mas tiempo acumulado (pg_stat_statements; constantes normalizadas)
        rol        | llamadas | total_ms | media_ms |  max_ms  | filas |                               sentencia                                
 ------------------+----------+----------+----------+----------+-------+------------------------------------------------------------------------
- taller_mecanico  |        9 |  36028.5 |  4003.16 |  4004.53 |     9 | SELECT pg_sleep($1)
- app_backend_user |       10 |  15017.2 |  1501.72 |  1501.97 |    10 | SELECT pg_sleep($1)
- postgres         |        1 |  10010.1 | 10010.11 | 10010.11 |     1 | SELECT pg_sleep($1)
- taller_mecanico  |        4 |   4892.7 |  1223.18 |  2448.06 |     4 | SELECT count(*) FROM fn_cerrar_cotizacion((SELECT c.id FROM cotizacion
- app_backend_user |       10 |   4004.2 |   400.42 |  4004.06 |    10 | SELECT pg_sleep($1)
- app_backend_user |        6 |   2780.2 |   463.36 |  2562.48 |     6 | SELECT a.autenticado AS ok_login FROM fn_autenticar_usuario($1, $2) a
- taller_mecanico  |        3 |   2561.2 |   853.73 |  2530.47 |     3 | SELECT count(*) FROM fn_crear_cotizacion((SELECT s.id FROM sesion_diag
- taller_mecanico  |        2 |   2507.5 |  1253.77 |  2501.05 |     2 | INSERT INTO cotizacion_detalle (cotizacion_id, repuesto_id, taller_id,
- postgres         |        2 |   1001.2 |   500.61 |   500.63 |     2 | SELECT pg_sleep($1)
- postgres         |        1 |    500.6 |   500.59 |   500.59 |     1 | SELECT pg_stat_force_next_flush(), pg_sleep($1)
+ taller_mecanico  |        9 |  36032.3 |  4003.59 |  4004.12 |     9 | SELECT pg_sleep($1)
+ app_backend_user |       10 |  15015.8 |  1501.58 |  1501.63 |    10 | SELECT pg_sleep($1)
+ postgres         |        1 |  10010.1 | 10010.15 | 10010.15 |     1 | SELECT pg_sleep($1)
+ taller_mecanico  |        4 |   4882.4 |  1220.60 |  2440.44 |     4 | SELECT count(*) FROM fn_cerrar_cotizacion((SELECT c.id FROM cotizacion
+ app_backend_user |       10 |   4004.2 |   400.42 |  4004.10 |    10 | SELECT pg_sleep($1)
+ app_backend_user |        6 |   2779.2 |   463.19 |  2563.22 |     6 | SELECT a.autenticado AS ok_login FROM fn_autenticar_usuario($1, $2) a
+ taller_mecanico  |        2 |   2485.4 |  1242.69 |  2478.20 |     2 | INSERT INTO cotizacion_detalle (cotizacion_id, repuesto_id, taller_id,
+ taller_mecanico  |        3 |   2458.3 |   819.45 |  2435.63 |     3 | SELECT count(*) FROM fn_crear_cotizacion((SELECT s.id FROM sesion_diag
+ postgres         |        2 |   1001.2 |   500.60 |   500.61 |     2 | SELECT pg_sleep($1)
+ postgres         |        1 |    566.8 |   566.81 |   566.81 |     0 | VACUUM (ANALYZE)
 (10 rows)
 
 ## 8. Actividad de la base: confirmaciones, reversiones, interbloqueos, archivos temporales
@@ -85,7 +85,7 @@
 ## 9. Edad de los identificadores de transaccion (autovacuum forzado al llegar al limite)
        base        | edad_xid | limite_autovacuum 
 -------------------+----------+-------------------
- repuestos_exactos |     2684 | 200000000
+ repuestos_exactos |     2690 | 200000000
 (1 row)
 
 ## 10. Privacidad: bloqueos de titular vencidos sin anonimizar (0 si el proceso periodico corre)
@@ -97,13 +97,13 @@
 ## 11. Auditoria: volumen y antiguedad
  registros | tamanio |      mas_antiguo       |      mas_reciente      | no_exitosos 
 -----------+---------+------------------------+------------------------+-------------
-       644 | 536 kB  | 2026-10-04 07:34:22+00 | 2026-10-04 07:36:44+00 |          13
+       383 | 368 kB  | 2026-10-04 15:45:37+00 | 2026-10-04 15:47:48+00 |           7
 (1 row)
 
 ## 12. Accesos: inicios de sesion fallidos de las ultimas 24 horas y cuentas bloqueadas
  login_fallidos_24h | cuentas_bloqueadas 
 --------------------+--------------------
-                 13 |                  0
+                  7 |                  0
 (1 row)
 
 

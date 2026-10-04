@@ -1,20 +1,20 @@
 # Pruebas
 
 La suite se ejecuta con `bash db/tests/run_all.sh` (o `make test`) sobre una base migrada y con semillas.
-Resultado real en `docs/evidencia/fase4_pruebas.txt`: **514 pruebas, 0 fallos**, código de salida 0, tanto
+Resultado real en `docs/evidencia/fase4_pruebas.txt`: **518 pruebas, 0 fallos**, código de salida 0, tanto
 tras `reset → migrate → seed` como al repetirla sobre la misma base.
 
 ## 1. Qué se prueba
 
 | Archivo | Pruebas | Qué demuestra |
 |---|---:|---|
-| `01_esquema.sql` | 29 | Invariantes leídos del catálogo: sin `SERIAL`, sin `TIMESTAMP` sin zona, todo comentado, RLS activo y forzado en las 14 tablas que lo requieren, funciones definidoras con `search_path` y dueño `app_funciones`, atributos y membresías de los roles, `PUBLIC` y `app_backend_user` sin privilegios, ningún CHECK con `now()` ni subconsulta, las 10 FK entre tablas de taller compuestas con `taller_id`, convención de nombres, y ningún índice de búsqueda con un enum como clave en tablas con RLS (Fase 5) |
+| `01_esquema.sql` | 31 | Invariantes leídos del catálogo: sin `SERIAL`, sin `TIMESTAMP` sin zona, todo comentado, RLS activo y forzado en las 14 tablas que lo requieren, funciones definidoras con `search_path` y dueño `app_funciones`, atributos y membresías de los roles, `PUBLIC` y `app_backend_user` sin privilegios, ningún CHECK con `now()` ni subconsulta, las 10 FK entre tablas de taller compuestas con `taller_id`, convención de nombres, ningún índice de búsqueda con un enum como clave en tablas con RLS (Fase 5), y `pg_temp` explícito al final del `search_path` de las 21 funciones junto con la ausencia de `TEMPORARY` en los roles de la aplicación (Fase 7, `V010`) |
 | `02_restricciones.sql` | 63 | Cada CHECK, UNIQUE, FK y NOT NULL de las reglas RN-01 a RN-65, probados como plataforma para que quien rechace sea la restricción y no un privilegio |
 | `03_estados_y_cotizaciones.sql` | 42 | Máquina de estados (RN-30 a RN-34) y cotizaciones (RN-50 a RN-59) con el rol del mecánico y las sentencias `tx_*`: transiciones, idempotencia, *snapshot*, cierre, inmutabilidad, control optimista |
 | `04_rbac.sql` | 137 | Matriz rol × sentencia: 78 operaciones denegadas (`42501`) y 59 permitidas, para la conexión sin rol, el mecánico, el administrador y el auditor |
 | `05_aislamiento_rls.sql` | 75 | Aislamiento entre talleres en lectura y escritura, FK compuestas, contexto ausente o inválido, `FORCE` sobre el propietario, visibilidad del mecánico sobre titulares bloqueados |
 | `06_autenticacion.sql` | 33 | Login, normalización del email, respuesta uniforme ante fallos, contador y bloqueo, hashes bcrypt, límites de la contraseña |
-| `07_auditoria.sql` | 24 | Solo inserción (también para el superusuario), contexto registrado, columnas enmascaradas, operaciones fallidas |
+| `07_auditoria.sql` | 26 | Solo inserción (también para el superusuario), contexto registrado, columnas enmascaradas, operaciones fallidas, y una tabla temporal homónima que no logra desviar los registros (Fase 7, `V010`) |
 | `08_privacidad.sql` | 24 | Bloqueo por retención, anonimización inmediata y por vencimiento, irreversibilidad, conservación de la trazabilidad técnica |
 | `09_consultas.sql` | 45 | Contrato de las consultas del frontend: paginación por clave, matriz, precios por taller, dashboard |
 | `10_operacion.sql` | 17 | Configuración que la operación da por supuesta (Fase 6): `pg_hba.conf` sin `trust`, parámetros del log, `pg_stat_statements` ilegible para la aplicación y sin claves, y la purga de la auditoría por retención: borra solo lo anterior al corte, la inmutabilidad vuelve a regir en la misma transacción y ningún rol de la aplicación puede usar ese camino |

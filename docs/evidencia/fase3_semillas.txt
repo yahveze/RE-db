@@ -1,5 +1,5 @@
 # Semillas: verificacion y resumen (generado por db/scripts/evidencia_fase3.sh)
-# Fecha: 2026-10-04T07:35Z
+# Fecha: 2026-10-04T15:50Z
 
 --- Catalogos globales ---
  marcas | modelos | dtc | componentes | dtc_componente | repuestos | compatibilidades 
@@ -18,8 +18,8 @@
 --- Por taller ---
            taller           | margen_pct | usuarios | dispositivos | titulares | vehiculos | sesiones | fallas | cotizaciones | lineas | auditoria 
 ----------------------------+------------+----------+--------------+-----------+-----------+----------+--------+--------------+--------+-----------
- Taller Mecánico Los Aromos |      30.00 |        5 |            3 |         5 |         8 |       12 |     16 |           11 |     17 |       466
- Servicio Automotriz Ñuble  |      45.50 |        3 |            1 |         2 |         3 |        4 |      5 |            3 |      4 |        46
+ Taller Mecánico Los Aromos |      30.00 |        5 |            3 |         5 |         8 |       12 |     16 |           11 |     17 |       296
+ Servicio Automotriz Ñuble  |      45.50 |        3 |            1 |         2 |         3 |        4 |      5 |            3 |      4 |        42
 (2 rows)
 
 --- Sesiones por taller y estado ---
@@ -55,12 +55,12 @@
 ---------------+------------------+-----------+-----------
  INSERT        | postgres         | exito     |        48
  INSERT        | taller_admin     | exito     |        13
- INSERT        | taller_mecanico  | exito     |       245
+ INSERT        | taller_mecanico  | exito     |       172
  UPDATE        | taller_admin     | exito     |        12
- UPDATE        | taller_mecanico  | exito     |        78
- DELETE        | postgres         | exito     |       147
+ UPDATE        | taller_mecanico  | exito     |        54
+ DELETE        | postgres         | exito     |        74
  LOGIN         | postgres         | exito     |         3
- LOGIN_FALLIDO | app_backend_user | fallo     |         8
+ LOGIN_FALLIDO | app_backend_user | fallo     |         4
  LOGIN_FALLIDO | postgres         | fallo     |         2
  LOGIN_FALLIDO | postgres         | denegado  |         1
 (10 rows)

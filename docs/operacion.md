@@ -61,8 +61,8 @@ Scripts nuevos (todos en `db/scripts/`, consultas en `db/ops/`):
 - **Consistencia.** `pg_dump` trabaja sobre una instantánea: no bloquea a quienes leen o escriben y el
   resultado corresponde a un único instante.
 - **Un respaldo ilegible no es un respaldo.** El script recorre el índice del archivo (`pg_restore --list`)
-  y falla si no tiene objetos. En la corrida de la evidencia: 286.928 bytes, 660 objetos, 2 segundos, para
-  una base de 21 tablas y 1.083 filas.
+  y falla si no tiene objetos. En la corrida de la evidencia: 278.194 bytes, 660 objetos, 1 segundo, para
+  una base de 21 tablas y 822 filas.
 - **Rotación.** Conserva los 7 más recientes (`RESPALDOS_CONSERVAR`).
 
 **Lo que el respaldo contiene y hay que proteger.** Datos personales de titulares y los hashes bcrypt de
@@ -90,13 +90,13 @@ los archivos del respaldo y `.env`. Resultado en `fase6_respaldo.txt`:
 
 | Paso | Resultado |
 |---|---|
-| 1. Huella de la base de origen | 6 roles, 21 tablas, 49 políticas, 21 funciones, 32 triggers; 1.083 filas |
-| 2. Respaldo | 660 objetos, 2 s |
+| 1. Huella de la base de origen | 6 roles, 21 tablas, 49 políticas, 21 funciones, 32 triggers; 822 filas |
+| 2. Respaldo | 660 objetos, 1 s |
 | 3. Cambio posterior al respaldo | un administrador solicita la supresión de un titular: pasa a `bloqueado` |
 | 4. Se elimina contenedor y volumen | clúster nuevo: 0 roles de la aplicación, 0 tablas |
 | 5. `restaurar.sh` | roles creados, base restaurada, 5 s |
 | 6. Comparación | **datos idénticos** (mismo md5 en las 21 tablas y mismas secuencias) y **esquema idéntico** |
-| 7. Suite completa sobre la base restaurada | **514 PASS, 0 FAIL**, código 0 |
+| 7. Suite completa sobre la base restaurada | **518 PASS, 0 FAIL**, código 0 |
 
 La comparación de datos usa `db/ops/huella.sql`: por cada tabla, número de filas y md5 de todas sus filas
 ordenadas, más el último valor de cada secuencia. La del esquema es el sha256 de `pg_dump --schema-only`.
@@ -237,7 +237,7 @@ verificador SCRAM en el cliente y nunca envía la clave en claro **[NO EJECUTADO
 **Dónde está el log.** El servidor escribe en `stderr` y lo guarda Docker
 (`docker compose logs db`), rotado en 5 archivos de 10 MB. No se activó `log_connections`: el `healthcheck`
 consulta al servidor cada 3 segundos y cada consulta deja una línea. Activado durante 10 segundos
-(`fase6_operacion.txt` §9) produjo 6 líneas `connection received`, de las que solo 2 eran conexiones
+(`fase6_operacion.txt` §9) produjo 5 líneas `connection received`, de las que solo 2 eran conexiones
 autenticadas (las del propio experimento). En producción, con una comprobación de salud menos frecuente,
 conviene activarlo junto con `log_disconnections` para auditar accesos **[NO EJECUTADO]**.
 
@@ -282,7 +282,7 @@ vuelve a rechazar `DELETE` y `TRUNCATE` (`OPE-12`, `OPE-13`).
 |---|---|
 | `OPE-11`, `OPE-14` | elimina exactamente lo anterior al corte; repetirla no elimina nada |
 | `OPE-29` a `OPE-31` | con el script real: 3 registros de 40 años archivados en CSV, eliminados, y la purga registrada |
-| `fase6_operacion.txt` §7 | simulación con 6 años: 0 de 644 registros; plazo de 2 años: rechazado |
+| `fase6_operacion.txt` §7 | simulación con 6 años: 0 de 383 registros; plazo de 2 años: rechazado |
 
 **Límites.** (a) Con millones de filas, un `DELETE` es lento y deja espacio que solo `VACUUM` recupera para
 reutilizar: la solución es particionar por mes y eliminar particiones enteras, **[AVANZADA]**, no
@@ -297,7 +297,7 @@ procedimiento garantiza es que la vía prevista archiva y deja rastro.
 `db/scripts/anonimizar_vencidos.sh`, una vez al día, desde el programador del sistema.
 
 ```
-anonimizar: 2026-10-04T07:37Z titulares anonimizados: 0; vencidos pendientes: 0; proximo vencimiento: 2032-08-25
+anonimizar: 2026-10-04T15:48Z titulares anonimizados: 0; vencidos pendientes: 0; proximo vencimiento: 2032-08-25
 ```
 
 - La función solo tiene `EXECUTE` para `app_owner`, que no tiene `LOGIN`: el script se conecta como
@@ -344,8 +344,8 @@ Las vistas de `pg_stat_statements` no son legibles por ningún rol de la aplicac
 (`fase6_operacion.txt` §4), con el rol y la base, y sin el texto de la sentencia:
 
 ```
-app_backend_user@repuestos_exactos LOG:  process 346 still waiting for ShareLock on transaction 1867 after 1000.058 ms
-app_backend_user@repuestos_exactos DETAIL:  Process holding the lock: 345. Wait queue: 346.
+app_backend_user@repuestos_exactos LOG:  process 347 still waiting for ShareLock on transaction 1872 after 1000.103 ms
+app_backend_user@repuestos_exactos DETAIL:  Process holding the lock: 340. Wait queue: 347.
 ```
 
 **Lo que falta [AVANZADA, no implementado]:** exportar métricas a un sistema de monitoreo
@@ -362,7 +362,7 @@ ve (operaciones denegadas, lecturas).
 | Anonimización de vencidos | `anonimizar_vencidos.sh` (§7) | probado; programación documentada |
 | Respaldo y verificación | `respaldar.sh`, `verificar_respaldo.sh` (§2, §3.5) | probado; programación documentada |
 
-`mantenimiento.sh` en la evidencia (`fase6_operacion.txt` §8): de 177 filas muertas a 0, en 2 segundos.
+`mantenimiento.sh` en la evidencia (`fase6_operacion.txt` §8): de 178 filas muertas a 0, en 2 segundos.
 No usa `VACUUM FULL`, que bloquea la tabla; con el tamaño del prototipo no hay hinchazón que lo justifique.
 
 **Memoria compartida (T-51).** Con los 64 MB por defecto, el `VACUUM` paralelo de la base de volumen
@@ -385,7 +385,7 @@ respaldo y restauración (§2, §3) o `pg_upgrade`.
 - **Alta disponibilidad.** Una sola instancia, sin réplica.
 - **Cifrado y copia externa de los respaldos**, y su programación: documentados, no ejecutados.
 - **TLS** y la regla `hostssl` de §4.
-- **Tiempos de respaldo y restauración con volumen.** Se midieron con las semillas (2 s y 5 s). Con la
+- **Tiempos de respaldo y restauración con volumen.** Se midieron con las semillas (1 s y 5 s). Con la
   base de volumen de la Fase 5 serán mucho mayores; no se midió.
 - **La programación real de las tareas periódicas.** Los scripts se ejecutaron a mano.
 - **Restauración parcial** (una tabla o un taller). `pg_restore` permite elegir tablas, pero restaurar un

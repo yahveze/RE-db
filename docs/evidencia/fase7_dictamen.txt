@@ -1,0 +1,145 @@
+# Dictamen de cierre: comprobaciones y experimentos (db/tests/humo/fase7_dictamen.sql) (generado por db/scripts/evidencia_fase7.sh)
+# Fecha: 2026-10-04T15:53Z
+
+######## A. Salud del catalogo (solo lectura) ########
+
+## A1. Claves foraneas sin un indice completo que empiece por la columna que identifica al padre
+##     (la columna distinta de taller_id; taller_id solo si la FK apunta a taller)
+           tabla           |                  fk                  |        columna         |          padre          |  indice_parcial_que_ayuda  
+---------------------------+--------------------------------------+------------------------+-------------------------+----------------------------
+ usuario                   | fk_usuario_taller                    | taller_id              | taller                  | -
+ solicitud_derecho_titular | fk_solicitud_derecho_titular_taller  | taller_id              | taller                  | -
+ solicitud_derecho_titular | fk_solicitud_derecho_titular_titular | titular_id             | titular                 | -
+ solicitud_derecho_titular | fk_solicitud_derecho_titular_usuario | usuario_responsable_id | usuario                 | -
+ vehiculo                  | fk_vehiculo_modelo_vehiculo          | modelo_vehiculo_id     | modelo_vehiculo         | -
+ vehiculo                  | fk_vehiculo_titular                  | titular_id             | titular                 | ix_vehiculo_taller_titular
+ sesion_diagnostico        | fk_sesion_diagnostico_dispositivo    | dispositivo_id         | dispositivo_diagnostico | -
+ sesion_diagnostico        | fk_sesion_diagnostico_usuario        | usuario_id             | usuario                 | -
+ falla_sesion              | fk_falla_sesion_taller               | taller_id              | taller                  | ix_falla_sesion_critica
+ cotizacion_detalle        | fk_cotizacion_detalle_repuesto       | repuesto_id            | repuesto                | -
+ cotizacion_detalle        | fk_cotizacion_detalle_taller         | taller_id              | taller                  | -
+(11 rows)
+
+## A2. Indices con la misma tabla y las mismas columnas clave (duplicados exactos)
+ tabla | indices 
+-------+---------
+(0 rows)
+
+## A3. Objetos invalidos o a medio validar; tablas sin clave primaria
+ indices_invalidos | restricciones_sin_validar | tablas_sin_pk | triggers_no_habilitados 
+-------------------+---------------------------+---------------+-------------------------
+                 0 |                         0 |             0 |                       0
+(1 row)
+
+## A4. search_path de las funciones: cuantas nombran pg_temp de forma explicita
+ funciones_fn | definidoras | con_pg_temp_explicito |           search_path_minimo            |           search_path_maximo            
+--------------+-------------+-----------------------+-----------------------------------------+-----------------------------------------
+           21 |           6 |                    21 | search_path=pg_catalog, public, pg_temp | search_path=pg_catalog, public, pg_temp
+(1 row)
+
+## A5. Privilegio TEMPORARY sobre la base (de el depende que A4 no sea explotable)
+       rol        | puede_crear_temporales 
+------------------+------------------------
+ app_backend_user | f
+ app_funciones    | f
+ app_owner        | f
+ taller_admin     | f
+ taller_auditor   | f
+ taller_mecanico  | f
+(6 rows)
+
+## A6. Limites del rol de conexion: tiempos de espera y numero de conexiones
+       rol        | limite_conexiones |   configuracion_del_rol    
+------------------+-------------------+----------------------------
+ app_backend_user |                -1 | (sin configuracion propia)
+(1 row)
+
+              parametro              | valor | unidad 
+-------------------------------------+-------+--------
+ idle_in_transaction_session_timeout | 0     | ms
+ lock_timeout                        | 0     | ms
+ max_connections                     | 100   | 
+ statement_timeout                   | 0     | ms
+(4 rows)
+
+## A7. Columnas que un rol de taller puede fijar al insertar y que la base no acota (fechas)
+       rol       |           tabla           |   columna   
+-----------------+---------------------------+-------------
+ taller_admin    | consentimiento_titular    | otorgado_en
+ taller_mecanico | consentimiento_titular    | otorgado_en
+ taller_mecanico | sesion_diagnostico        | iniciada_en
+ taller_admin    | solicitud_derecho_titular | recibida_en
+(4 rows)
+
+
+######## B. Experimentos con el rol real del backend ########
+
+## B1. Una sesion COMPLETADA sigue admitiendo cambios en su diagnostico (mecanico)
+-- B1a. cambiar el kilometraje de la sesion completada
+sqlstate 00000 , filas 1
+-- B1b. agregar una falla (DTC) nueva a la sesion completada
+sqlstate 00000 , filas 1
+-- B1c. cambiar la severidad de las fallas de la sesion completada
+sqlstate 00000 , filas 3
+   estado   | km_agregados | fallas_agregadas | cambios_auditados 
+------------+--------------+------------------+-------------------
+ completado |            1 |                1 |                 5
+(1 row)
+
+
+## B2. El mecanico puede fijar la fecha de inicio de una sesion (de ella depende la retencion)
+  estado   | inicio_en_el_futuro 
+-----------+---------------------
+ pendiente | t
+(1 row)
+
+sqlstate 00000
+
+## B3. El administrador decide el plazo de retencion y puede anularlo antes de suprimir
+-- B3a. con la retencion configurada (6 anios): queda bloqueado
+ resultado_con_retencion 
+-------------------------
+ bloqueado
+(1 row)
+
+-- B3b. el mismo administrador pone retencion_anios = 0 y repite: anonimizacion inmediata
+ resultado_con_retencion_cero 
+------------------------------
+ anonimizado
+(1 row)
+
+
+## B4. Un taller puede quedarse sin administrador activo
+sqlstate 00000 , filas 1
+ administradores_activos 
+-------------------------
+                       0
+(1 row)
+
+
+## B5. Sombra de pg_temp en las funciones definidoras
+-- B5a. estado real: el rol del backend no puede crear tablas temporales (se espera error 42501)
+psql:/db/tests/humo/fase7_dictamen.sql:172: ERROR:  permission denied to create temporary tables in database "repuestos_exactos" at character 19
+sqlstate 42501
+-- B5b. hipotesis: alguien otorga TEMPORARY a los roles de taller (hoy solo lo hace 09_consultas.sql, en su transaccion)
+-- escritura auditada del mecanico (kilometraje de una sesion)
+sqlstate 00000 , filas 1
+ registros_desviados_a_la_tabla_temporal 
+-----------------------------------------
+                                       0
+(1 row)
+
+ registros_nuevos_en_la_auditoria_real 
+---------------------------------------
+                                     1
+(1 row)
+
+
+######## C. La base queda como estaba ########
+ kilometraje_intacto | fallas_intactas | mecanico_con_temporary 
+---------------------+-----------------+------------------------
+ t                   | t               | f
+(1 row)
+
+
+# codigo de salida: 0
