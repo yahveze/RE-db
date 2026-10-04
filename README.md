@@ -3,7 +3,7 @@
 Base de datos PostgreSQL 16 del sistema **Repuestos Exactos** (diagnóstico OBD-II y matriz comparativa de
 repuestos para talleres mecánicos). Proyecto universitario de Ingeniería en Computación e Informática.
 
-> Estado: **Fase 5** (esquema, seguridad, semillas, consultas, transacciones, suite de 484 pruebas y medición de rendimiento; falta operación). Este README se completa en la Fase 7.
+> Estado: **Fase 6** (esquema, seguridad, semillas, consultas, transacciones, suite de 514 pruebas, medición de rendimiento y operación con respaldo y restauración probados). Este README se completa en la Fase 7.
 
 ## Requisitos
 
@@ -30,8 +30,12 @@ bash db/scripts/psql.sh -c "SELECT version();"
 | `make perf` | `bash db/perf/run.sh` |
 | `make psql` | `bash db/scripts/psql.sh` |
 | `make all` | `reset` → `migrate` → `seed` → `test` |
+| `make backup` / `verify-backup` / `status` | `bash db/scripts/respaldar.sh` / `verificar_respaldo.sh` / `estado.sh` |
 
 La base queda publicada solo en `127.0.0.1:5433`. `.env` nunca se versiona.
+
+Toda conexión exige clave, también dentro del contenedor (`pg_hba.conf` sin `trust`). Esa configuración se
+aplica al **crear** el volumen: con un volumen anterior a la Fase 6 hay que ejecutar `reset`.
 
 ## Datos de demostración
 
@@ -60,6 +64,26 @@ bash db/tests/control_negativo.sh  # demuestra que la prueba de concurrencia det
 La suite corre sobre las semillas y no deja cambios, salvo los registros de auditoría de la prueba de
 concurrencia.
 
+## Operación
+
+```bash
+bash db/scripts/respaldar.sh             # make backup: respaldo en backups/ (ignorada por Git)
+bash db/scripts/verificar_respaldo.sh    # make verify-backup: lo restaura en una base temporal y compara
+bash db/scripts/estado.sh                # make status: conexiones, bloqueos, tablas, sentencias costosas
+bash db/scripts/mantenimiento.sh         # VACUUM (ANALYZE) manual
+bash db/scripts/anonimizar_vencidos.sh   # proceso periodico de privacidad (programar a diario)
+bash db/scripts/purgar_auditoria.sh 6    # retencion de la auditoria: simulacion; CONFIRMAR=1 para purgar
+```
+
+Destructivos (reemplazan la base; piden confirmación o la advierten en su cabecera):
+
+```bash
+CONFIRMAR=repuestos_exactos bash db/scripts/restaurar.sh backups/<archivo>.dump   # make restore
+bash db/scripts/prueba_restauracion.sh   # make restore-test: respaldo -> borra el volumen -> restaura -> suite
+```
+
+Detalle en `docs/operacion.md`.
+
 ## Rendimiento
 
 ```bash
@@ -77,5 +101,5 @@ Crea `<base>_perf` como copia de la base principal, le carga volumen sintético,
 - `docs/consultas.md`, `docs/transacciones.md` — contrato de las consultas del frontend (`db/queries/`) y transacciones atómicas.
 - `docs/pruebas.md` — qué prueba la suite (`db/tests/`), cómo está construida y qué no cubre.
 - `docs/evidencia/rendimiento.md` — medición con volumen: planes, hallazgos y decisiones sobre índices.
-- `docs/operacion.md` — Fase 6.
+- `docs/operacion.md` — respaldo y restauración probados, `pg_hba`, registro del servidor, retención de la auditoría, proceso periódico de privacidad, observabilidad y mantenimiento.
 - `docs/evidencia/` — salidas reales de las ejecuciones.

@@ -32,6 +32,9 @@ Responder siempre en **español**. Detalle y justificación de decisiones: `docs
 | `make perf` | `bash db/perf/run.sh` | volumen + EXPLAIN (Fase 5) |
 | `make psql` | `bash db/scripts/psql.sh [-c ... | -f /db/...]` | psql 16 del contenedor |
 | `make all` | reset → migrate → seed → test | criterio de aceptación: código 0 |
+| `make backup` / `verify-backup` | `bash db/scripts/respaldar.sh` / `verificar_respaldo.sh` | respaldo en `backups/`; verificación en base temporal |
+| `make restore` / `restore-test` | `restaurar.sh <dump>` (con `CONFIRMAR=<base>`) / `prueba_restauracion.sh` | **destructivos** |
+| `make status` | `bash db/scripts/estado.sh` | informe de observabilidad |
 
 Notas: se usa el `psql` **del contenedor** (el del host es v18). `db/` está montado en `/db` (solo lectura).
 `psql -c` no interpola variables `:'x'`; usar `-f` o stdin.
@@ -159,7 +162,7 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
 - `concurrencia.sh` hace `COMMIT`, limpia sus datos (kilometraje 900001–900009, patente `ZZZZ99`) y deja
   auditoría. No afirmar conteos absolutos de `auditoria_operacion`.
 - En scripts con `set -euo pipefail`, `grep` sin coincidencias aborta: usar `|| true`.
-- Temas T-43 a T-48 en `docs/decisiones.md` §9.2. T-43 (pg_hba `trust` local) se retoma en la Fase 6.
+- Temas T-43 a T-48 en `docs/decisiones.md` §9.2. T-43 (pg_hba `trust` local) quedó resuelto en la Fase 6.
 
 ## Notas de implementación (Fase 5)
 
@@ -174,18 +177,46 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
   escalar antes que `JOIN`.
 - `idx_scan` cuenta también los sondeos del planificador: para decidir sobre un índice, comparar el plan con
   y sin él dentro de una transacción (`experimentos_indices.sql`).
-- `VACUUM` en el contenedor: `PARALLEL 0` (el `/dev/shm` por defecto es de 64 MB; T-51).
+- `VACUUM` paralelo: funciona desde la Fase 6 (`shm_size: 256mb`; con los 64 MB por defecto había que usar `PARALLEL 0`, T-51).
 - Los índices nuevos o eliminados van en una migración nueva (`V009`), no editando `V006`.
 - Tras cambiar una sentencia de `db/queries/`: regenerar `evidencia_fase3.sh` y `evidencia_fase4.sh`.
 - Temas T-49 a T-54 en `docs/decisiones.md` §10.3.
 
+## Notas de implementación (Fase 6)
+
+- **Toda conexión exige clave** (`pg_hba.conf` solo `scram-sha-256`, vía `POSTGRES_INITDB_ARGS`; se aplica al
+  crear el volumen). Dentro del contenedor usar siempre las funciones de `_lib.sh`: `psql_super`,
+  `psql_backend` (rol del backend) y `en_contenedor <programa>` (`pg_dump`, `pg_restore`...). Un `psql` suelto
+  con `docker compose exec` falla con `no password supplied`.
+- **El log no contiene sentencias** (`log_min_error_statement=panic`): al depurar, el `ERROR` del log viene sin
+  su `STATEMENT`; el texto hay que verlo en la salida de `psql`. No activar `log_min_duration_statement` en el
+  compose: registra literales (`OPE-26`). Las consultas lentas se buscan con `estado.sh` §7.
+- **`pg_stat_statements` guarda sin normalizar las sentencias de utilidad** (`CREATE ROLE ... PASSWORD`,
+  `EXPLAIN`, `CREATE TABLE AS`): todo script que envíe una clave como literal termina con
+  `vaciar_estadisticas_sentencias`. Lo vigila `OPE-07`.
+- `db/ops/`: SQL de operación reutilizable (`huella.sql`, `observabilidad.sql`, `purgar_auditoria.sql`). Este
+  último no abre transacción y deja `:purga_eliminadas`; lo incluyen el script y la prueba.
+- La única vía para borrar auditoría es `purgar_auditoria.sh` (`SET LOCAL session_replication_role = replica`,
+  solo superusuario). Sin plazo por defecto; rechaza menos que la mayor `retencion_anios`.
+- `prueba_restauracion.sh` y `evidencia_fase6.sh` **eliminan el volumen**. Los respaldos quedan en `backups/`
+  (ignorada por Git; rotación de 7). `FASE6_PERF=1` agrega la corrida de rendimiento y conserva `fase5_*.txt`.
+- Comparar esquemas con `pg_dump --schema-only` exige normalizar `\restrict` y el orden de los roles de las
+  políticas (cambia tras restaurar): ver `normalizar_esquema` en `prueba_restauracion.sh`.
+- Pruebas con shell (`concurrencia.sh`, `operacion.sh`) se registran en el arreglo `guiones` de `run_all.sh`.
+  `operacion.sh` confirma transacciones y deja un registro de purga en la auditoría.
+- En scripts con `set -euo pipefail`, `diff` con diferencias devuelve 1 y aborta: `{ diff ... || true; }`.
+- No pasar SQL con barras invertidas (`\gexec`, `\bind`) en un heredoc de la herramienta Bash: usar la
+  herramienta de escritura de archivos.
+- Temas T-55 a T-62 en `docs/decisiones.md` §11.4.
+
 ## Estado
 
-- Fases 0 a 5 completas. Esquema en `db/migrations/` (V000–V009), semillas en `db/seeds/`, consultas y
-  transacciones en `db/queries/` (43 sentencias), suite en `db/tests/` (484 pruebas), medición en `db/perf/`;
-  `reset → migrate → seed → test` verificado desde cero con código 0.
+- Fases 0 a 6 completas. Esquema en `db/migrations/` (V000–V009), semillas en `db/seeds/`, consultas y
+  transacciones en `db/queries/` (43 sentencias), suite en `db/tests/` (514 pruebas), medición en `db/perf/`,
+  operación en `db/scripts/` y `db/ops/`; `reset → migrate → seed → test` verificado desde cero con código 0,
+  y también sobre una base restaurada desde un respaldo.
 - Documentos: `docs/decisiones.md`, `docs/modelo/` (01–05), `docs/seguridad.md`, `docs/privacidad.md`,
-  `docs/consultas.md`, `docs/transacciones.md`, `docs/pruebas.md`, `docs/evidencia/rendimiento.md`.
-- Siguiente: Fase 6 (`docs/operacion.md`: respaldo y restauración probados, mantenimiento, `pg_hba`,
-  parámetros de log, retención de la auditoría, programación de `fn_anonimizar_vencidos`). Pendientes
-  anotados para esa fase: T-13, T-18, T-21, T-43, T-51.
+  `docs/consultas.md`, `docs/transacciones.md`, `docs/pruebas.md`, `docs/operacion.md`,
+  `docs/evidencia/rendimiento.md`.
+- Siguiente: Fase 7 (cierre: README final, revisión de coherencia entre documentos, evidencia de `make all`;
+  T-1 `make` sigue sin instalar). Es punto de parada.

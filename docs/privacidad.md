@@ -164,9 +164,11 @@ fn_anonimizar_vencidos()                           [proceso periódico, app_owne
   no generó servicio y no justifica conservar datos (criterio de diseño, **validar**).
 - **`retencion_anios`** vive en `taller_configuracion`: cambiar el plazo es cambiar un dato. Con `0`,
   toda supresión anonimiza de inmediato.
-- **Proceso periódico.** La imagen `postgres:16` no trae `pg_cron`: `fn_anonimizar_vencidos()` debe
-  programarla un job externo (cron del sistema o del backend) que se conecte como `app_owner`. Si ese job
-  no corre, los bloqueos vencidos quedan sin anonimizar; conviene monitorear la consulta
+- **Proceso periódico.** La imagen `postgres:16` no trae `pg_cron`: `fn_anonimizar_vencidos()` la ejecuta
+  `db/scripts/anonimizar_vencidos.sh` desde el programador de tareas del sistema, asumiendo `app_owner`
+  (`docs/operacion.md` §7). Si ese job no corre, los bloqueos vencidos quedan sin anonimizar; el script
+  termina con error si queda alguno, y la misma cuenta aparece en `db/scripts/estado.sh` §10 y la vigila
+  la prueba `OPE-08`:
   `SELECT count(*) FROM titular WHERE estado_tratamiento = 'bloqueado' AND bloqueado_hasta <= current_date`.
 
 Comprobado en [humo §5c]: con una atención completada hoy y `retencion_anios = 6`, el titular queda
@@ -227,12 +229,16 @@ como un vehículo nuevo, sin vínculo con su historial anterior.
 1. **Respaldos.** La anonimización modifica la base viva, no las copias de seguridad ya tomadas: un
    respaldo anterior sigue conteniendo los datos. La política de retención de respaldos debe ser coherente
    con la de datos, y una restauración debe ir seguida de re-aplicar las anonimizaciones posteriores a la
-   fecha del respaldo (se retoma en `docs/operacion.md`).
+   fecha del respaldo. Comprobado en `docs/evidencia/fase6_respaldo.txt`: una supresión solicitada después
+   del respaldo **desaparece** al restaurar (el titular vuelve a estar `activo`). `restaurar.sh` ejecuta
+   `fn_anonimizar_vencidos()` al terminar, pero las solicitudes posteriores al respaldo hay que reaplicarlas
+   a mano desde un registro externo a la base (`docs/operacion.md` §3.4).
 2. **`freeze_frame`.** Es JSON libre proveniente del escáner. La anonimización no lo modifica; el backend
    **no debe guardar el VIN ni otro identificador dentro de él**. Está excluido de la auditoría por
    precaución.
-3. **Registros del servidor y WAL.** Con `log_statement = none` las sentencias no se registran, pero el
-   WAL contiene los valores previos hasta que se recicla.
+3. **Registros del servidor y WAL.** Con `log_statement = none` y `log_min_error_statement = panic` las
+   sentencias no se registran ni siquiera cuando fallan (`docs/operacion.md` §5), pero el WAL contiene los
+   valores previos hasta que se recicla.
 4. **Datos de los trabajadores.** Nombre y email de `usuario` están excluidos de la auditoría, pero no
    existe un flujo de supresión para usuarios: se desactivan (`activo = false`). Su tratamiento se rige
    por la relación laboral (**validar**).

@@ -1,0 +1,37 @@
+# Fase 6: estado ANTES de los cambios de operacion (captura unica, compose de la Fase 5)
+# Fecha: 2026-10-04T07:15Z
+
+## A1. pg_hba.conf efectivo
+ line_number | type  |   database    | user_name |  address  |  auth_method  
+-------------+-------+---------------+-----------+-----------+---------------
+         117 | local | {all}         | {all}     |           | trust
+         119 | host  | {all}         | {all}     | 127.0.0.1 | trust
+         121 | host  | {all}         | {all}     | ::1       | trust
+         124 | local | {replication} | {all}     |           | trust
+         125 | host  | {replication} | {all}     | 127.0.0.1 | trust
+         126 | host  | {replication} | {all}     | ::1       | trust
+         128 | host  | {all}         | {all}     | all       | scram-sha-256
+(7 rows)
+
+## A2. Conexion local SIN clave (socket Unix del contenedor)
+app_backend_user: conexion ACEPTADA sin clave
+superusuario: conexion ACEPTADA sin clave
+
+## A3. Memoria compartida del contenedor
+Filesystem      Size  Used Avail Use% Mounted on
+shm              64M  1.1M   63M   2% /dev/shm
+
+## A4. Una sentencia que falla deja su texto (con literales) en el log del servidor
+ERROR:  role "rol_que_no_existe" does not exist
+lineas del log del contenedor que contienen el canario: 1
+2026-10-04 07:15:14.422 UTC [3839] STATEMENT:  ALTER ROLE rol_que_no_existe PASSWORD '<canario>'
+
+## A5. Secretos reales de .env en el log del contenedor y en pg_stat_statements (solo conteos)
+POSTGRES_PASSWORD en el log: 0 linea(s)
+APP_BACKEND_PASSWORD en el log: 0 linea(s)
+CLAVE_DEMO en el log: 0 linea(s)
+ sentencias_con_clave_backend | sentencias_con_clave_demo | sentencias_registradas 
+------------------------------+---------------------------+------------------------
+                            1 |                         1 |                   1263
+(1 row)
+

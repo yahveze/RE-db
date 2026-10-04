@@ -1,0 +1,54 @@
+# Medicion de rendimiento con shm_size 256 MB y VACUUM paralelo (db/perf/run.sh) (generado por db/scripts/evidencia_fase6.sh)
+# Fecha: 2026-10-04T07:29Z
+
+perf: creando repuestos_exactos_perf como copia de repuestos_exactos
+perf: cargando volumen (puede tardar varios minutos)
+perf: volumen cargado en 242 s
+perf: VACUUM (ANALYZE) terminado; lanzamientos de procesos paralelos: 8
+perf:         2 INFO:  launched 1 parallel vacuum worker for index cleanup (planned: 1)
+perf:         5 INFO:  launched 2 parallel vacuum workers for index cleanup (planned: 2)
+perf:         1 INFO:  launched 2 parallel vacuum workers for index vacuuming (planned: 2)
+perf: midiendo
+perf: docs/evidencia/fase5_medidas.txt (1740 lineas), docs/evidencia/fase5_indices.txt (416 lineas), docs/evidencia/fase5_resumen.txt
+# Rendimiento: resumen de fase5_medidas.txt (generado por db/perf/run.sh)
+# Fecha: 2026-10-04T07:33Z
+
+medida ejecucion_ms      bloques  sentencia
+M01           0.598          381  q_historial - primera pagina (21 filas, sin filtro)
+M02           0.497          434  q_historial - pagina profunda por clave (cursor tras 75.000 sesiones)
+M03          62.803         4253  comparacion: la misma pagina profunda con OFFSET 75000 (lo que la paginacion por clave evita)
+M04           0.468          360  q_historial - filtrado por estado pendiente, primera pagina
+M05           0.447          397  q_historial - filtrado por estado completado, pagina profunda
+M06           0.494          397  q_historial_siguiente - la misma pagina profunda con PLAN GENERICO forzado
+M06a         25.903        75873  ANTES: formulacion con cursor opcional (Fase 3), misma pagina, plan generico
+M07           0.082           19  q_buscar_vehiculo_patente
+M08           0.058           18  q_buscar_vehiculo_vin
+M09           0.106           32  q_buscar_vehiculo_modelo (modelo + anio, 20 filas)
+M10           0.095           27  q_sesion
+M11           0.035           11  q_sesion_fallas
+M12           3.501         1643  q_matriz
+M13           1.472         3032  q_repuestos_por_dtc (con modelo y anio)
+M14           0.076           17  q_cotizaciones_sesion
+M15           0.054           17  q_cotizacion_detalle
+M16           0.123           60  q_historial_vehiculo
+M17          12.631        14402  q_dashboard_resumen (ultimos 30 dias)
+M17a        182.572        15557  ANTES: dashboard en un solo recorrido de las sesiones del taller (Fase 3)
+M18          36.323        53137  q_dashboard_dtc_frecuentes (ultimos 90 dias, 10 filas)
+M19           0.070           44  q_dtc_buscar (prefijo P10, 20 filas)
+M20          13.374          905  politica RLS con subconsulta: vehiculos visibles para el MECANICO (titular activo)
+M21           1.381           58  tx_crear_sesion (sesion + 2 fallas, con triggers y auditoria)
+M22           0.735           73  tx_crear_cotizacion (borrador nuevo)
+M23           0.476           30  tx_guardar_linea (snapshot de precio por trigger)
+M24           0.686           84  tx_cerrar_cotizacion (bloqueos, suma del detalle, vigente)
+M25           0.549           72  tx_cambiar_estado (pendiente -> cotizado)
+M26           3.319          135  misma consulta que M20 para el ADMINISTRADOR (politica sin subconsulta)
+M27           0.084           18  q_auditoria - primera pagina (51 filas)
+M28           0.076            8  q_auditoria - pagina profunda por clave (cursor tras 500.000 registros)
+M29           0.144           25  q_auditoria - filtrada por tabla
+M30           0.040            4  q_usuarios
+M33           0.036           10  q_consentimientos_titular
+M31           1.686          149  tx_solicitar_supresion (ultima atencion del titular, bloqueo o anonimizacion)
+M32          42.455            -  q_login (bcrypt de costo 10 dentro de la base)
+perf: base repuestos_exactos_perf eliminada
+
+# codigo de salida: 0

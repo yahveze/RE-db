@@ -5,6 +5,6 @@
 source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
 
 if [ $# -eq 0 ] && [ -t 0 ]; then
-  exec docker compose exec db sh -c 'exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+  exec docker compose exec db sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 fi
 psql_super "$@"

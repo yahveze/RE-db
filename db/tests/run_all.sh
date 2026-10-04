@@ -3,6 +3,8 @@
 #   1. db/tests/NN_*.sql  -> cada archivo corre en una transaccion con ROLLBACK
 #                            e imprime una linea PASS o FAIL por prueba.
 #   2. db/tests/concurrencia.sh -> dos conexiones reales por escenario.
+#   3. db/tests/operacion.sh    -> autenticacion local, log del servidor y
+#                                  scripts de operacion (Fase 6).
 # Termina con codigo distinto de cero si:
 #   * alguna prueba imprime FAIL;
 #   * psql termina con error;
@@ -50,22 +52,25 @@ for archivo in "${archivos[@]}"; do
   echo
 done
 
-if salida="$(bash db/tests/concurrencia.sh 2>&1)"; then codigo=0; else codigo=$?; fi
-echo "$salida"
-pass="$(contar '^PASS |' "$salida")"
-fail="$(contar '^FAIL |' "$salida")"
-total_pass=$((total_pass + pass))
-total_fail=$((total_fail + fail))
-if [ "$codigo" -ne 0 ] || [ "$fail" -gt 0 ] || [ "$pass" -eq 0 ]; then
-  con_fallos=$((con_fallos + 1)); estado="FALLO"
-else
-  estado="ok"
-fi
-echo "==> concurrencia.sh: $pass PASS, $fail FAIL [$estado]"
-echo
+guiones=(concurrencia.sh operacion.sh)
+for guion in "${guiones[@]}"; do
+  if salida="$(bash "db/tests/$guion" 2>&1)"; then codigo=0; else codigo=$?; fi
+  echo "$salida"
+  pass="$(contar '^PASS |' "$salida")"
+  fail="$(contar '^FAIL |' "$salida")"
+  total_pass=$((total_pass + pass))
+  total_fail=$((total_fail + fail))
+  if [ "$codigo" -ne 0 ] || [ "$fail" -gt 0 ] || [ "$pass" -eq 0 ]; then
+    con_fallos=$((con_fallos + 1)); estado="FALLO"
+  else
+    estado="ok"
+  fi
+  echo "==> $guion: $pass PASS, $fail FAIL [$estado]"
+  echo
+done
 
 if [ "$con_fallos" -gt 0 ]; then
   echo "test: $total_pass PASS, $total_fail FAIL - $con_fallos archivo(s) con fallos"
   exit 1
 fi
-echo "test: todo PASS ($total_pass pruebas en $(( ${#archivos[@]} + 1 )) archivos)"
+echo "test: todo PASS ($total_pass pruebas en $(( ${#archivos[@]} + ${#guiones[@]} )) archivos)"

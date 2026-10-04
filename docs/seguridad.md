@@ -272,16 +272,25 @@ protege en la red, pero no de los registros del propio servidor.
 
 | Parámetro | Valor | Qué evita |
 |---|---|---|
-| `log_statement` | `none` (ya fijado en `docker-compose.yml`) | que toda sentencia se escriba en el log |
+| `log_statement` | `none` | que toda sentencia se escriba en el log |
 | `log_min_error_statement` | `panic` | que una sentencia que **falla** se registre con su texto |
 | `log_parameter_max_length` | `0` | que los parámetros se registren junto a la sentencia |
 | `log_parameter_max_length_on_error` | `0` (su valor por defecto) | lo mismo en los mensajes de error |
-| `log_min_duration_statement` | `-1`, o con cuidado | que una consulta lenta se registre con su texto |
+| `log_min_duration_statement` | `-1` (apagado) | que una consulta lenta se registre con su texto y sus literales |
 
-Solo el primero está aplicado (tema T-13: el enunciado fija el `command` del contenedor). Además,
-`pg_stat_statements` normaliza las constantes, pero un `SELECT fn_autenticar_usuario('a@b', 'clave')`
-escrito con literales en vez de parámetros puede verse en `pg_stat_activity` mientras se ejecuta. **El
-backend debe usar siempre parámetros (`$1`, `$2`).**
+Los cinco están aplicados en `docker-compose.yml` desde la Fase 6 y los vigila la suite (`OPE-02`,
+`OPE-03`). Antes solo lo estaba el primero, y se comprobó la fuga: una sentencia fallida dejaba su texto
+completo, con la clave literal, en el log (`docs/evidencia/fase6_antes.txt` §A4). El detalle, incluido por
+qué el log de sentencias lentas queda apagado, está en `docs/operacion.md` §5.
+
+Dos matices que la ejecución mostró:
+
+- `pg_stat_statements` normaliza las constantes de `SELECT`, `INSERT`, `UPDATE` y `DELETE`, pero **guarda
+  tal cual el texto de las sentencias de utilidad**: el `CREATE ROLE ... PASSWORD '...'` de `V000` quedaba
+  legible para un superusuario (`fase6_antes.txt` §A5). Los scripts que envían claves como literal vacían
+  esas estadísticas al terminar (`OPE-07`), y ningún rol de la aplicación puede leer la vista (`OPE-06`).
+- Un `SELECT fn_autenticar_usuario('a@b', 'clave')` escrito con literales en vez de parámetros puede verse
+  en `pg_stat_activity` mientras se ejecuta. **El backend debe usar siempre parámetros (`$1`, `$2`).**
 
 Ninguna configuración elimina el problema de fondo: el motor recibe la contraseña. Por eso el diseño de
 producción es otro.
@@ -330,7 +339,9 @@ puede bloquear ni ser bloqueado por otra tabla.
   intentos fallidos de autorización deben registrarse **desde el backend** o con `pgaudit` / logs del
   servidor. La excepción es el login, que por diseño no lanza error y sí queda registrado.
 - **(b) El propietario o un superusuario pueden alterar la tabla** (`ALTER TABLE ... DISABLE TRIGGER`).
-  La inmutabilidad protege contra los roles de ejecución, no contra quien administra el servidor.
+  La inmutabilidad protege contra los roles de ejecución, no contra quien administra el servidor. La única
+  vía prevista para borrar es la purga por retención (`docs/operacion.md` §6), que solo puede ejecutar un
+  superusuario, archiva antes de eliminar y deja su propio registro (`OPE-09` a `OPE-17`, `OPE-29` a `OPE-31`).
 - **(c) [AVANZADA]** Envío a almacenamiento externo WORM o a un SIEM, y encadenamiento de hashes (cada
   registro incluye el hash del anterior) para que una alteración sea detectable.
 - Un `LOGIN_FALLIDO` de un email inexistente queda con `taller_id` nulo: ningún taller lo ve.
@@ -362,6 +373,11 @@ Las funciones y triggers usan `SQLSTATE` propios para que la API los traduzca si
 - Llegan al SQL como variables de `psql` (`:'clave_backend'`, `:'clave_demo'`), nunca escritas en un archivo.
 - La contraseña de `app_backend_user` se almacena como verificador SCRAM, no en claro.
 - La evidencia no contiene claves: se comprueba que estén definidas, no su valor.
+- Dentro del contenedor toda conexión exige clave, también por el socket local (`pg_hba.conf` sin `trust`,
+  tema T-43): los scripts la toman de las variables de entorno del contenedor, nunca de la línea de comandos.
+- Ni el log del servidor ni `pg_stat_statements` contienen las claves de `.env` (`OPE-07`, `OPE-32`).
+- Los respaldos se generan sin claves de roles (`pg_dumpall --no-role-passwords`), pero contienen los
+  hashes bcrypt de los usuarios y datos personales: se guardan cifrados (`docs/operacion.md` §2).
 
 ## 13. Límites del modelo
 
@@ -373,7 +389,8 @@ Las funciones y triggers usan `SQLSTATE` propios para que la API los traduzca si
 3. **PgBouncer no está en el prototipo.** El patrón es compatible con *transaction pooling* por
    construcción, pero no se probó contra un PgBouncer real.
 4. **Sin TLS en el contenedor de desarrollo.** El puerto solo se publica en loopback; en producción la
-   conexión backend → base debe exigir TLS (`hostssl` en `pg_hba.conf`).
+   conexión backend → base debe exigir TLS (`hostssl` en `pg_hba.conf`). Lo que sí está aplicado es la
+   autenticación: todas las reglas de `pg_hba.conf` exigen `scram-sha-256` (`docs/operacion.md` §4).
 5. **Sin límite de tasa en el login** más allá del bloqueo por cuenta: el *rate limiting* por IP es del backend.
 6. **Cerrar una cotización por `UPDATE` directo** (en vez de `fn_cerrar_cotizacion`) es válido y seguro
    para los datos, pero toma los bloqueos en orden cotización → sesión. Si coincide con un cambio de estado

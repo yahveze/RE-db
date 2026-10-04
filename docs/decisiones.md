@@ -1,8 +1,9 @@
 # Decisiones de diseño — Repuestos Exactos (Fase 0)
 
-> Estado: **Fases 0 a 5 completas** (ver secciones 7 a 10). Esquema en `db/migrations/` (V000–V009),
-> semillas en `db/seeds/`, consultas y transacciones en `db/queries/`, suite de 484 pruebas en `db/tests/`
-> y medición con volumen en `db/perf/`, verificado sobre PostgreSQL 16.15; falta operación (Fases 6 y 7).
+> Estado: **Fases 0 a 6 completas** (ver secciones 7 a 11). Esquema en `db/migrations/` (V000–V009),
+> semillas en `db/seeds/`, consultas y transacciones en `db/queries/`, suite de 514 pruebas en `db/tests/`,
+> medición con volumen en `db/perf/` y operación en `db/scripts/` y `db/ops/` (respaldo y restauración
+> probados), verificado sobre PostgreSQL 16.15; falta el cierre (Fase 7).
 
 Clasificación usada: **[OBLIGATORIA]** la exige el enunciado o la integridad del modelo ·
 **[RECOMENDADA]** se implementa porque el costo es bajo y el beneficio defendible ·
@@ -555,7 +556,7 @@ secretos de ningún entorno; las claves reales siguen llegando solo por `psql -v
 | La base tras la suite | mismos conteos que tras las semillas, salvo la auditoría (T-46) | consulta tras la ejecución |
 | Secretos en archivos versionados y en la evidencia | ninguno | búsqueda de los valores de `.env` |
 
-**Riesgos que la ejecución no cubrió:** los de `docs/pruebas.md` §5 (rendimiento, PgBouncer, canal de
+**Riesgos que la ejecución no cubrió:** los de `docs/pruebas.md` §6 (rendimiento, PgBouncer, canal de
 tiempo del login, concurrencia de la anonimización, controles negativos del resto de la suite).
 
 ---
@@ -641,3 +642,111 @@ explica cada cambio.
 
 **Riesgos que la ejecución no cubrió:** los de `docs/evidencia/rendimiento.md` §9 (carga concurrente, caché
 fría, variabilidad entre corridas, crecimiento de la auditoría, ajuste del servidor).
+
+---
+
+## 11. Fase 6: operación
+
+Detalle en `docs/operacion.md`. Ninguna migración cambió: el esquema es el de la Fase 5. Cambiaron el
+entorno (`docker-compose.yml`), los scripts y la suite.
+
+### 11.1 Resolución de los temas pendientes
+
+| Tema | Resolución |
+|---|---|
+| T-49 (cifras del dashboard por cohorte de inicio) | **Aprobado** por el usuario: queda como está |
+| T-51 (`/dev/shm` de 64 MB) | **Aprobado**: `shm_size: 256mb`. `db/perf/run.sh` volvió al `VACUUM` paralelo |
+| T-43 (`trust` en el socket local) | **Aprobado**: `pg_hba.conf` exige `scram-sha-256` en todas sus reglas, mediante `POSTGRES_INITDB_ARGS` |
+| T-13 (parámetros del log) | Aplicados en el `command` del compose, **además** de los tres que fija el enunciado (ver T-55) |
+| T-18 (programación de `fn_anonimizar_vencidos`) | `db/scripts/anonimizar_vencidos.sh`, ejecutado; la tarea programada solo se documenta |
+| T-21 (control de migraciones) | Sin cambios: **[AVANZADA]**, documentado en `docs/operacion.md` §9 |
+
+### 11.2 Qué se construyó
+
+| Entregable | Dónde |
+|---|---|
+| Respaldo, verificación no destructiva y restauración | `db/scripts/respaldar.sh`, `verificar_respaldo.sh`, `restaurar.sh` |
+| Prueba de recuperación ante pérdida total | `db/scripts/prueba_restauracion.sh`, `db/ops/huella.sql` |
+| Observabilidad y mantenimiento | `db/scripts/estado.sh`, `db/ops/observabilidad.sql`, `db/scripts/mantenimiento.sh` |
+| Retención de la auditoría | `db/scripts/purgar_auditoria.sh`, `db/ops/purgar_auditoria.sql` |
+| Proceso periódico de privacidad | `db/scripts/anonimizar_vencidos.sh` |
+| 30 pruebas de operación (514 en total) | `db/tests/10_operacion.sql`, `db/tests/operacion.sh` |
+| Evidencia | `db/scripts/evidencia_fase6.sh` → `docs/evidencia/fase6_*.txt` |
+
+### 11.3 Hallazgos de la ejecución
+
+| # | Hallazgo | Qué se hizo |
+|---|---|---|
+| 1 | Una sentencia que falla se copiaba entera al log, con sus literales (`fase6_antes.txt` §A4) | `log_min_error_statement=panic`; `OPE-24` |
+| 2 | `pg_stat_statements` guardaba en claro el `CREATE ROLE ... PASSWORD` de `V000` y un `EXPLAIN` del login con la clave de demostración (`fase6_antes.txt` §A5): normaliza las constantes de las consultas, no las de las sentencias de utilidad | `migrate.sh`, `seed.sh`, `restaurar.sh` y `perf/run.sh` vacían las estadísticas al terminar; `OPE-07` |
+| 3 | El log de sentencias lentas registra los literales (`OPE-26`), y las migraciones y semillas envían las claves como literal | `log_min_duration_statement` queda apagado (`OPE-03`); las consultas lentas se buscan en `pg_stat_statements` |
+| 4 | Dentro del contenedor cualquiera se conectaba como superusuario sin clave (`fase6_antes.txt` §A2) | T-43; los scripts se autentican con `PGPASSWORD` tomado del entorno del contenedor |
+| 5 | Tras restaurar, `pg_dump` lista en otro orden los roles de 8 políticas (`TO a, b, c` se guarda como OID y el clúster restaurado crea los roles en otro orden) | No es un defecto: la comparación de esquemas normaliza ese orden |
+| 6 | Una supresión solicitada después del respaldo desaparece al restaurar (`fase6_respaldo.txt`, pasos 3 y 6) | `restaurar.sh` ejecuta `fn_anonimizar_vencidos()`; lo demás debe reaplicarse a mano (T-57) |
+
+### 11.4 Temas nuevos
+
+Si no dices nada, queda como está. ⚠ marca lo que conviene leer.
+
+**T-55 ⚠ El `command` del contenedor tiene más parámetros que los tres del enunciado.**
+T-13 proponía respetar el `command` y solo documentar los parámetros del log. Al ejecutar el experimento,
+la fuga resultó real (hallazgo 1), y como ya estabas autorizando cambios al compose para T-43 y T-51,
+agregué cinco parámetros `-c` a continuación de los tres originales, que no se tocaron. Si el `command`
+debe quedar literalmente como en el enunciado, se quitan esas líneas y habría que retirar las pruebas que
+los vigilan (`OPE-02`, `OPE-04`, `OPE-24`) y dejar la sección como recomendación.
+
+**T-56 ⚠ `pg_hba` se configura con `POSTGRES_INITDB_ARGS`, no con un archivo propio.**
+Así no se toca el `command` y el archivo lo genera `initdb`. El costo: solo se aplica al **crear** el
+volumen. Quien tenga un volumen anterior a esta fase debe hacer `reset`: con el `pg_hba` antiguo fallarían
+`OPE-01`, `OPE-20` y `OPE-21` (deducido; no se ejecutó la suite nueva sobre un volumen antiguo). La alternativa es
+versionar un `pg_hba.conf` y montarlo con `-c hba_file=...`; la dejo para producción, donde además lleva
+`hostssl` y la red del backend (`docs/operacion.md` §4).
+
+**T-57 ⚠ Restaurar un respaldo revive datos suprimidos.**
+Es inherente a cualquier respaldo. Lo que la base puede hacer sola está hecho (anonimizar los bloqueos
+vencidos tras restaurar). Reaplicar las solicitudes posteriores al respaldo exige que su registro exista
+**fuera** de la base: es un requisito para el backend o para el procedimiento del responsable, y un
+argumento para conservar los respaldos poco tiempo. **Validar legalmente** el plazo.
+
+**T-58 ⚠ El plazo de retención de la auditoría no está definido.**
+`purgar_auditoria.sh` no tiene valor por defecto y rechaza un plazo menor que la mayor `retencion_anios` de
+un taller. Es un criterio de diseño mío, no una regla del enunciado ni una afirmación jurídica. Si prefieres
+un parámetro de plataforma con valor por defecto, dímelo.
+
+**T-59 La purga salta la inmutabilidad con `session_replication_role`.**
+Solo puede hacerlo un superusuario y solo dura la transacción. No agrega ningún objeto al esquema. La
+alternativa (una función definidora de purga) dejaría un camino de borrado permanente; no la propongo.
+
+**T-60 La evidencia de la Fase 5 no se regeneró.**
+`db/perf/run.sh` se volvió a ejecutar completo para validar los cambios (autenticación y `VACUUM`
+paralelo), pero su salida quedó en `fase6_perf.txt` y los `fase5_*.txt` se conservaron: son los que cita
+`rendimiento.md` y los tiempos varían entre corridas.
+
+**T-61 Los respaldos no se cifran ni se copian fuera del equipo.**
+Quedan en `backups/` (ignorada por Git). Contienen datos personales y hashes bcrypt. Cifrado, copia externa
+y programación están documentados como pendientes de producción (`docs/operacion.md` §2).
+
+**T-62 `make` sigue sin instalarse (T-1).**
+Los objetivos nuevos del `Makefile` (`backup`, `verify-backup`, `restore`, `restore-test`, `status`) se
+verificaron ejecutando el script en que delega cada uno, no con `make`.
+
+### 11.5 Verificación de la Fase 6
+
+| Comprobación | Resultado | Evidencia |
+|---|---|---|
+| `reset` → `migrate` (V000–V009) → `seed` → `test` con el compose nuevo | código 0; 514 PASS, 0 FAIL | `fase4_pruebas.txt` |
+| Control negativo de CON-01 con la autenticación nueva | detecta el defecto; restaurado, pasa | `fase4_control_negativo.txt` |
+| Respaldo → eliminación del volumen → restauración | datos idénticos (md5 de las 21 tablas y secuencias) y esquema idéntico | `fase6_respaldo.txt` §1–§6 |
+| Suite sobre la base restaurada | código 0; 514 PASS | `fase6_respaldo.txt` §7 |
+| Verificación no destructiva en base temporal | respaldo nuevo: idéntico; respaldo anterior a la suite: lista lo que cambió | `fase6_respaldo.txt` §8, §9 |
+| `pg_hba.conf` | 7 reglas, todas `scram-sha-256`; sin clave la conexión local se rechaza | `fase6_operacion.txt` §1; `OPE-20` a `OPE-23` |
+| Log tras la corrida completa | 206 líneas `ERROR`, 0 líneas `STATEMENT`, 0 apariciones de las claves de `.env` | `fase6_operacion.txt` §4, §5 |
+| `pg_stat_statements` | 0 sentencias con claves | `fase6_operacion.txt` §5; `OPE-07` |
+| Memoria compartida y `VACUUM` paralelo con volumen | 256 MB; `db/perf/run.sh` completo con código 0 | `fase6_operacion.txt` §3; `fase6_perf.txt` |
+| Purga de auditoría | prueba en transacción y con el script real; simulación y rechazo de plazo corto | `OPE-09` a `OPE-17`, `OPE-29` a `OPE-31`; `fase6_operacion.txt` §7 |
+| Consultas y transacciones de la Fase 3 con la autenticación nueva | sin errores; 18 errores esperados | `fase3_*.txt` regenerados |
+| Secretos en archivos versionados y en la evidencia | ninguno | búsqueda de los valores de `.env` |
+
+**Riesgos que la ejecución no cubrió:** los de `docs/operacion.md` §10 (recuperación a un punto en el
+tiempo, cifrado y copia externa de respaldos, TLS, tiempos con volumen, programación real de las tareas) y
+todo lo marcado **[NO EJECUTADO]** en ese documento. `make` sigue sin instalarse (T-1, T-62).

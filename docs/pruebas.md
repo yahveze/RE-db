@@ -1,7 +1,7 @@
 # Pruebas
 
 La suite se ejecuta con `bash db/tests/run_all.sh` (o `make test`) sobre una base migrada y con semillas.
-Resultado real en `docs/evidencia/fase4_pruebas.txt`: **484 pruebas, 0 fallos**, código de salida 0, tanto
+Resultado real en `docs/evidencia/fase4_pruebas.txt`: **514 pruebas, 0 fallos**, código de salida 0, tanto
 tras `reset → migrate → seed` como al repetirla sobre la misma base.
 
 ## 1. Qué se prueba
@@ -17,7 +17,9 @@ tras `reset → migrate → seed` como al repetirla sobre la misma base.
 | `07_auditoria.sql` | 24 | Solo inserción (también para el superusuario), contexto registrado, columnas enmascaradas, operaciones fallidas |
 | `08_privacidad.sql` | 24 | Bloqueo por retención, anonimización inmediata y por vencimiento, irreversibilidad, conservación de la trazabilidad técnica |
 | `09_consultas.sql` | 45 | Contrato de las consultas del frontend: paginación por clave, matriz, precios por taller, dashboard |
+| `10_operacion.sql` | 17 | Configuración que la operación da por supuesta (Fase 6): `pg_hba.conf` sin `trust`, parámetros del log, `pg_stat_statements` ilegible para la aplicación y sin claves, y la purga de la auditoría por retención: borra solo lo anterior al corte, la inmutabilidad vuelve a regir en la misma transacción y ningún rol de la aplicación puede usar ese camino |
 | `concurrencia.sh` | 12 | Diez escenarios con dos conexiones reales, ausencia de interbloqueos |
+| `operacion.sh` | 13 | Con conexiones reales y leyendo el log del servidor: el socket local exige clave, una sentencia fallida no deja su texto en el log, los parámetros no se registran, memoria compartida y rotación del log del contenedor, la purga real (archiva, elimina, deja rastro) y ausencia de las claves de `.env` en el log |
 
 ## 2. Cómo está construida
 
@@ -106,7 +108,21 @@ que el defecto descrito en T-8 es real y que la prueba lo detecta.
 A diferencia del resto de la suite, estos escenarios hacen `COMMIT`. Sus datos se crean al empezar y se
 borran al terminar; quedan únicamente sus registros de auditoría, que no se pueden borrar.
 
-## 5. Lo que la suite no cubre
+## 5. Operación
+
+Las pruebas `OPE-*` (Fase 6) comprueban el entorno, no el esquema: fallan si alguien devuelve `trust` a
+`pg_hba.conf`, relaja un parámetro del log o deja una clave en `pg_stat_statements`.
+
+- **El "antes" es el control negativo.** `docs/evidencia/fase6_antes.txt` registra el mismo experimento con
+  la configuración anterior: la conexión local sin clave se aceptaba y la sentencia fallida aparecía en el
+  log con su literal. Con la configuración nueva, `OPE-20`, `OPE-21` y `OPE-24` muestran lo contrario.
+- **`OPE-26` afirma un riesgo, no una protección.** Activa el log de duración solo en su sesión y comprueba
+  que un valor escrito como literal **sí** queda en el log. Es la razón por la que `OPE-03` exige que ese
+  log esté apagado, y por la que el backend debe usar parámetros (`OPE-25`: con parámetros no queda).
+- **`operacion.sh` confirma transacciones**, como `concurrencia.sh`: crea tres registros de auditoría de 40
+  años de antigüedad, ejecuta la purga real con un plazo de 30 años y deja el registro de esa purga.
+
+## 6. Lo que la suite no cubre
 
 - **Rendimiento y planes de ejecución** (Fase 5).
 - **PgBouncer real.** El patrón de petición se prueba con `psql`; el *pool* no forma parte del prototipo.
@@ -117,4 +133,6 @@ borran al terminar; quedan únicamente sus registros de auditoría, que no se pu
 - **Niveles de aislamiento distintos de `READ COMMITTED`.**
 - **Controles negativos del resto de la suite.** Solo se hizo para CON-01. Las demás pruebas se vieron
   fallar durante su escritura por errores de la propia prueba, no por mutaciones deliberadas del esquema.
-- **Respaldo y restauración** (Fase 6).
+- **Respaldo y restauración.** No forman parte de `make test` porque la prueba elimina el volumen. Se
+  prueban aparte con `bash db/scripts/prueba_restauracion.sh` (`docs/operacion.md` §3, evidencia en
+  `fase6_respaldo.txt`), que termina ejecutando esta misma suite sobre la base restaurada.

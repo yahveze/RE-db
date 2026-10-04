@@ -1,5 +1,5 @@
 # Consultas de lectura sobre las semillas (generado por db/scripts/evidencia_fase3.sh)
-# Fecha: 2026-10-04T06:59Z
+# Fecha: 2026-10-04T07:35Z
 
 === 1. Login del mecanico del taller 1 (sin contexto) ===
 autenticado=t rol=mecanico nombre=Diego Rojas
@@ -14,26 +14,26 @@ autenticado=t rol=mecanico nombre=Diego Rojas
 -- q_configuracion
               id_publico              |           nombre           | moneda | tema  | margen_pct | retencion_anios |        actualizado_en         
 --------------------------------------+----------------------------+--------+-------+------------+-----------------+-------------------------------
- bbd095a6-3585-4152-8211-ef812ec79f0a | Taller Mecánico Los Aromos | CLP    | claro |      30.00 |               6 | 2026-10-04 06:59:23.713281+00
+ 1fbc5bc9-419f-4715-a135-534292618bb4 | Taller Mecánico Los Aromos | CLP    | claro |      30.00 |               6 | 2026-10-04 07:34:22.359206+00
 (1 row)
 
 -- q_marcas
               id_publico              |  nombre   
 --------------------------------------+-----------
- ab26a6f8-9646-4edb-b234-3f52c5ad48e0 | Chevrolet
- 6fbe5633-a7b8-4c3b-96df-2cb228a12db4 | Hyundai
- 05d6b223-97ac-47c2-8554-a7ac4acead1d | Kia
- 78d8987a-8040-4f14-b6f0-6cfcd1631a43 | Nissan
- cad7d48e-a360-4bd9-93b0-671484e99d2e | Suzuki
- dde5d140-be11-4e1a-8ab2-62148f501666 | Toyota
+ 9d2c6204-6be8-44bc-9cf5-f354f14e7a7f | Chevrolet
+ 41c29738-143a-4aa3-811f-26b96465e56b | Hyundai
+ d47d66b8-ee82-4ccb-a287-6a672a71f402 | Kia
+ f5c31056-131c-4f8f-bdb6-b16ba7092210 | Nissan
+ baea4b51-dd39-44d7-a541-15480b3937aa | Suzuki
+ 9a5c78a0-0458-409b-8994-2e6b7332a4de | Toyota
 (6 rows)
 
 -- q_modelos(Toyota)
               id_publico              | nombre  
 --------------------------------------+---------
- ee347a66-69ee-40e3-934f-7213c54ac0b4 | Corolla
- 3a23a31b-5c71-413a-8558-1dd50d53334d | Hilux
- c7610d13-d041-470c-9791-75a67e88f4c0 | Yaris
+ 9147450c-cab2-4518-bb79-fe22067a9f41 | Corolla
+ b18092b2-c6ca-4df0-862d-5975ef99fb06 | Hilux
+ c6b40e76-aeac-4de6-a61c-160db632f440 | Yaris
 (3 rows)
 
 -- q_dtc_buscar(P03, 10)
@@ -50,19 +50,19 @@ autenticado=t rol=mecanico nombre=Diego Rojas
 -- q_buscar_vehiculo_patente(LPRS56)
               id_publico              | patente |        vin        | anio |   motor    |          modelo_id_publico           | modelo_nombre | marca_nombre |          titular_id_publico          |  titular_nombre  |       ultima_sesion_en        
 --------------------------------------+---------+-------------------+------+------------+--------------------------------------+---------------+--------------+--------------------------------------+------------------+-------------------------------
- eb5308e8-af29-4a71-a9c3-cbcb5bf37cb9 | LPRS56  | 8AJFR22G5B4512345 | 2021 | 2.4 Diésel | 3a23a31b-5c71-413a-8558-1dd50d53334d | Hilux         | Toyota       | 4085e020-96c0-4b95-b25d-1fd25dd91a46 | Juana Pérez Soto | 2026-09-28 06:59:24.436695+00
+ 3b695d88-ee84-4802-8f99-402dffe1371f | LPRS56  | 8AJFR22G5B4512345 | 2021 | 2.4 Diésel | b18092b2-c6ca-4df0-862d-5975ef99fb06 | Hilux         | Toyota       | 48673aba-9d76-4a35-bbda-1dc31037847d | Juana Pérez Soto | 2026-09-28 07:34:23.102594+00
 (1 row)
 
 -- q_buscar_vehiculo_vin(JTDBR32E720123456)
               id_publico              | patente |        vin        | anio |    motor    |          modelo_id_publico           | modelo_nombre | marca_nombre |          titular_id_publico          |  titular_nombre  |       ultima_sesion_en        
 --------------------------------------+---------+-------------------+------+-------------+--------------------------------------+---------------+--------------+--------------------------------------+------------------+-------------------------------
- 55426f00-4f99-4dc0-be57-2a0574191249 | GHJK34  | JTDBR32E720123456 | 2018 | 1.5 Bencina | c7610d13-d041-470c-9791-75a67e88f4c0 | Yaris         | Toyota       | 19c51dfb-96d4-4d59-a29a-937d2d5640c9 | Marco Díaz Leiva | 2026-10-04 03:59:24.436695+00
+ 2b33500d-8340-4b26-bfa4-0f4db36d476a | GHJK34  | JTDBR32E720123456 | 2018 | 1.5 Bencina | c6b40e76-aeac-4de6-a61c-160db632f440 | Yaris         | Toyota       | b86415c4-1c13-4b57-9dec-c84665ca967a | Marco Díaz Leiva | 2026-10-04 04:34:23.102594+00
 (1 row)
 
 -- q_buscar_vehiculo_modelo(Hilux, cualquier anio, 10)
               id_publico              | patente |        vin        | anio |   motor    |          modelo_id_publico           | modelo_nombre | marca_nombre |          titular_id_publico          |  titular_nombre  |       ultima_sesion_en        
 --------------------------------------+---------+-------------------+------+------------+--------------------------------------+---------------+--------------+--------------------------------------+------------------+-------------------------------
- eb5308e8-af29-4a71-a9c3-cbcb5bf37cb9 | LPRS56  | 8AJFR22G5B4512345 | 2021 | 2.4 Diésel | 3a23a31b-5c71-413a-8558-1dd50d53334d | Hilux         | Toyota       | 4085e020-96c0-4b95-b25d-1fd25dd91a46 | Juana Pérez Soto | 2026-09-28 06:59:24.436695+00
+ 3b695d88-ee84-4802-8f99-402dffe1371f | LPRS56  | 8AJFR22G5B4512345 | 2021 | 2.4 Diésel | b18092b2-c6ca-4df0-862d-5975ef99fb06 | Hilux         | Toyota       | 48673aba-9d76-4a35-bbda-1dc31037847d | Juana Pérez Soto | 2026-09-28 07:34:23.102594+00
 (1 row)
 
 -- patente de un titular bloqueado (BCDF12): el mecanico no la encuentra
@@ -75,83 +75,83 @@ autenticado=t rol=mecanico nombre=Diego Rojas
 -- pagina 1: q_historial(5)
               id_publico              |  estado   |          iniciada_en          | metodo_ingreso | kilometraje | version |         vehiculo_id_publico          | vehiculo_patente | vehiculo_anio | modelo_nombre | marca_nombre | usuario_nombre | fallas | severidad_maxima | cotizacion_total | cotizacion_moneda 
 --------------------------------------+-----------+-------------------------------+----------------+-------------+---------+--------------------------------------+------------------+---------------+---------------+--------------+----------------+--------+------------------+------------------+-------------------
- 3a3b82ee-9ce7-4692-ae62-2db973d69b82 | pendiente | 2026-10-04 03:59:24.436695+00 | manual         |       66480 |       1 | 55426f00-4f99-4dc0-be57-2a0574191249 | GHJK34           |          2018 | Yaris         | Toyota       | Diego Rojas    |      1 | critica          |                  | 
- 5569481b-e8b9-4f47-a903-00fd92adb402 | pendiente | 2026-10-03 06:59:24.487869+00 | manual         |       99020 |       1 | 13e72686-03a8-475c-865f-262727f84950 | YZBC90           |          2017 | Swift         | Suzuki       | Paula Soto     |      1 | critica          |                  | 
- b2d132f3-3d3c-45ff-bac3-23be5a25df9b | pendiente | 2026-10-02 06:59:24.436695+00 | obd_bluetooth  |      143750 |       1 | 26e5d0b1-855b-4a96-9def-e24898802177 | DFGH21           |          2015 | Morning       | Kia          | Diego Rojas    |      2 | alta             |                  | 
- d22f14f0-9bb8-4329-81c6-14de9ea898f1 | cotizado  | 2026-09-28 06:59:24.436695+00 | obd_bluetooth  |       91800 |       2 | eb5308e8-af29-4a71-a9c3-cbcb5bf37cb9 | LPRS56           |          2021 | Hilux         | Toyota       | Diego Rojas    |      1 | alta             |           110487 | CLP
- 9dacb7d6-f49e-4dab-a1f6-f50996ae8531 | cotizado  | 2026-09-25 06:59:24.487869+00 | obd_bluetooth  |       44150 |       2 | 1afbf3f2-f3d8-4ea7-937f-97b084277fec | JKLP43           |          2020 | Tucson        | Hyundai      | Paula Soto     |      1 | media            |           129987 | CLP
+ 3bbd451c-9583-4839-9e50-a99fda811a92 | pendiente | 2026-10-04 04:34:23.102594+00 | manual         |       66480 |       1 | 2b33500d-8340-4b26-bfa4-0f4db36d476a | GHJK34           |          2018 | Yaris         | Toyota       | Diego Rojas    |      1 | critica          |                  | 
+ 5e989a84-4d21-4848-bbca-3f00cb7bb723 | pendiente | 2026-10-03 07:34:23.158158+00 | manual         |       99020 |       1 | fe463619-6b1e-4558-8192-54ac13638ef9 | YZBC90           |          2017 | Swift         | Suzuki       | Paula Soto     |      1 | critica          |                  | 
+ 4b8bfb86-f6bc-4b17-bc87-83a477d07c06 | pendiente | 2026-10-02 07:34:23.102594+00 | obd_bluetooth  |      143750 |       1 | 9b0812f2-b93f-4c5d-9145-834dbe33e7e1 | DFGH21           |          2015 | Morning       | Kia          | Diego Rojas    |      2 | alta             |                  | 
+ c19e3fee-de20-4e35-86ef-9c806f35e772 | cotizado  | 2026-09-28 07:34:23.102594+00 | obd_bluetooth  |       91800 |       2 | 3b695d88-ee84-4802-8f99-402dffe1371f | LPRS56           |          2021 | Hilux         | Toyota       | Diego Rojas    |      1 | alta             |           110487 | CLP
+ df4292c6-5f4a-4f6c-8551-11f34b967313 | cotizado  | 2026-09-25 07:34:23.158158+00 | obd_bluetooth  |       44150 |       2 | 9b8392d7-4cbb-461e-ae2a-a32ecc141c1e | JKLP43           |          2020 | Tucson        | Hyundai      | Paula Soto     |      1 | media            |           129987 | CLP
 (5 rows)
 
 -- pagina 2: q_historial(NULL, <cursor>, 5)
               id_publico              |   estado   |          iniciada_en          | metodo_ingreso | kilometraje | version |         vehiculo_id_publico          | vehiculo_patente | vehiculo_anio | modelo_nombre | marca_nombre | usuario_nombre | fallas | severidad_maxima | cotizacion_total | cotizacion_moneda 
 --------------------------------------+------------+-------------------------------+----------------+-------------+---------+--------------------------------------+------------------+---------------+---------------+--------------+----------------+--------+------------------+------------------+-------------------
- 3ca9c53f-9298-4de6-84cf-d759ad721da2 | cotizado   | 2026-09-14 06:59:24.436695+00 | manual         |      238900 |       2 | f43caab0-fea6-4f33-b9a7-063c45638f32 | XK4521           |          2006 | Corolla       | Toyota       | Diego Rojas    |      1 | baja             |            90987 | CLP
- 2da1fcf9-12e5-4162-9d14-df8431e08a4f | cancelado  | 2026-09-06 06:59:24.487869+00 | manual         |       97400 |       3 | 13e72686-03a8-475c-865f-262727f84950 | YZBC90           |          2017 | Swift         | Suzuki       | Paula Soto     |      2 | media            |           116974 | CLP
- 93c667f0-b314-449a-ba7b-ad09335d4acb | cancelado  | 2026-09-01 06:59:24.436695+00 | manual         |      112300 |       2 |                                      |                  |               |               |              | Diego Rojas    |      1 | critica          |                  | 
- 1e0d62a0-20e9-4140-b8a7-6fdf9fac39be | completado | 2026-08-25 06:59:24.436695+00 | obd_bluetooth  |       45210 |       3 |                                      |                  |               |               |              | Diego Rojas    |      1 | media            |           122174 | CLP
- da3c96fb-b6cd-40fa-b465-a7ddbfdbc6f6 | completado | 2026-08-13 06:59:24.436695+00 | manual         |       61200 |       3 | 55426f00-4f99-4dc0-be57-2a0574191249 | GHJK34           |          2018 | Yaris         | Toyota       | Diego Rojas    |      2 | media            |           981474 | CLP
+ be286d85-430a-47e8-ac93-aa5a3c342e29 | cotizado   | 2026-09-14 07:34:23.102594+00 | manual         |      238900 |       2 | 7ba81dea-b27a-49fe-8ca1-18ad4710b98c | XK4521           |          2006 | Corolla       | Toyota       | Diego Rojas    |      1 | baja             |            90987 | CLP
+ da53df37-8edd-4c44-b5a6-8717d6f578cf | cancelado  | 2026-09-06 07:34:23.158158+00 | manual         |       97400 |       3 | fe463619-6b1e-4558-8192-54ac13638ef9 | YZBC90           |          2017 | Swift         | Suzuki       | Paula Soto     |      2 | media            |           116974 | CLP
+ cb147a8e-3ab9-40c9-a6a3-6f81f3458634 | cancelado  | 2026-09-01 07:34:23.102594+00 | manual         |      112300 |       2 |                                      |                  |               |               |              | Diego Rojas    |      1 | critica          |                  | 
+ f1505b27-2c5d-46a6-8b80-a6aeb91e6262 | completado | 2026-08-25 07:34:23.102594+00 | obd_bluetooth  |       45210 |       3 |                                      |                  |               |               |              | Diego Rojas    |      1 | media            |           122174 | CLP
+ 53906851-154a-4461-9df3-5c269d6cb638 | completado | 2026-08-13 07:34:23.102594+00 | manual         |       61200 |       3 | 2b33500d-8340-4b26-bfa4-0f4db36d476a | GHJK34           |          2018 | Yaris         | Toyota       | Diego Rojas    |      2 | media            |           981474 | CLP
 (5 rows)
 
 -- filtrado por estado: q_historial_estado(pendiente, 5)
               id_publico              |  estado   |          iniciada_en          | metodo_ingreso | kilometraje | version |         vehiculo_id_publico          | vehiculo_patente | vehiculo_anio | modelo_nombre | marca_nombre | usuario_nombre | fallas | severidad_maxima | cotizacion_total | cotizacion_moneda 
 --------------------------------------+-----------+-------------------------------+----------------+-------------+---------+--------------------------------------+------------------+---------------+---------------+--------------+----------------+--------+------------------+------------------+-------------------
- 3a3b82ee-9ce7-4692-ae62-2db973d69b82 | pendiente | 2026-10-04 03:59:24.436695+00 | manual         |       66480 |       1 | 55426f00-4f99-4dc0-be57-2a0574191249 | GHJK34           |          2018 | Yaris         | Toyota       | Diego Rojas    |      1 | critica          |                  | 
- 5569481b-e8b9-4f47-a903-00fd92adb402 | pendiente | 2026-10-03 06:59:24.487869+00 | manual         |       99020 |       1 | 13e72686-03a8-475c-865f-262727f84950 | YZBC90           |          2017 | Swift         | Suzuki       | Paula Soto     |      1 | critica          |                  | 
- b2d132f3-3d3c-45ff-bac3-23be5a25df9b | pendiente | 2026-10-02 06:59:24.436695+00 | obd_bluetooth  |      143750 |       1 | 26e5d0b1-855b-4a96-9def-e24898802177 | DFGH21           |          2015 | Morning       | Kia          | Diego Rojas    |      2 | alta             |                  | 
+ 3bbd451c-9583-4839-9e50-a99fda811a92 | pendiente | 2026-10-04 04:34:23.102594+00 | manual         |       66480 |       1 | 2b33500d-8340-4b26-bfa4-0f4db36d476a | GHJK34           |          2018 | Yaris         | Toyota       | Diego Rojas    |      1 | critica          |                  | 
+ 5e989a84-4d21-4848-bbca-3f00cb7bb723 | pendiente | 2026-10-03 07:34:23.158158+00 | manual         |       99020 |       1 | fe463619-6b1e-4558-8192-54ac13638ef9 | YZBC90           |          2017 | Swift         | Suzuki       | Paula Soto     |      1 | critica          |                  | 
+ 4b8bfb86-f6bc-4b17-bc87-83a477d07c06 | pendiente | 2026-10-02 07:34:23.102594+00 | obd_bluetooth  |      143750 |       1 | 9b0812f2-b93f-4c5d-9145-834dbe33e7e1 | DFGH21           |          2015 | Morning       | Kia          | Diego Rojas    |      2 | alta             |                  | 
 (3 rows)
 
 
 === 5. Detalle de sesion, fallas y matriz (mecanico, taller 1) ===
 -- q_sesion (Kia Morning 2015, pendiente con borrador)
 -[ RECORD 1 ]------------------+-------------------------------------
-id_publico                     | b2d132f3-3d3c-45ff-bac3-23be5a25df9b
+id_publico                     | 4b8bfb86-f6bc-4b17-bc87-83a477d07c06
 estado                         | pendiente
 metodo_ingreso                 | obd_bluetooth
 kilometraje                    | 143750
-iniciada_en                    | 2026-10-02 06:59:24.436695+00
+iniciada_en                    | 2026-10-02 07:34:23.102594+00
 cotizada_en                    | 
 completada_en                  | 
 cancelada_en                   | 
 version                        | 1
-actualizado_en                 | 2026-10-04 06:59:24.436695+00
-vehiculo_id_publico            | 26e5d0b1-855b-4a96-9def-e24898802177
+actualizado_en                 | 2026-10-04 07:34:23.102594+00
+vehiculo_id_publico            | 9b0812f2-b93f-4c5d-9145-834dbe33e7e1
 vehiculo_patente               | DFGH21
 vehiculo_vin                   | 
 vehiculo_anio                  | 2015
 vehiculo_motor                 | 1.0 Bencina
 modelo_nombre                  | Morning
 marca_nombre                   | Kia
-usuario_id_publico             | 01d71831-820b-43a8-bd6f-6254a0b56fdf
+usuario_id_publico             | 39c07f9c-164a-40e3-b7bd-35eeeec0c857
 usuario_nombre                 | Diego Rojas
-dispositivo_id_publico         | 3061c15f-411b-4a58-bb06-26010e2c8d37
+dispositivo_id_publico         | 71027cc3-42ae-41a2-b854-ba29995067ab
 dispositivo_mac                | 00:1d:a5:68:98:8a
 cotizacion_vigente_id_publico  | 
 cotizacion_vigente_total       | 
-cotizacion_borrador_id_publico | 565d4ab5-470e-4da5-926a-1765ccec0a48
+cotizacion_borrador_id_publico | 86dcdae1-522a-4d4f-9b1d-f13e0f6a7fa9
 
 -- q_sesion_fallas
  codigo |                     descripcion                      | severidad | severidad_sugerida | freeze_frame |           creado_en           
 --------+------------------------------------------------------+-----------+--------------------+--------------+-------------------------------
- P0201  | Circuito del inyector abierto, cilindro 1            | alta      | alta               |              | 2026-10-04 06:59:24.436695+00
- P0300  | Fallas de encendido aleatorias o en varios cilindros | media     | alta               |              | 2026-10-04 06:59:24.436695+00
+ P0201  | Circuito del inyector abierto, cilindro 1            | alta      | alta               |              | 2026-10-04 07:34:23.102594+00
+ P0300  | Fallas de encendido aleatorias o en varios cilindros | media     | alta               |              | 2026-10-04 07:34:23.102594+00
 (2 rows)
 
 -- q_matriz: Kia Morning 2015. Sin genuinos (no hay de la marca Kia); P0300 y P0201 comparten el inyector
         componente_id_publico         |    componente_nombre    |  dtc_codigos  | severidad_maxima |              id_publico              |  perfil  |  marca  |            nombre            | codigo_fabricante | durabilidad_estimada_km | riesgo | precio_venta | moneda 
 --------------------------------------+-------------------------+---------------+------------------+--------------------------------------+----------+---------+------------------------------+-------------------+-------------------------+--------+--------------+--------
- 0efcb265-5c36-4368-b592-cb24f7e2fe20 | Inyector de combustible | {P0201,P0300} | alta             | aa94ef8e-d63e-4726-a36c-436097dbed46 | oem      | Bosch   | Inyector Bosch               | 0280158117        |                  160000 | bajo   |        64987 | CLP
- 0efcb265-5c36-4368-b592-cb24f7e2fe20 | Inyector de combustible | {P0201,P0300} | alta             | efcd2078-682e-4c7d-9394-2b621be3f6c2 | generico | Autolab | Inyector genérico            | GEN-INY-01        |                   70000 | alto   |        29887 | CLP
- 153f3ba5-6178-4610-9cd6-26066fe0cb30 | Bobina de encendido     | {P0300}       | media            | 82a8b16b-e454-48d5-bd83-923eb16462bd | oem      | Denso   | Bobina de encendido Denso    | 673-1307          |                  120000 | bajo   |        50687 | CLP
- 153f3ba5-6178-4610-9cd6-26066fe0cb30 | Bobina de encendido     | {P0300}       | media            | 43085aaa-010b-44b5-bce8-894b442d006a | generico | Autolab | Bobina de encendido genérica | GEN-BOB-01        |                   50000 | alto   |        23387 | CLP
- ca7372fc-84f4-4655-b323-8bba4fd90c2e | Bujía                   | {P0300}       | media            | 4f9fc016-9b90-43c6-a3e9-c1d6762443ee | oem      | NGK     | Bujía de iridio NGK Laser    | ILKAR7B11         |                   90000 | bajo   |        11687 | CLP
- ca7372fc-84f4-4655-b323-8bba4fd90c2e | Bujía                   | {P0300}       | media            | 0d6ff0ce-54e8-4bee-922a-2fa3295ab471 | oem      | Denso   | Bujía de iridio Denso        | SC20HR11          |                   90000 | bajo   |        12337 | CLP
- ca7372fc-84f4-4655-b323-8bba4fd90c2e | Bujía                   | {P0300}       | media            | f2a2b4d6-2f44-42ca-a57e-3ae9ad07d4f6 | generico | Autolab | Bujía de cobre               | GEN-BUJ-01        |                   30000 | medio  |         4537 | CLP
+ 35a40904-b022-4864-a7f9-e0b0af98d25d | Inyector de combustible | {P0201,P0300} | alta             | 578dfcd4-28cf-4083-875e-fcbb33d756c3 | oem      | Bosch   | Inyector Bosch               | 0280158117        |                  160000 | bajo   |        64987 | CLP
+ 35a40904-b022-4864-a7f9-e0b0af98d25d | Inyector de combustible | {P0201,P0300} | alta             | 1afd6a84-8722-4dde-9775-55b35bed895f | generico | Autolab | Inyector genérico            | GEN-INY-01        |                   70000 | alto   |        29887 | CLP
+ 542d18d9-bc67-44f1-bd86-484289ac4eb7 | Bobina de encendido     | {P0300}       | media            | 150f19e3-fb08-43d1-b1bf-335c9c6f0e12 | oem      | Denso   | Bobina de encendido Denso    | 673-1307          |                  120000 | bajo   |        50687 | CLP
+ 542d18d9-bc67-44f1-bd86-484289ac4eb7 | Bobina de encendido     | {P0300}       | media            | 17b1eeef-b810-48c7-aac6-2032043a220a | generico | Autolab | Bobina de encendido genérica | GEN-BOB-01        |                   50000 | alto   |        23387 | CLP
+ e811f2e2-1d47-4478-bcdb-98fa37da9b88 | Bujía                   | {P0300}       | media            | c7c2dbb8-dc95-4a68-bc0f-152b634858fd | oem      | NGK     | Bujía de iridio NGK Laser    | ILKAR7B11         |                   90000 | bajo   |        11687 | CLP
+ e811f2e2-1d47-4478-bcdb-98fa37da9b88 | Bujía                   | {P0300}       | media            | 19b5cb0c-da97-44c0-af39-7b5fc24627bc | oem      | Denso   | Bujía de iridio Denso        | SC20HR11          |                   90000 | bajo   |        12337 | CLP
+ e811f2e2-1d47-4478-bcdb-98fa37da9b88 | Bujía                   | {P0300}       | media            | d7e6ce2e-f186-4854-b99e-f13630ba083c | generico | Autolab | Bujía de cobre               | GEN-BUJ-01        |                   30000 | medio  |         4537 | CLP
 (7 rows)
 
 -- q_matriz: Toyota Corolla 2006. El anio deja fuera genuinos (2010+) y OEM (2008+)
         componente_id_publico         | componente_nombre | dtc_codigos | severidad_maxima |              id_publico              |  perfil  |  marca  |        nombre        | codigo_fabricante | durabilidad_estimada_km | riesgo | precio_venta | moneda 
 --------------------------------------+-------------------+-------------+------------------+--------------------------------------+----------+---------+----------------------+-------------------+-------------------------+--------+--------------+--------
- 07716108-83f3-4c8b-b3c0-9bbaeb3f433f | Válvula EGR       | {P0401}     | baja             | 3a79a4c9-d501-4644-a79a-9eaae22de892 | generico | Autolab | Válvula EGR genérica | GEN-EGR-01        |                   60000 | alto   |        90987 | CLP
+ aeb6c333-4e11-4c9e-b74b-c5f5d633c5c4 | Válvula EGR       | {P0401}     | baja             | c0b3ac4f-bd34-49ad-abfb-a199807a4269 | generico | Autolab | Válvula EGR genérica | GEN-EGR-01        |                   60000 | alto   |        90987 | CLP
 (1 row)
 
 -- q_matriz: sesion con U0100 (DTC sin componente): cero filas
@@ -166,16 +166,16 @@ cotizacion_borrador_id_publico | 565d4ab5-470e-4da5-926a-1765ccec0a48
 
 -- q_sesion de esa sesion: sigue visible, con las columnas del vehiculo en NULL
 -[ RECORD 1 ]------------------+-------------------------------------
-id_publico                     | 1e0d62a0-20e9-4140-b8a7-6fdf9fac39be
+id_publico                     | f1505b27-2c5d-46a6-8b80-a6aeb91e6262
 estado                         | completado
 metodo_ingreso                 | obd_bluetooth
 kilometraje                    | 45210
-iniciada_en                    | 2026-08-25 06:59:24.436695+00
-cotizada_en                    | 2026-10-04 06:59:24.436695+00
-completada_en                  | 2026-10-04 06:59:24.436695+00
+iniciada_en                    | 2026-08-25 07:34:23.102594+00
+cotizada_en                    | 2026-10-04 07:34:23.102594+00
+completada_en                  | 2026-10-04 07:34:23.102594+00
 cancelada_en                   | 
 version                        | 3
-actualizado_en                 | 2026-10-04 06:59:24.436695+00
+actualizado_en                 | 2026-10-04 07:34:23.102594+00
 vehiculo_id_publico            | 
 vehiculo_patente               | 
 vehiculo_vin                   | 
@@ -183,35 +183,35 @@ vehiculo_anio                  |
 vehiculo_motor                 | 
 modelo_nombre                  | 
 marca_nombre                   | 
-usuario_id_publico             | 01d71831-820b-43a8-bd6f-6254a0b56fdf
+usuario_id_publico             | 39c07f9c-164a-40e3-b7bd-35eeeec0c857
 usuario_nombre                 | Diego Rojas
-dispositivo_id_publico         | 3061c15f-411b-4a58-bb06-26010e2c8d37
+dispositivo_id_publico         | 71027cc3-42ae-41a2-b854-ba29995067ab
 dispositivo_mac                | 00:1d:a5:68:98:8a
-cotizacion_vigente_id_publico  | fd815f8b-e589-42fa-843d-94f133b57d91
+cotizacion_vigente_id_publico  | b8957aaa-dd4a-49ee-b770-89c9c935d8d8
 cotizacion_vigente_total       | 122174
 cotizacion_borrador_id_publico | 
 
 -- q_repuestos_por_dtc(P0420) sin vehiculo, y para una Hilux 2016 (fuera de los rangos del Walker)
         componente_id_publico         | componente_nombre |              id_publico              |  perfil  |  marca  |           nombre            | codigo_fabricante | durabilidad_estimada_km | riesgo | precio_venta | moneda 
 --------------------------------------+-------------------+--------------------------------------+----------+---------+-----------------------------+-------------------+-------------------------+--------+--------------+--------
- 4788624b-b179-4e70-add5-2f2b8f1f8ae4 | Catalizador       | ca2e3d09-e0e4-45c2-b621-a7a7b062348a | genuino  | Toyota  | Catalizador Toyota          | 25051-0C011       |                  200000 | bajo   |       896987 | CLP
- 4788624b-b179-4e70-add5-2f2b8f1f8ae4 | Catalizador       | 73e8918f-5f6f-4c2e-91d3-840b31a77870 | oem      | Walker  | Catalizador Walker          | 16468             |                  160000 | medio  |       454987 | CLP
- 4788624b-b179-4e70-add5-2f2b8f1f8ae4 | Catalizador       | c15e50e6-4414-4bf6-bb19-b7753a7f8f39 | generico | Autolab | Catalizador universal       | GEN-CAT-01        |                   80000 | alto   |       194987 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | 19b7f4fc-c29e-4553-8cec-462543eeda1d | genuino  | Hyundai | Sensor de oxígeno Hyundai   | 39210-2B310       |                  150000 | bajo   |       129987 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | 43b52ace-fd29-4a05-9fac-a5e1be5b3462 | genuino  | Toyota  | Sensor de oxígeno Toyota    | 89465-0K240       |                  160000 | bajo   |       155987 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | b2143a9a-dcf7-488d-a49b-ea531da1417b | oem      | Bosch   | Sonda lambda Bosch          | 0258006537        |                  130000 | bajo   |        84487 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | d8f852a7-1454-4d1e-b44c-7af73485c72d | oem      | Denso   | Sensor de oxígeno Denso     | 234-4622          |                  130000 | bajo   |        88387 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | 586fa55d-8f5a-49ff-b270-f171b4c13fe0 | generico | Autolab | Sensor de oxígeno universal | GEN-O2-01         |                   60000 | medio  |        36387 | CLP
+ 96b825ee-de59-4fc1-a43a-4bc038bb46a9 | Catalizador       | 89c0c9b9-d1e6-4e32-9190-9d669d1c1230 | genuino  | Toyota  | Catalizador Toyota          | 25051-0C011       |                  200000 | bajo   |       896987 | CLP
+ 96b825ee-de59-4fc1-a43a-4bc038bb46a9 | Catalizador       | 127faf8f-c0c9-4558-a42b-ab5ef0a268a3 | oem      | Walker  | Catalizador Walker          | 16468             |                  160000 | medio  |       454987 | CLP
+ 96b825ee-de59-4fc1-a43a-4bc038bb46a9 | Catalizador       | 401ac0d6-61a8-49fe-ac85-fe9cf1784a34 | generico | Autolab | Catalizador universal       | GEN-CAT-01        |                   80000 | alto   |       194987 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | eec9048a-c752-4ce2-9be5-0a37c7049f43 | genuino  | Hyundai | Sensor de oxígeno Hyundai   | 39210-2B310       |                  150000 | bajo   |       129987 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | b25b0af2-2e6f-4d6a-9144-8f96d8990a62 | genuino  | Toyota  | Sensor de oxígeno Toyota    | 89465-0K240       |                  160000 | bajo   |       155987 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | 05cdae9b-9e86-4f5f-bb2d-9b2aeb135e9f | oem      | Bosch   | Sonda lambda Bosch          | 0258006537        |                  130000 | bajo   |        84487 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | 9fd2623c-d0bd-45f2-9f1e-1b3d09aa6171 | oem      | Denso   | Sensor de oxígeno Denso     | 234-4622          |                  130000 | bajo   |        88387 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | 90805676-c95d-4fd1-a740-bb7345f706c4 | generico | Autolab | Sensor de oxígeno universal | GEN-O2-01         |                   60000 | medio  |        36387 | CLP
 (8 rows)
 
         componente_id_publico         | componente_nombre |              id_publico              |  perfil  |  marca  |           nombre            | codigo_fabricante | durabilidad_estimada_km | riesgo | precio_venta | moneda 
 --------------------------------------+-------------------+--------------------------------------+----------+---------+-----------------------------+-------------------+-------------------------+--------+--------------+--------
- 4788624b-b179-4e70-add5-2f2b8f1f8ae4 | Catalizador       | ca2e3d09-e0e4-45c2-b621-a7a7b062348a | genuino  | Toyota  | Catalizador Toyota          | 25051-0C011       |                  200000 | bajo   |       896987 | CLP
- 4788624b-b179-4e70-add5-2f2b8f1f8ae4 | Catalizador       | c15e50e6-4414-4bf6-bb19-b7753a7f8f39 | generico | Autolab | Catalizador universal       | GEN-CAT-01        |                   80000 | alto   |       194987 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | 43b52ace-fd29-4a05-9fac-a5e1be5b3462 | genuino  | Toyota  | Sensor de oxígeno Toyota    | 89465-0K240       |                  160000 | bajo   |       155987 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | b2143a9a-dcf7-488d-a49b-ea531da1417b | oem      | Bosch   | Sonda lambda Bosch          | 0258006537        |                  130000 | bajo   |        84487 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | d8f852a7-1454-4d1e-b44c-7af73485c72d | oem      | Denso   | Sensor de oxígeno Denso     | 234-4622          |                  130000 | bajo   |        88387 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | 586fa55d-8f5a-49ff-b270-f171b4c13fe0 | generico | Autolab | Sensor de oxígeno universal | GEN-O2-01         |                   60000 | medio  |        36387 | CLP
+ 96b825ee-de59-4fc1-a43a-4bc038bb46a9 | Catalizador       | 89c0c9b9-d1e6-4e32-9190-9d669d1c1230 | genuino  | Toyota  | Catalizador Toyota          | 25051-0C011       |                  200000 | bajo   |       896987 | CLP
+ 96b825ee-de59-4fc1-a43a-4bc038bb46a9 | Catalizador       | 401ac0d6-61a8-49fe-ac85-fe9cf1784a34 | generico | Autolab | Catalizador universal       | GEN-CAT-01        |                   80000 | alto   |       194987 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | b25b0af2-2e6f-4d6a-9144-8f96d8990a62 | genuino  | Toyota  | Sensor de oxígeno Toyota    | 89465-0K240       |                  160000 | bajo   |       155987 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | 05cdae9b-9e86-4f5f-bb2d-9b2aeb135e9f | oem      | Bosch   | Sonda lambda Bosch          | 0258006537        |                  130000 | bajo   |        84487 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | 9fd2623c-d0bd-45f2-9f1e-1b3d09aa6171 | oem      | Denso   | Sensor de oxígeno Denso     | 234-4622          |                  130000 | bajo   |        88387 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | 90805676-c95d-4fd1-a740-bb7345f706c4 | generico | Autolab | Sensor de oxígeno universal | GEN-O2-01         |                   60000 | medio  |        36387 | CLP
 (6 rows)
 
 
@@ -219,21 +219,21 @@ cotizacion_borrador_id_publico |
 -- q_cotizaciones_sesion (Yaris: dos revisiones, vigente la segunda)
               id_publico              | numero_revision | vigente |          cerrada_en           | total  | moneda | version |           creado_en           | lineas | total_calculado 
 --------------------------------------+-----------------+---------+-------------------------------+--------+--------+---------+-------------------------------+--------+-----------------
- 156f1160-d47b-4020-8f65-0a00c2525574 |               2 | t       | 2026-10-04 06:59:24.436695+00 | 981474 | CLP    |       2 | 2026-10-04 06:59:24.436695+00 |      2 |          981474
- ed183402-ff98-4f73-84e7-518b18f394ba |               1 | f       | 2026-10-04 06:59:24.436695+00 | 279474 | CLP    |       3 | 2026-10-04 06:59:24.436695+00 |      2 |          279474
+ a7abad3e-5478-4b34-80f2-8325f1ac492f |               2 | t       | 2026-10-04 07:34:23.102594+00 | 981474 | CLP    |       2 | 2026-10-04 07:34:23.102594+00 |      2 |          981474
+ ec19ab47-8617-4840-9d79-60b294c27de5 |               1 | f       | 2026-10-04 07:34:23.102594+00 | 279474 | CLP    |       3 | 2026-10-04 07:34:23.102594+00 |      2 |          279474
 (2 rows)
 
 -- q_cotizacion_detalle (revision vigente)
          repuesto_id_publico          |  nombre_snapshot   | marca_snapshot | perfil_snapshot | cantidad | precio_unitario | subtotal | moneda 
 --------------------------------------+--------------------+----------------+-----------------+----------+-----------------+----------+--------
- ca2e3d09-e0e4-45c2-b621-a7a7b062348a | Catalizador Toyota | Toyota         | genuino         |        1 |          896987 |   896987 | CLP
- b2143a9a-dcf7-488d-a49b-ea531da1417b | Sonda lambda Bosch | Bosch          | oem             |        1 |           84487 |    84487 | CLP
+ 89c0c9b9-d1e6-4e32-9190-9d669d1c1230 | Catalizador Toyota | Toyota         | genuino         |        1 |          896987 |   896987 | CLP
+ 05cdae9b-9e86-4f5f-bb2d-9b2aeb135e9f | Sonda lambda Bosch | Bosch          | oem             |        1 |           84487 |    84487 | CLP
 (2 rows)
 
 -- q_cotizaciones_sesion (Morning: borrador sin total, con total_calculado)
               id_publico              | numero_revision | vigente | cerrada_en | total | moneda | version |           creado_en           | lineas | total_calculado 
 --------------------------------------+-----------------+---------+------------+-------+--------+---------+-------------------------------+--------+-----------------
- 565d4ab5-470e-4da5-926a-1765ccec0a48 |               1 | f       |            |       | CLP    |       1 | 2026-10-04 06:59:24.436695+00 |      2 |          124722
+ 86dcdae1-522a-4d4f-9b1d-f13e0f6a7fa9 |               1 | f       |            |       | CLP    |       1 | 2026-10-04 07:34:23.102594+00 |      2 |          124722
 (1 row)
 
 
@@ -265,47 +265,47 @@ moneda                       | CLP
 -- q_historial: el auditor ve todos los vehiculos, tambien el del titular bloqueado y el anonimizado (sin patente)
               id_publico              |   estado   |          iniciada_en          | metodo_ingreso | kilometraje | version |         vehiculo_id_publico          | vehiculo_patente | vehiculo_anio | modelo_nombre | marca_nombre | usuario_nombre | fallas | severidad_maxima | cotizacion_total | cotizacion_moneda 
 --------------------------------------+------------+-------------------------------+----------------+-------------+---------+--------------------------------------+------------------+---------------+---------------+--------------+----------------+--------+------------------+------------------+-------------------
- 1e0d62a0-20e9-4140-b8a7-6fdf9fac39be | completado | 2026-08-25 06:59:24.436695+00 | obd_bluetooth  |       45210 |       3 | c988f3dc-4587-49f3-b86f-31811eb3d3d3 | BCDF12           |          2019 | Accent        | Hyundai      | Diego Rojas    |      1 | media            |           122174 | CLP
- da3c96fb-b6cd-40fa-b465-a7ddbfdbc6f6 | completado | 2026-08-13 06:59:24.436695+00 | manual         |       61200 |       3 | 55426f00-4f99-4dc0-be57-2a0574191249 | GHJK34           |          2018 | Yaris         | Toyota       | Diego Rojas    |      2 | media            |           981474 | CLP
- ae5b5007-424e-47dd-a034-7e084e1cd16e | completado | 2026-08-05 06:59:24.487869+00 | obd_bluetooth  |       38900 |       3 | 1afbf3f2-f3d8-4ea7-937f-97b084277fec | JKLP43           |          2020 | Tucson        | Hyundai      | Paula Soto     |      1 | alta             |            62348 | CLP
- 85dc4b0b-f056-4b95-8f24-14c5eca0a0ad | completado | 2026-07-21 06:59:24.436695+00 | obd_bluetooth  |       84500 |       3 | eb5308e8-af29-4a71-a9c3-cbcb5bf37cb9 | LPRS56           |          2021 | Hilux         | Toyota       | Diego Rojas    |      2 | critica          |           118235 | CLP
+ f1505b27-2c5d-46a6-8b80-a6aeb91e6262 | completado | 2026-08-25 07:34:23.102594+00 | obd_bluetooth  |       45210 |       3 | b1024c1d-74c7-4880-9d7b-85c92375f993 | BCDF12           |          2019 | Accent        | Hyundai      | Diego Rojas    |      1 | media            |           122174 | CLP
+ 53906851-154a-4461-9df3-5c269d6cb638 | completado | 2026-08-13 07:34:23.102594+00 | manual         |       61200 |       3 | 2b33500d-8340-4b26-bfa4-0f4db36d476a | GHJK34           |          2018 | Yaris         | Toyota       | Diego Rojas    |      2 | media            |           981474 | CLP
+ 2f2d2d34-f981-4eb0-b18b-e6a4ef43a2b3 | completado | 2026-08-05 07:34:23.158158+00 | obd_bluetooth  |       38900 |       3 | 9b8392d7-4cbb-461e-ae2a-a32ecc141c1e | JKLP43           |          2020 | Tucson        | Hyundai      | Paula Soto     |      1 | alta             |            62348 | CLP
+ efb073fc-9837-438a-8b28-ad53d36fe8a9 | completado | 2026-07-21 07:34:23.102594+00 | obd_bluetooth  |       84500 |       3 | 3b695d88-ee84-4802-8f99-402dffe1371f | LPRS56           |          2021 | Hilux         | Toyota       | Diego Rojas    |      2 | critica          |           118235 | CLP
 (4 rows)
 
               id_publico              |  estado   |          iniciada_en          | metodo_ingreso | kilometraje | version |         vehiculo_id_publico          | vehiculo_patente | vehiculo_anio | modelo_nombre | marca_nombre | usuario_nombre | fallas | severidad_maxima | cotizacion_total | cotizacion_moneda 
 --------------------------------------+-----------+-------------------------------+----------------+-------------+---------+--------------------------------------+------------------+---------------+---------------+--------------+----------------+--------+------------------+------------------+-------------------
- 2da1fcf9-12e5-4162-9d14-df8431e08a4f | cancelado | 2026-09-06 06:59:24.487869+00 | manual         |       97400 |       3 | 13e72686-03a8-475c-865f-262727f84950 | YZBC90           |          2017 | Swift         | Suzuki       | Paula Soto     |      2 | media            |           116974 | CLP
- 93c667f0-b314-449a-ba7b-ad09335d4acb | cancelado | 2026-09-01 06:59:24.436695+00 | manual         |      112300 |       2 | f180cdab-6ad2-4513-9a11-5534f9ae1ccd |                  |          2016 | Sail          | Chevrolet    | Diego Rojas    |      1 | critica          |                  | 
+ da53df37-8edd-4c44-b5a6-8717d6f578cf | cancelado | 2026-09-06 07:34:23.158158+00 | manual         |       97400 |       3 | fe463619-6b1e-4558-8192-54ac13638ef9 | YZBC90           |          2017 | Swift         | Suzuki       | Paula Soto     |      2 | media            |           116974 | CLP
+ cb147a8e-3ab9-40c9-a6a3-6f81f3458634 | cancelado | 2026-09-01 07:34:23.102594+00 | manual         |      112300 |       2 | fb9b6bc9-8e57-4554-bc1a-3c5d938a8cdc |                  |          2016 | Sail          | Chevrolet    | Diego Rojas    |      1 | critica          |                  | 
 (2 rows)
 
 -- q_historial_estado_siguiente(completado, <cursor de la 2.a fila>, 10): la pagina siguiente del mismo estado
               id_publico              |   estado   |          iniciada_en          | metodo_ingreso | kilometraje | version |         vehiculo_id_publico          | vehiculo_patente | vehiculo_anio | modelo_nombre | marca_nombre | usuario_nombre | fallas | severidad_maxima | cotizacion_total | cotizacion_moneda 
 --------------------------------------+------------+-------------------------------+----------------+-------------+---------+--------------------------------------+------------------+---------------+---------------+--------------+----------------+--------+------------------+------------------+-------------------
- ae5b5007-424e-47dd-a034-7e084e1cd16e | completado | 2026-08-05 06:59:24.487869+00 | obd_bluetooth  |       38900 |       3 | 1afbf3f2-f3d8-4ea7-937f-97b084277fec | JKLP43           |          2020 | Tucson        | Hyundai      | Paula Soto     |      1 | alta             |            62348 | CLP
- 85dc4b0b-f056-4b95-8f24-14c5eca0a0ad | completado | 2026-07-21 06:59:24.436695+00 | obd_bluetooth  |       84500 |       3 | eb5308e8-af29-4a71-a9c3-cbcb5bf37cb9 | LPRS56           |          2021 | Hilux         | Toyota       | Diego Rojas    |      2 | critica          |           118235 | CLP
+ 2f2d2d34-f981-4eb0-b18b-e6a4ef43a2b3 | completado | 2026-08-05 07:34:23.158158+00 | obd_bluetooth  |       38900 |       3 | 9b8392d7-4cbb-461e-ae2a-a32ecc141c1e | JKLP43           |          2020 | Tucson        | Hyundai      | Paula Soto     |      1 | alta             |            62348 | CLP
+ efb073fc-9837-438a-8b28-ad53d36fe8a9 | completado | 2026-07-21 07:34:23.102594+00 | obd_bluetooth  |       84500 |       3 | 3b695d88-ee84-4802-8f99-402dffe1371f | LPRS56           |          2021 | Hilux         | Toyota       | Diego Rojas    |      2 | critica          |           118235 | CLP
 (2 rows)
 
 -- q_consentimientos_titular de un titular bloqueado (el auditor lo ve; sin datos de identidad)
       finalidad       | version_terminos | canal |          otorgado_en          | revocado_en 
 ----------------------+------------------+-------+-------------------------------+-------------
- contacto_seguimiento | v1.0             | web   | 2026-08-25 06:59:24.436695+00 | 
- prestacion_servicio  | v1.0             | web   | 2026-08-25 06:59:24.436695+00 | 
+ contacto_seguimiento | v1.0             | web   | 2026-08-25 07:34:23.102594+00 | 
+ prestacion_servicio  | v1.0             | web   | 2026-08-25 07:34:23.102594+00 | 
 (2 rows)
 
 -- q_solicitudes_derecho (sin identidad del titular)
               id_publico              |   tipo    |   estado   |          recibida_en          |          resuelta_en          |          titular_id_publico          | titular_estado_tratamiento | titular_bloqueado_hasta | usuario_responsable_nombre 
 --------------------------------------+-----------+------------+-------------------------------+-------------------------------+--------------------------------------+----------------------------+-------------------------+----------------------------
- 90e3d4a3-59b4-4279-b38b-250cf5e6cef0 | supresion | resuelta   | 2026-10-04 06:59:24.897318+00 | 2026-10-04 06:59:24.897318+00 | 864f85dd-ee9b-4394-b6b7-aaee25584095 | anonimizado                |                         | Carla Fuentes
- 168d23f1-5025-4e66-a652-a535ba0b2b1b | supresion | en_proceso | 2026-10-04 06:59:24.897318+00 |                               | 4b922e1a-2693-4bbb-a444-9c31c42d9267 | bloqueado                  | 2032-08-25              | Carla Fuentes
- 58bebc85-d906-4998-975c-df745c25694e | acceso    | recibida   | 2026-10-01 06:59:24.897318+00 |                               | 4085e020-96c0-4b95-b25d-1fd25dd91a46 | activo                     |                         | Carla Fuentes
+ f745b6b0-dfc9-4336-8e54-4039ad3720f6 | supresion | resuelta   | 2026-10-04 07:34:23.558001+00 | 2026-10-04 07:34:23.558001+00 | 52bba445-574f-419c-b235-8ed226d7dd09 | anonimizado                |                         | Carla Fuentes
+ 4eaccc79-4e62-4e3f-8e57-5ff14f42d743 | supresion | en_proceso | 2026-10-04 07:34:23.558001+00 |                               | ab9e3ea1-9d7b-4a09-ba00-24dbcf4ec16e | bloqueado                  | 2032-08-25              | Carla Fuentes
+ 87ce9136-75d8-4938-9d92-506e025ef732 | acceso    | recibida   | 2026-10-01 07:34:23.558001+00 |                               | 48673aba-9d76-4a35-bbda-1dc31037847d | activo                     |                         | Carla Fuentes
 (3 rows)
 
 -- q_auditoria(cotizacion, 4)
- id  |          ocurrido_en          | operacion |   tabla    | registro_id | resultado |       rol       |          usuario_id_publico          | usuario_nombre |   ip_origen   |       request_id       |                                                                                                                                                                                 datos_anteriores                                                                                                                                                                                 |                                                                                                                                                                                                  datos_nuevos                                                                                                                                                                                                   
------+-------------------------------+-----------+------------+-------------+-----------+-----------------+--------------------------------------+----------------+---------------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- 164 | 2026-10-04 06:59:24.500965+00 | UPDATE    | cotizacion |          11 | exito     | taller_mecanico | 25c96068-3cdd-4711-92cd-2249c5260f25 | Paula Soto     | 192.168.10.22 | semilla-03-mecanico-1b | {"id": 11, "total": null, "moneda": "CLP", "version": 1, "vigente": false, "creado_en": "2026-10-04T06:59:24.487869+00:00", "sesion_id": 11, "taller_id": 1, "cerrada_en": null, "id_publico": "6c7b0b6a-d221-4a8e-9832-16c684abd010", "actualizado_en": "2026-10-04T06:59:24.487869+00:00", "numero_revision": 1, "clave_idempotencia": "54a296ca-6a28-3ce9-780b-a638afdced3c"} | {"id": 11, "total": 129987, "moneda": "CLP", "version": 2, "vigente": true, "creado_en": "2026-10-04T06:59:24.487869+00:00", "sesion_id": 11, "taller_id": 1, "cerrada_en": "2026-10-04T06:59:24.487869+00:00", "id_publico": "6c7b0b6a-d221-4a8e-9832-16c684abd010", "actualizado_en": "2026-10-04T06:59:24.487869+00:00", "numero_revision": 1, "clave_idempotencia": "54a296ca-6a28-3ce9-780b-a638afdced3c"}
- 162 | 2026-10-04 06:59:24.500401+00 | INSERT    | cotizacion |          11 | exito     | taller_mecanico | 25c96068-3cdd-4711-92cd-2249c5260f25 | Paula Soto     | 192.168.10.22 | semilla-03-mecanico-1b |                                                                                                                                                                                                                                                                                                                                                                                  | {"id": 11, "total": null, "moneda": "CLP", "version": 1, "vigente": false, "creado_en": "2026-10-04T06:59:24.487869+00:00", "sesion_id": 11, "taller_id": 1, "cerrada_en": null, "id_publico": "6c7b0b6a-d221-4a8e-9832-16c684abd010", "actualizado_en": "2026-10-04T06:59:24.487869+00:00", "numero_revision": 1, "clave_idempotencia": "54a296ca-6a28-3ce9-780b-a638afdced3c"}
- 157 | 2026-10-04 06:59:24.498672+00 | UPDATE    | cotizacion |          10 | exito     | taller_mecanico | 25c96068-3cdd-4711-92cd-2249c5260f25 | Paula Soto     | 192.168.10.22 | semilla-03-mecanico-1b | {"id": 10, "total": null, "moneda": "CLP", "version": 1, "vigente": false, "creado_en": "2026-10-04T06:59:24.487869+00:00", "sesion_id": 10, "taller_id": 1, "cerrada_en": null, "id_publico": "446f61c7-033b-46bb-a6e7-ae0b09d774da", "actualizado_en": "2026-10-04T06:59:24.487869+00:00", "numero_revision": 1, "clave_idempotencia": "e64e44c7-adea-f383-5f12-c7d9cea062c7"} | {"id": 10, "total": 116974, "moneda": "CLP", "version": 2, "vigente": true, "creado_en": "2026-10-04T06:59:24.487869+00:00", "sesion_id": 10, "taller_id": 1, "cerrada_en": "2026-10-04T06:59:24.487869+00:00", "id_publico": "446f61c7-033b-46bb-a6e7-ae0b09d774da", "actualizado_en": "2026-10-04T06:59:24.487869+00:00", "numero_revision": 1, "clave_idempotencia": "e64e44c7-adea-f383-5f12-c7d9cea062c7"}
- 154 | 2026-10-04 06:59:24.497949+00 | INSERT    | cotizacion |          10 | exito     | taller_mecanico | 25c96068-3cdd-4711-92cd-2249c5260f25 | Paula Soto     | 192.168.10.22 | semilla-03-mecanico-1b |                                                                                                                                                                                                                                                                                                                                                                                  | {"id": 10, "total": null, "moneda": "CLP", "version": 1, "vigente": false, "creado_en": "2026-10-04T06:59:24.487869+00:00", "sesion_id": 10, "taller_id": 1, "cerrada_en": null, "id_publico": "446f61c7-033b-46bb-a6e7-ae0b09d774da", "actualizado_en": "2026-10-04T06:59:24.487869+00:00", "numero_revision": 1, "clave_idempotencia": "e64e44c7-adea-f383-5f12-c7d9cea062c7"}
+ id  |          ocurrido_en          | operacion |   tabla    | registro_id | resultado |   rol    | usuario_id_publico | usuario_nombre | ip_origen | request_id |                                                                                                                                                                                                datos_anteriores                                                                                                                                                                                                | datos_nuevos 
+-----+-------------------------------+-----------+------------+-------------+-----------+----------+--------------------+----------------+-----------+------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------
+ 764 | 2026-10-04 07:35:49.220334+00 | DELETE    | cotizacion |          72 | exito     | postgres |                    |                |           |            | {"id": 72, "total": 11687, "moneda": "CLP", "version": 2, "vigente": true, "creado_en": "2026-10-04T07:35:38.910885+00:00", "sesion_id": 80, "taller_id": 1, "cerrada_en": "2026-10-04T07:35:41.432943+00:00", "id_publico": "bee06db1-c42e-4760-84c0-cd23cd4ca09d", "actualizado_en": "2026-10-04T07:35:41.432943+00:00", "numero_revision": 1, "clave_idempotencia": "6579d3da-2b55-4a26-a0e3-6cf8e3e06c06"} | 
+ 763 | 2026-10-04 07:35:49.220209+00 | DELETE    | cotizacion |          76 | exito     | postgres |                    |                |           |            | {"id": 76, "total": null, "moneda": "CLP", "version": 1, "vigente": false, "creado_en": "2026-10-04T07:35:40.886988+00:00", "sesion_id": 77, "taller_id": 1, "cerrada_en": null, "id_publico": "96ef22a7-3462-4133-9c9f-c9580b0c354d", "actualizado_en": "2026-10-04T07:35:40.886988+00:00", "numero_revision": 1, "clave_idempotencia": "eeeeeeee-0000-4000-8000-000000000004"}                               | 
+ 762 | 2026-10-04 07:35:49.220094+00 | DELETE    | cotizacion |          75 | exito     | postgres |                    |                |           |            | {"id": 75, "total": null, "moneda": "CLP", "version": 1, "vigente": false, "creado_en": "2026-10-04T07:35:40.774162+00:00", "sesion_id": 76, "taller_id": 1, "cerrada_en": null, "id_publico": "61567091-4145-4073-8e90-c3dbb378f575", "actualizado_en": "2026-10-04T07:35:40.774162+00:00", "numero_revision": 1, "clave_idempotencia": "eeeeeeee-0000-4000-8000-000000000003"}                               | 
+ 761 | 2026-10-04 07:35:49.219955+00 | DELETE    | cotizacion |          68 | exito     | postgres |                    |                |           |            | {"id": 68, "total": 11687, "moneda": "CLP", "version": 2, "vigente": true, "creado_en": "2026-10-04T07:35:38.910885+00:00", "sesion_id": 74, "taller_id": 1, "cerrada_en": "2026-10-04T07:35:40.189021+00:00", "id_publico": "1040b8e0-86c3-42cf-9741-4a3f765d888f", "actualizado_en": "2026-10-04T07:35:40.189021+00:00", "numero_revision": 1, "clave_idempotencia": "0c5d0ac9-f1fd-4466-aa4a-8140949a41a7"} | 
 (4 rows)
 
 
@@ -313,27 +313,27 @@ moneda                       | CLP
 -- q_usuarios
               id_publico              |            email             |    nombre     |   rol    | activo |           creado_en           
 --------------------------------------+------------------------------+---------------+----------+--------+-------------------------------
- a28f3640-9799-4535-8577-31135c676659 | admin@losaromos.example      | Carla Fuentes | admin    | t      | 2026-10-04 06:59:23.713281+00
- 01d71831-820b-43a8-bd6f-6254a0b56fdf | mecanico1@losaromos.example  | Diego Rojas   | mecanico | t      | 2026-10-04 06:59:23.805347+00
- 35e00d94-3e02-466c-959a-f47c41b06134 | auditor@losaromos.example    | Marcela Vidal | auditor  | t      | 2026-10-04 06:59:23.805347+00
- 25c96068-3cdd-4711-92cd-2249c5260f25 | mecanico2@losaromos.example  | Paula Soto    | mecanico | t      | 2026-10-04 06:59:23.805347+00
- f8c2235b-c7f1-473e-b7b6-3452cebf644d | exmecanico@losaromos.example | Hugo Pino     | mecanico | f      | 2026-10-04 06:59:23.805347+00
+ a55a5ae6-b020-44ad-9f1b-70b18d4a70ee | admin@losaromos.example      | Carla Fuentes | admin    | t      | 2026-10-04 07:34:22.359206+00
+ 39c07f9c-164a-40e3-b7bd-35eeeec0c857 | mecanico1@losaromos.example  | Diego Rojas   | mecanico | t      | 2026-10-04 07:34:22.45332+00
+ 0f96e4f1-72bf-4699-9278-c5c625992e57 | auditor@losaromos.example    | Marcela Vidal | auditor  | t      | 2026-10-04 07:34:22.45332+00
+ e3d7583e-5f7e-43d1-b32c-953e5a80abeb | mecanico2@losaromos.example  | Paula Soto    | mecanico | t      | 2026-10-04 07:34:22.45332+00
+ e011bddd-66c4-4b2e-9ca8-876dc6f7e796 | exmecanico@losaromos.example | Hugo Pino     | mecanico | f      | 2026-10-04 07:34:22.45332+00
 (5 rows)
 
 -- q_dispositivos
-              id_publico              |        mac        |  estado  | fabricante |   modelo    | firmware |        actualizado_en         
---------------------------------------+-------------------+----------+------------+-------------+----------+-------------------------------
- 3061c15f-411b-4a58-bb06-26010e2c8d37 | 00:1d:a5:68:98:8a | activo   | OBDLink    | MX+         | 5.6.19   | 2026-10-04 06:59:23.805347+00
- ad82f6a1-cc5f-47c9-af62-216ba365c517 | 00:1d:a5:00:12:34 | inactivo | Vgate      | iCar Pro    | 2.3      | 2026-10-04 06:59:23.805347+00
- 6231114f-205c-4437-8adf-18335293e24d | 66:1e:10:0f:aa:01 | baja     | ELM        | ELM327 v1.5 |          | 2026-10-04 06:59:23.805347+00
+              id_publico              |        mac        |  estado  | fabricante |   modelo    | firmware |        actualizado_en        
+--------------------------------------+-------------------+----------+------------+-------------+----------+------------------------------
+ 71027cc3-42ae-41a2-b854-ba29995067ab | 00:1d:a5:68:98:8a | activo   | OBDLink    | MX+         | 5.6.19   | 2026-10-04 07:34:22.45332+00
+ 7afa8585-a649-4012-beda-7856b990b7d7 | 00:1d:a5:00:12:34 | inactivo | Vgate      | iCar Pro    | 2.3      | 2026-10-04 07:34:22.45332+00
+ 3877f539-0717-4d6f-a8f8-cf8e544f623d | 66:1e:10:0f:aa:01 | baja     | ELM        | ELM327 v1.5 |          | 2026-10-04 07:34:22.45332+00
 (3 rows)
 
 -- q_auditoria(titular, 3): sin nombre, telefono, email ni HMAC
  id  |          ocurrido_en          | operacion |  tabla  | registro_id | resultado |       rol       |          usuario_id_publico          | usuario_nombre |   ip_origen   |       request_id       |                                                                                                                            datos_anteriores                                                                                                                             |                                                                                                                                                datos_nuevos                                                                                                                                                
 -----+-------------------------------+-----------+---------+-------------+-----------+-----------------+--------------------------------------+----------------+---------------+------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- 200 | 2026-10-04 06:59:24.905199+00 | UPDATE    | titular |           4 | exito     | taller_admin    | a28f3640-9799-4535-8577-31135c676659 | Carla Fuentes  | 192.168.10.2  | semilla-04-derechos    | {"id": 4, "creado_en": "2026-10-04T06:59:24.436695+00:00", "taller_id": 1, "id_publico": "864f85dd-ee9b-4394-b6b7-aaee25584095", "actualizado_en": "2026-10-04T06:59:24.436695+00:00", "anonimizado_en": null, "bloqueado_hasta": null, "estado_tratamiento": "activo"} | {"id": 4, "creado_en": "2026-10-04T06:59:24.436695+00:00", "taller_id": 1, "id_publico": "864f85dd-ee9b-4394-b6b7-aaee25584095", "actualizado_en": "2026-10-04T06:59:24.897318+00:00", "anonimizado_en": "2026-10-04T06:59:24.897318+00:00", "bloqueado_hasta": null, "estado_tratamiento": "anonimizado"}
- 198 | 2026-10-04 06:59:24.904158+00 | UPDATE    | titular |           3 | exito     | taller_admin    | a28f3640-9799-4535-8577-31135c676659 | Carla Fuentes  | 192.168.10.2  | semilla-04-derechos    | {"id": 3, "creado_en": "2026-10-04T06:59:24.436695+00:00", "taller_id": 1, "id_publico": "4b922e1a-2693-4bbb-a444-9c31c42d9267", "actualizado_en": "2026-10-04T06:59:24.436695+00:00", "anonimizado_en": null, "bloqueado_hasta": null, "estado_tratamiento": "activo"} | {"id": 3, "creado_en": "2026-10-04T06:59:24.436695+00:00", "taller_id": 1, "id_publico": "4b922e1a-2693-4bbb-a444-9c31c42d9267", "actualizado_en": "2026-10-04T06:59:24.897318+00:00", "anonimizado_en": null, "bloqueado_hasta": "2032-08-25", "estado_tratamiento": "bloqueado"}
- 140 | 2026-10-04 06:59:24.488694+00 | INSERT    | titular |           5 | exito     | taller_mecanico | 25c96068-3cdd-4711-92cd-2249c5260f25 | Paula Soto     | 192.168.10.22 | semilla-03-mecanico-1b |                                                                                                                                                                                                                                                                         | {"id": 5, "creado_en": "2026-10-04T06:59:24.487869+00:00", "taller_id": 1, "id_publico": "25da9e32-ceed-4a2d-abdc-503c7c8ab811", "actualizado_en": "2026-10-04T06:59:24.487869+00:00", "anonimizado_en": null, "bloqueado_hasta": null, "estado_tratamiento": "activo"}
+ 200 | 2026-10-04 07:34:23.565986+00 | UPDATE    | titular |           4 | exito     | taller_admin    | a55a5ae6-b020-44ad-9f1b-70b18d4a70ee | Carla Fuentes  | 192.168.10.2  | semilla-04-derechos    | {"id": 4, "creado_en": "2026-10-04T07:34:23.102594+00:00", "taller_id": 1, "id_publico": "52bba445-574f-419c-b235-8ed226d7dd09", "actualizado_en": "2026-10-04T07:34:23.102594+00:00", "anonimizado_en": null, "bloqueado_hasta": null, "estado_tratamiento": "activo"} | {"id": 4, "creado_en": "2026-10-04T07:34:23.102594+00:00", "taller_id": 1, "id_publico": "52bba445-574f-419c-b235-8ed226d7dd09", "actualizado_en": "2026-10-04T07:34:23.558001+00:00", "anonimizado_en": "2026-10-04T07:34:23.558001+00:00", "bloqueado_hasta": null, "estado_tratamiento": "anonimizado"}
+ 198 | 2026-10-04 07:34:23.564958+00 | UPDATE    | titular |           3 | exito     | taller_admin    | a55a5ae6-b020-44ad-9f1b-70b18d4a70ee | Carla Fuentes  | 192.168.10.2  | semilla-04-derechos    | {"id": 3, "creado_en": "2026-10-04T07:34:23.102594+00:00", "taller_id": 1, "id_publico": "ab9e3ea1-9d7b-4a09-ba00-24dbcf4ec16e", "actualizado_en": "2026-10-04T07:34:23.102594+00:00", "anonimizado_en": null, "bloqueado_hasta": null, "estado_tratamiento": "activo"} | {"id": 3, "creado_en": "2026-10-04T07:34:23.102594+00:00", "taller_id": 1, "id_publico": "ab9e3ea1-9d7b-4a09-ba00-24dbcf4ec16e", "actualizado_en": "2026-10-04T07:34:23.558001+00:00", "anonimizado_en": null, "bloqueado_hasta": "2032-08-25", "estado_tratamiento": "bloqueado"}
+ 140 | 2026-10-04 07:34:23.158919+00 | INSERT    | titular |           5 | exito     | taller_mecanico | e3d7583e-5f7e-43d1-b32c-953e5a80abeb | Paula Soto     | 192.168.10.22 | semilla-03-mecanico-1b |                                                                                                                                                                                                                                                                         | {"id": 5, "creado_en": "2026-10-04T07:34:23.158158+00:00", "taller_id": 1, "id_publico": "72c86f77-69bb-466e-b424-2f71dc504c32", "actualizado_en": "2026-10-04T07:34:23.158158+00:00", "anonimizado_en": null, "bloqueado_hasta": null, "estado_tratamiento": "activo"}
 (3 rows)
 
 
@@ -341,22 +341,22 @@ moneda                       | CLP
 -- q_configuracion: su taller, margen 45,5 %
               id_publico              |          nombre           | moneda |  tema  | margen_pct | retencion_anios |        actualizado_en         
 --------------------------------------+---------------------------+--------+--------+------------+-----------------+-------------------------------
- 87cd81c4-dff7-4282-8918-8d076080dfc2 | Servicio Automotriz Ñuble | CLP    | oscuro |      45.50 |               6 | 2026-10-04 06:59:23.981422+00
+ a2dea0f6-27bf-471c-93ba-80cfbe2c6694 | Servicio Automotriz Ñuble | CLP    | oscuro |      45.50 |               6 | 2026-10-04 07:34:22.630065+00
 (1 row)
 
 -- q_historial: solo sus 4 sesiones
               id_publico              |   estado   |          iniciada_en          | metodo_ingreso | kilometraje | version |         vehiculo_id_publico          | vehiculo_patente | vehiculo_anio | modelo_nombre | marca_nombre | usuario_nombre  | fallas | severidad_maxima | cotizacion_total | cotizacion_moneda 
 --------------------------------------+------------+-------------------------------+----------------+-------------+---------+--------------------------------------+------------------+---------------+---------------+--------------+-----------------+--------+------------------+------------------+-------------------
- 3809788f-3b0a-4167-b4d2-4851264544dd | pendiente  | 2026-10-04 01:59:24.504887+00 | manual         |      157050 |       1 | b7b61bca-0a1f-476f-8b5b-96eb80b906ec | HJKL65           |          2014 | Spark         | Chevrolet    | Valentina Muñoz |      1 | critica          |                  | 
- 5cee7a7c-271e-4779-8ed3-5ed1b6e405ef | pendiente  | 2026-09-30 06:59:24.504887+00 | obd_bluetooth  |       31800 |       1 | 371c91c5-6bce-4182-8a44-98cd37c54da9 | PRST09           |          2022 | Versa         | Nissan       | Valentina Muñoz |      1 | media            |                  | 
- baba2a2d-4c3e-447e-8564-624f19e6f6fc | cotizado   | 2026-09-19 06:59:24.504887+00 | manual         |      156200 |       2 | b7b61bca-0a1f-476f-8b5b-96eb80b906ec | HJKL65           |          2014 | Spark         | Chevrolet    | Valentina Muñoz |      1 | alta             |           174570 | CLP
- ffb3951c-d5cc-4981-a9e1-2daeb25f5e96 | completado | 2026-08-20 06:59:24.504887+00 | obd_bluetooth  |      128400 |       3 | 0a765c81-8cd2-4fa9-aa10-50ba90a77b34 | BCDF12           |          2019 | Hilux         | Toyota       | Valentina Muñoz |      2 | media            |           436470 | CLP
+ b504e711-fb4f-48fd-bcbe-05c7dcbb5eb8 | pendiente  | 2026-10-04 02:34:23.175835+00 | manual         |      157050 |       1 | daf79ec0-b7cb-4fa2-8ead-db9c4b91b74e | HJKL65           |          2014 | Spark         | Chevrolet    | Valentina Muñoz |      1 | critica          |                  | 
+ cefeeba8-966c-40ca-aebb-920b98fc9430 | pendiente  | 2026-09-30 07:34:23.175835+00 | obd_bluetooth  |       31800 |       1 | 89638e89-e5bf-4fa4-bbe2-45d11189df39 | PRST09           |          2022 | Versa         | Nissan       | Valentina Muñoz |      1 | media            |                  | 
+ 82133fdf-b5fb-4f5b-94d2-698f1708caea | cotizado   | 2026-09-19 07:34:23.175835+00 | manual         |      156200 |       2 | daf79ec0-b7cb-4fa2-8ead-db9c4b91b74e | HJKL65           |          2014 | Spark         | Chevrolet    | Valentina Muñoz |      1 | alta             |           174570 | CLP
+ bb32742b-e07b-4a17-94b3-76c2aea9f430 | completado | 2026-08-20 07:34:23.175835+00 | obd_bluetooth  |      128400 |       3 | 7b2ff779-4aa4-48b1-93f9-ca6ee569acb9 | BCDF12           |          2019 | Hilux         | Toyota       | Valentina Muñoz |      2 | media            |           436470 | CLP
 (4 rows)
 
 -- q_buscar_vehiculo_patente(BCDF12): SU Hilux, no el Accent del taller 1
               id_publico              | patente |        vin        | anio |   motor    |          modelo_id_publico           | modelo_nombre | marca_nombre |          titular_id_publico          |   titular_nombre   |       ultima_sesion_en        
 --------------------------------------+---------+-------------------+------+------------+--------------------------------------+---------------+--------------+--------------------------------------+--------------------+-------------------------------
- 0a765c81-8cd2-4fa9-aa10-50ba90a77b34 | BCDF12  | 8AJHA3CD2K2123456 | 2019 | 2.8 Diésel | 3a23a31b-5c71-413a-8558-1dd50d53334d | Hilux         | Toyota       | 7a19dde7-4d76-47af-b4cc-9a9314c879df | Pedro Aguilar Ríos | 2026-08-20 06:59:24.504887+00
+ 7b2ff779-4aa4-48b1-93f9-ca6ee569acb9 | BCDF12  | 8AJHA3CD2K2123456 | 2019 | 2.8 Diésel | b18092b2-c6ca-4df0-862d-5975ef99fb06 | Hilux         | Toyota       | 7306f5be-04e4-4f91-978e-5609a83bafc5 | Pedro Aguilar Ríos | 2026-08-20 07:34:23.175835+00
 (1 row)
 
 -- sentencias con ids publicos del taller 1: cero filas
@@ -375,14 +375,14 @@ moneda                       | CLP
 -- q_repuestos_por_dtc(P0420): mismo catalogo, precio con SU margen
         componente_id_publico         | componente_nombre |              id_publico              |  perfil  |  marca  |           nombre            | codigo_fabricante | durabilidad_estimada_km | riesgo | precio_venta | moneda 
 --------------------------------------+-------------------+--------------------------------------+----------+---------+-----------------------------+-------------------+-------------------------+--------+--------------+--------
- 4788624b-b179-4e70-add5-2f2b8f1f8ae4 | Catalizador       | ca2e3d09-e0e4-45c2-b621-a7a7b062348a | genuino  | Toyota  | Catalizador Toyota          | 25051-0C011       |                  200000 | bajo   |      1003935 | CLP
- 4788624b-b179-4e70-add5-2f2b8f1f8ae4 | Catalizador       | 73e8918f-5f6f-4c2e-91d3-840b31a77870 | oem      | Walker  | Catalizador Walker          | 16468             |                  160000 | medio  |       509235 | CLP
- 4788624b-b179-4e70-add5-2f2b8f1f8ae4 | Catalizador       | c15e50e6-4414-4bf6-bb19-b7753a7f8f39 | generico | Autolab | Catalizador universal       | GEN-CAT-01        |                   80000 | alto   |       218235 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | 19b7f4fc-c29e-4553-8cec-462543eeda1d | genuino  | Hyundai | Sensor de oxígeno Hyundai   | 39210-2B310       |                  150000 | bajo   |       145485 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | 43b52ace-fd29-4a05-9fac-a5e1be5b3462 | genuino  | Toyota  | Sensor de oxígeno Toyota    | 89465-0K240       |                  160000 | bajo   |       174585 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | b2143a9a-dcf7-488d-a49b-ea531da1417b | oem      | Bosch   | Sonda lambda Bosch          | 0258006537        |                  130000 | bajo   |        94560 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | d8f852a7-1454-4d1e-b44c-7af73485c72d | oem      | Denso   | Sensor de oxígeno Denso     | 234-4622          |                  130000 | bajo   |        98925 | CLP
- ae92188e-e48c-4d0e-963a-898a93011e4e | Sensor de oxígeno | 586fa55d-8f5a-49ff-b270-f171b4c13fe0 | generico | Autolab | Sensor de oxígeno universal | GEN-O2-01         |                   60000 | medio  |        40725 | CLP
+ 96b825ee-de59-4fc1-a43a-4bc038bb46a9 | Catalizador       | 89c0c9b9-d1e6-4e32-9190-9d669d1c1230 | genuino  | Toyota  | Catalizador Toyota          | 25051-0C011       |                  200000 | bajo   |      1003935 | CLP
+ 96b825ee-de59-4fc1-a43a-4bc038bb46a9 | Catalizador       | 127faf8f-c0c9-4558-a42b-ab5ef0a268a3 | oem      | Walker  | Catalizador Walker          | 16468             |                  160000 | medio  |       509235 | CLP
+ 96b825ee-de59-4fc1-a43a-4bc038bb46a9 | Catalizador       | 401ac0d6-61a8-49fe-ac85-fe9cf1784a34 | generico | Autolab | Catalizador universal       | GEN-CAT-01        |                   80000 | alto   |       218235 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | eec9048a-c752-4ce2-9be5-0a37c7049f43 | genuino  | Hyundai | Sensor de oxígeno Hyundai   | 39210-2B310       |                  150000 | bajo   |       145485 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | b25b0af2-2e6f-4d6a-9144-8f96d8990a62 | genuino  | Toyota  | Sensor de oxígeno Toyota    | 89465-0K240       |                  160000 | bajo   |       174585 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | 05cdae9b-9e86-4f5f-bb2d-9b2aeb135e9f | oem      | Bosch   | Sonda lambda Bosch          | 0258006537        |                  130000 | bajo   |        94560 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | 9fd2623c-d0bd-45f2-9f1e-1b3d09aa6171 | oem      | Denso   | Sensor de oxígeno Denso     | 234-4622          |                  130000 | bajo   |        98925 | CLP
+ c2b664a5-72a7-443e-af8f-2310ba6abee2 | Sensor de oxígeno | 90805676-c95d-4fd1-a740-bb7345f706c4 | generico | Autolab | Sensor de oxígeno universal | GEN-O2-01         |                   60000 | medio  |        40725 | CLP
 (8 rows)
 
 

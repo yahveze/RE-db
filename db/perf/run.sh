@@ -28,7 +28,7 @@ base_perf="${POSTGRES_DB}_perf"
 
 psql_perf() {
   docker compose exec -T -e CLAVE_DEMO db sh -c '
-    exec psql -X -q -v ON_ERROR_STOP=1 \
+    PGPASSWORD="$POSTGRES_PASSWORD" exec psql -X -q -v ON_ERROR_STOP=1 \
       -U "$POSTGRES_USER" -d "${POSTGRES_DB}_perf" \
       -v clave_demo="$CLAVE_DEMO" \
       "$@"' sh "$@"
@@ -40,6 +40,8 @@ if [ "$(psql_super -At -c "SELECT count(*) FROM taller")" = "0" ]; then
 fi
 
 eliminar() {
+  # medir.sql ejecuta EXPLAIN de q_login con la clave de demostracion literal.
+  vaciar_estadisticas_sentencias || true
   if [ "${PERF_CONSERVAR:-0}" = "1" ]; then
     echo "perf: se conserva la base $base_perf (PERF_CONSERVAR=1)"
   else
@@ -63,9 +65,12 @@ psql_perf \
   -f /db/perf/volumen.sql > "$RAIZ/docs/evidencia/fase5_volumen.tmp" 2>&1
 echo "perf: volumen cargado en $((SECONDS - inicio)) s"
 
-# PARALLEL 0: el /dev/shm por defecto del contenedor (64 MB) no alcanza para el
-# vacuum paralelo de indices grandes.
-psql_perf -c "VACUUM (ANALYZE, PARALLEL 0)"
+# VACUUM paralelo: posible desde que el contenedor tiene shm_size 256 MB (T-51);
+# con los 64 MB por defecto de Docker fallaba y habia que usar PARALLEL 0.
+psql_perf -c "VACUUM (ANALYZE, VERBOSE)" > "$RAIZ/docs/evidencia/fase5_vacuum.tmp" 2>&1
+echo "perf: VACUUM (ANALYZE) terminado; lanzamientos de procesos paralelos: $(grep -c 'parallel vacuum worker' "$RAIZ/docs/evidencia/fase5_vacuum.tmp" || true)"
+{ grep 'parallel vacuum worker' "$RAIZ/docs/evidencia/fase5_vacuum.tmp" || true; } | sort | uniq -c | sed 's/^/perf:   /'
+rm -f "$RAIZ/docs/evidencia/fase5_vacuum.tmp"
 psql_perf -c "SELECT pg_stat_reset()" >/dev/null
 
 cabecera() {

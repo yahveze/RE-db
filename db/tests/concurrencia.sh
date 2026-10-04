@@ -20,12 +20,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/../scripts/_lib.sh"
 
 dir="$(mktemp -d)"
 
-# psql como app_backend_user, por el socket local del contenedor. El guion SQL
-# llega por la entrada estandar.
-psql_backend() {
-  docker compose exec -T db sh -c '
-    exec psql -X -q -At -v ON_ERROR_STOP=0 -U app_backend_user -d "$POSTGRES_DB" "$@"' sh "$@"
-}
+# psql_backend (db/scripts/_lib.sh): psql como app_backend_user, con su clave,
+# por el socket local del contenedor. El guion SQL llega por la entrada estandar.
 
 limpiar() {
   psql_super -At <<'SQL' >/dev/null

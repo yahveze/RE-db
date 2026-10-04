@@ -22,4 +22,6 @@ for archivo in "${archivos[@]}"; do
   echo "==> $nombre"
   psql_super -f "/db/seeds/$nombre"
 done
+# Las semillas envian la clave de demostracion como literal.
+vaciar_estadisticas_sentencias
 echo "seed: ${#archivos[@]} archivos cargados"

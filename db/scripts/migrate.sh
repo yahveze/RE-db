@@ -25,4 +25,6 @@ for archivo in "${archivos[@]}"; do
     psql_super --single-transaction -c "SET ROLE app_owner" -f "/db/migrations/$nombre"
   fi
 done
+# V000 envia la clave del backend como literal (CREATE ROLE ... PASSWORD).
+vaciar_estadisticas_sentencias
 echo "migrate: ${#archivos[@]} migraciones aplicadas"

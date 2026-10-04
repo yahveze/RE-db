@@ -200,4 +200,6 @@ que el administrador pueda leer la bitácora de su taller en 0,08 ms.
   particionado por fecha y la política de retención son **[AVANZADA]** y se tratan en la Fase 6.
 - **Ajuste del servidor.** No se modificó ningún parámetro. El `/dev/shm` de 64 MB del contenedor impidió
   el `VACUUM` paralelo (se ejecuta con `PARALLEL 0`); es un límite del entorno Docker, no del esquema
-  (tema T-51).
+  (tema T-51). **Resuelto en la Fase 6:** el contenedor tiene `shm_size: 256mb` y `db/perf/run.sh` volvió a
+  usar el `VACUUM` paralelo sobre el mismo volumen (`docs/evidencia/fase6_perf.txt`). Las cifras de este
+  documento son las de la corrida de la Fase 5 y no se regeneraron.
