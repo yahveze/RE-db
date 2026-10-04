@@ -107,4 +107,5 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
 
 ## Estado
 
-- Fase 0 completa. Siguiente: Fase 1 (modelo y normalización, en `docs/modelo/`).
+- Fases 0 y 1 completas. Modelo en `docs/modelo/` (01 dominio y reglas RN-xx, 02 conceptual, 03 lógico, 04 normalización).
+- Siguiente: Fase 2 (migraciones V000–V008). El modelo lógico de `docs/modelo/03_modelo_logico.md` es la especificación a implementar.

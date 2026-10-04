@@ -1,7 +1,8 @@
 # Decisiones de diseño — Repuestos Exactos (Fase 0)
 
-> Estado: **Fase 0 cerrada, esperando revisión.** Nada de este documento está implementado en SQL todavía;
-> las migraciones se escriben en la Fase 2. Lo único ejecutado es el entorno (ver sección 5).
+> Estado: **Fase 0 aprobada; Fase 1 cerrada, esperando revisión** (ver sección 6). Nada de este documento
+> está implementado en SQL todavía; las migraciones se escriben en la Fase 2. Lo ejecutado hasta ahora es
+> el entorno (sección 5) y experimentos reversibles que respaldan el modelo (`docs/evidencia/`).
 
 Clasificación usada: **[OBLIGATORIA]** la exige el enunciado o la integridad del modelo ·
 **[RECOMENDADA]** se implementa porque el costo es bajo y el beneficio defendible ·
@@ -221,3 +222,83 @@ Evidencia en `docs/evidencia/fase0_entorno.txt` y `docs/evidencia/fase0_experime
 | `ON_ERROR_STOP` | un error detiene la ejecución con código 1 |
 
 **No verificado:** la ejecución literal de `make` (T-1) y `make perf` (`db/perf/run.sh` se crea en la Fase 5).
+
+---
+
+## 6. Resolución de temas y novedades de la Fase 1
+
+### 6.1 Temas de la Fase 0
+
+| Tema | Resolución |
+|---|---|
+| T-7, T-8, T-9, T-11, T-17 | **Aprobados explícitamente** por el usuario, con la propuesta indicada en cada uno |
+| Columnas enmascaradas adicionales (decisión abierta d) | **Aprobadas** |
+| T-2, T-3, T-4 (desviaciones de entorno) | **Aceptadas** |
+| T-1 (`make`) | Sin instalar: se sigue verificando con los scripts. Queda pendiente para la evidencia de `make all` en la Fase 7 |
+| T-5, T-6, T-10, T-12 a T-16, T-18 a T-22 | Sin objeción: se aplica la propuesta |
+
+### 6.2 Temas nuevos surgidos al modelar
+
+Mismo criterio: si no dices nada, aplico la propuesta. ⚠ marca lo que conviene que leas antes de la Fase 2.
+
+**T-23 ⚠ "Normalizada hasta BCNF" necesita un matiz para la defensa.**
+Al escribir las dependencias funcionales tabla por tabla, el `taller_id` propagado (decisión 1) resulta ser
+una violación formal: de **2FN** en `falla_sesion` y `cotizacion_detalle` (depende de parte de la clave),
+de 3FN en `sesion_diagnostico`, `consentimiento_titular` y `solicitud_derecho_titular`, y de BCNF en
+`cotizacion`. Además `precio_unitario`, `estado` y `estado_tratamiento` son atributos derivables (3FN).
+No reabro la decisión: `docs/modelo/04_normalizacion.md` §4.5 declara cada desviación, la forma que
+incumple y la restricción que impide la inconsistencia. Lo señalo porque la formulación defendible es
+"BCNF con desviaciones deliberadas y protegidas", no "todo en BCNF".
+
+**T-24 `cotizacion_detalle` con PK compuesta `(cotizacion_id, repuesto_id)`.**
+Es una tabla de enlace cotización ↔ repuesto, así que sigue la convención de PK natural: un repuesto aparece
+una vez por cotización y la repetición se expresa con `cantidad`. Alternativa: `id` propio, si se quisieran
+dos líneas del mismo repuesto (por ejemplo, con precios distintos), lo que hoy no es un requisito.
+
+**T-25 Valores de enums y de `canal` que el enunciado no lista.**
+`tipo_finalidad_tratamiento`: `prestacion_servicio`, `contacto_seguimiento`, `marketing`.
+`tipo_estado_solicitud`: `recibida`, `en_proceso`, `resuelta`, `rechazada`.
+`consentimiento_titular.canal`: texto con CHECK en `presencial`, `app`, `web`, `telefono`.
+Son propuestas mínimas; cambiarlas no altera la estructura.
+
+**T-26 CHECK con la fórmula del precio unitario** *(verificado, `fase1_experimentos.txt` E5)*.
+`precio_unitario = ROUND(precio_referencia_snapshot * (1 + margen_pct_snapshot / 100))` como CHECK de
+`cotizacion_detalle`, además del trigger que lo calcula. Consecuencia: si algún día cambia la regla de
+redondeo, hay que reemplazar el CHECK (el nuevo como `NOT VALID` para no invalidar las filas históricas).
+
+**T-27 La sesión queda a nombre de quien la crea (RN-25).**
+La política RLS de inserción exige `usuario_id = app.usuario_id`. El enunciado dice "usuario mecánico" pero
+una FK no puede exigir un rol; con esto, más el hecho de que solo `taller_mecanico` tiene `INSERT`, la regla
+queda cubierta sin trigger.
+
+**T-28 Columnas que no agregué por no inventar requisitos.**
+`solicitud_derecho_titular` no tiene campo de observaciones (texto libre con riesgo de datos personales que
+acabarían en la auditoría); `cotizacion` no tiene "creada por" (lo registra la auditoría);
+`sesion_diagnostico` no tiene `creado_en` (es `iniciada_en`). Si necesitas alguna, dímelo.
+
+**T-29 Rangos de compatibilidad solapados.**
+La PK `(repuesto_id, modelo_vehiculo_id, anio_desde)` admite rangos disjuntos pero no impide solapados
+(2015–2020 y 2018–2022). Impedirlo requiere `EXCLUDE` con `btree_gist` → **[AVANZADA]**. La matriz usa
+`EXISTS`, así que un solapamiento no duplica resultados.
+
+**T-30 Normalización a mayúsculas de la patente.**
+Los CHECK rechazan minúsculas *(verificado, E7)* en lugar de convertirlas: la API normaliza y la BD
+garantiza. Alternativa: un trigger que aplique `upper()`, que oculta errores del cliente; no lo propongo.
+
+### 6.3 Verificación de la Fase 1
+
+La fase es documental, pero las afirmaciones estructurales del modelo lógico se comprobaron en el motor
+(`docs/evidencia/fase1_experimentos.txt`, transacción con `ROLLBACK`):
+
+| Afirmación | Resultado |
+|---|---|
+| La FK compuesta exige `UNIQUE (id, taller_id)` en el padre | sin ella: `there is no unique constraint matching given keys` |
+| Una referencia cruzada entre talleres es imposible | rechazada por la FK |
+| `MATCH SIMPLE`: con la columna anulable en `NULL` la FK no se evalúa | inserción aceptada |
+| No se puede cambiar el `taller_id` de un padre con hijos | rechazado por la FK |
+| CHECK de la fórmula de precio | acepta el valor calculado, rechaza uno manipulado |
+| Una vigente y un borrador por sesión; vigente solo si cerrada; total solo si cerrada | las cuatro violaciones rechazadas |
+| `macaddr` normaliza y valida; regex de patente, VIN y DTC | casos válidos e inválidos según lo esperado |
+
+**No verificado:** los diagramas Mermaid no se renderizaron (no hay herramienta instalada para hacerlo);
+la sintaxis se revisó a mano. Conviene abrir `docs/modelo/02_modelo_conceptual.md` en un visor.

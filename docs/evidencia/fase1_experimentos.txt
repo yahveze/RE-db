@@ -1,0 +1,107 @@
+== Experimentos de la Fase 1: afirmaciones del modelo logico (transaccion con ROLLBACK) ==
+BEGIN
+CREATE TABLE
+CREATE TABLE
+INSERT 0 2
+INSERT 0 2
+
+-- E1: la FK compuesta exige una restriccion unica exacta sobre (id, taller_id) (se espera error)
+SAVEPOINT
+ERROR:  there is no unique constraint matching given keys for referenced table "x_padre"
+ROLLBACK
+-- E1b: con UNIQUE (id, taller_id) en el padre, la FK se crea
+ALTER TABLE
+CREATE TABLE
+
+-- E2: referencia cruzada entre talleres (hija del taller 1 -> padre del taller 2) (se espera error)
+SAVEPOINT
+ERROR:  insert or update on table "x_hija" violates foreign key constraint "x_hija_padre_id_taller_id_fkey"
+ROLLBACK
+-- E3: MATCH SIMPLE: padre_id NULL no se evalua aunque taller_id tenga valor (se espera INSERT 0 1)
+INSERT 0 1
+-- E3b: mismo taller (se espera INSERT 0 1)
+INSERT 0 1
+
+-- E4: cambiar el taller_id de un padre con hijos lo rechaza la FK (se espera error)
+SAVEPOINT
+ERROR:  update or delete on table "x_padre" violates foreign key constraint "x_hija_padre_id_taller_id_fkey" on table "x_hija"
+ROLLBACK
+
+-- E5: CHECK del precio unitario con la formula de markup
+CREATE TABLE
+INSERT 0 1
+INSERT 0 1
+ precio_referencia_snapshot | margen_pct_snapshot | precio_unitario |       sin_redondear        
+----------------------------+---------------------+-----------------+----------------------------
+                      18990 |               30.00 |           24687 | 24687.00000000000000000000
+                       9995 |               12.50 |           11244 | 11244.37500000000000000000
+(2 rows)
+
+-- E5b: precio unitario manipulado (se espera error)
+SAVEPOINT
+ERROR:  new row for relation "x_detalle" violates check constraint "ck_x_precio"
+ROLLBACK
+
+-- E6: indices unicos parciales de cotizacion: una vigente y un borrador por sesion
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+INSERT 0 1
+INSERT 0 1
+-- E6b: segunda vigente en la misma sesion (se espera error)
+SAVEPOINT
+ERROR:  duplicate key value violates unique constraint "uq_x_cot_vigente"
+ROLLBACK
+-- E6c: segundo borrador en la misma sesion (se espera error)
+SAVEPOINT
+ERROR:  duplicate key value violates unique constraint "uq_x_cot_borrador"
+ROLLBACK
+-- E6d: vigente sin cerrar (se espera error)
+SAVEPOINT
+ERROR:  new row for relation "x_cot" violates check constraint "ck_x_vigente"
+ROLLBACK
+-- E6e: cerrada sin total (se espera error)
+SAVEPOINT
+ERROR:  new row for relation "x_cot" violates check constraint "ck_x_total"
+ROLLBACK
+
+-- E7: macaddr valida y normaliza; regex de patente, VIN y DTC
+  mac_normalizada  
+-------------------
+ aa:bb:cc:00:11:22
+(1 row)
+
+SAVEPOINT
+ERROR:  invalid input syntax for type macaddr: "ZZ:ZZ" at character 8
+ROLLBACK
+ valor  | patente_valida 
+--------+----------------
+ AB1234 | t
+ BCDF12 | t
+ ABCD12 | f
+ bcdf12 | f
+ BCDF1  | f
+(5 rows)
+
+       valor       | vin_valido 
+-------------------+------------
+ 8AJBA3CD1M1234567 | t
+ 8AJBA3CD1M123456I | f
+ 8AJBA3CD1M12345   | f
+(3 rows)
+
+ valor | dtc_valido 
+-------+------------
+ P0301 | t
+ U3FFF | t
+ P4301 | f
+ X0301 | f
+ P030  | f
+(5 rows)
+
+ROLLBACK
+ tablas_x_restantes 
+--------------------
+                  0
+(1 row)
+
