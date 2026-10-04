@@ -1,0 +1,275 @@
+=== 0. Datos minimos (superusuario) ===
+ filas_v_dtc_repuesto 
+----------------------
+                    2
+(1 row)
+
+
+=== 1. Rol de conexion del backend: sin contexto no puede nada ===
+   current_user   |   session_user   
+------------------+------------------
+ app_backend_user | app_backend_user
+(1 row)
+
+-- 1a. SELECT sin SET LOCAL ROLE (se espera error: permission denied)
+psql:/db/tests/humo/fase2_humo.sql:40: ERROR:  permission denied for table sesion_diagnostico
+-- 1b. login correcto (antes de que exista contexto)
+ autenticado | es_mec_a | es_taller_a |   rol    |   nombre   
+-------------+----------+-------------+----------+------------
+ t           | t        | t           | mecanico | Mecanico A
+(1 row)
+
+-- 1c. login con clave incorrecta y con email inexistente (autenticado = f, sin motivo)
+ autenticado | usuario_id | rol 
+-------------+------------+-----
+ f           |            | 
+(1 row)
+
+ autenticado | usuario_id | rol 
+-------------+------------+-----
+ f           |            | 
+(1 row)
+
+-- 1d. acceso directo a credenciales (se espera error)
+psql:/db/tests/humo/fase2_humo.sql:48: ERROR:  permission denied for table usuario_credencial
+
+=== 2. Mecanico del taller A: flujo completo ===
+ taller | usuario |    ip    |  request   
+--------+---------+----------+------------
+ 1      | 2       | 10.0.0.7 | req-humo-1
+(1 row)
+
+sesion creada: estado pendiente version 1
+-- 2a. cotizado sin cotizacion (se espera error RE002)
+psql:/db/tests/humo/fase2_humo.sql:65: ERROR:  el estado cotizado exige una cotizacion vigente cerrada
+-- 2b. transicion invalida pendiente -> completado (se espera error RE001)
+psql:/db/tests/humo/fase2_humo.sql:67: ERROR:  transicion de estado invalida: pendiente -> completado
+-- 2c. crear cotizacion (idempotente: dos llamadas, una sola fila)
+ misma_cotizacion 
+------------------
+ t
+(1 row)
+
+ cotizaciones 
+--------------
+            1
+(1 row)
+
+-- 2d. detalle: el cliente solo envia repuesto y cantidad; el trigger pone el snapshot
+   nombre_snapshot    | perfil_snapshot | precio_referencia_snapshot | margen_pct_snapshot | precio_unitario 
+----------------------+-----------------+----------------------------+---------------------+-----------------
+ Bujia iridio genuina | genuino         |                      18990 |               30.00 |           24687
+(1 row)
+
+-- 2e. el mecanico intenta fijar el precio (se espera error: permission denied)
+psql:/db/tests/humo/fase2_humo.sql:79: ERROR:  permission denied for table cotizacion_detalle
+-- 2f. cerrar: total = 4 x 24687 = 98748
+ numero_revision | vigente | cerrada | total | version 
+-----------------+---------+---------+-------+---------
+               1 | t       | t       | 98748 |       2
+(1 row)
+
+-- 2g. cotizacion cerrada: detalle inmutable (se esperan 3 errores RE003)
+psql:/db/tests/humo/fase2_humo.sql:83: ERROR:  la cotizacion 1 esta cerrada: su detalle es inmutable
+psql:/db/tests/humo/fase2_humo.sql:84: ERROR:  la cotizacion 1 esta cerrada: su detalle es inmutable
+psql:/db/tests/humo/fase2_humo.sql:85: ERROR:  la cotizacion 1 esta cerrada: su detalle es inmutable
+-- 2h. reabrir la cotizacion cerrada (se espera error RE003)
+psql:/db/tests/humo/fase2_humo.sql:87: ERROR:  la cotizacion 1 esta cerrada y es inmutable
+-- 2i. pendiente -> cotizado -> completado
+  estado  | con_fecha | version 
+----------+-----------+---------
+ cotizado | t         |       2
+(1 row)
+
+-- 2j. conflicto de version: se envia una version antigua (se espera error RE007)
+psql:/db/tests/humo/fase2_humo.sql:91: ERROR:  conflicto de version en la sesion 1: esperada 1, actual 2
+   estado   | con_fecha 
+------------+-----------
+ completado | t
+(1 row)
+
+-- 2k. estado terminal: no admite mas cambios ni cotizaciones (se esperan errores RE001 y RE004)
+psql:/db/tests/humo/fase2_humo.sql:94: ERROR:  transicion de estado invalida: completado -> cancelado
+psql:/db/tests/humo/fase2_humo.sql:95: ERROR:  la sesion 1 esta en estado completado y no admite cotizaciones nuevas
+-- 2l. el mecanico no modifica precios maestros ni lee la auditoria (se esperan 2 errores)
+psql:/db/tests/humo/fase2_humo.sql:97: ERROR:  permission denied for table repuesto
+psql:/db/tests/humo/fase2_humo.sql:98: ERROR:  permission denied for table auditoria_operacion
+
+=== 3. Mecanico del taller B: no ve ni toca datos del taller A ===
+ taller | usuario 
+--------+---------
+ 2      | 4
+(1 row)
+
+ sesiones | vehiculos | titulares | cotizaciones | talleres 
+----------+-----------+-----------+--------------+----------
+        0 |         0 |         0 |            0 |        1
+(1 row)
+
+-- 3a. UPDATE sobre una sesion del taller A (0 filas)
+-- 3b. INSERT con taller_id ajeno (se espera error: row-level security)
+psql:/db/tests/humo/fase2_humo.sql:111: ERROR:  new row violates row-level security policy for table "titular"
+-- 3c. FK cruzada: sesion del taller B sobre un vehiculo del taller A (se espera error de FK)
+psql:/db/tests/humo/fase2_humo.sql:114: ERROR:  insert or update on table "sesion_diagnostico" violates foreign key constraint "fk_sesion_diagnostico_vehiculo"
+
+=== 4. Auditor del taller A ===
+ taller | usuario 
+--------+---------
+ 1      | 3
+(1 row)
+
+-- 4a. columnas de identidad del titular (se espera error: permission denied)
+psql:/db/tests/humo/fase2_humo.sql:122: ERROR:  permission denied for table titular
+-- 4b. columnas permitidas
+ estado_tratamiento | anonimizado_en 
+--------------------+----------------
+ activo             | 
+(1 row)
+
+-- 4c. escribir (se espera error)
+psql:/db/tests/humo/fase2_humo.sql:126: ERROR:  permission denied for table sesion_diagnostico
+-- 4d. auditoria del taller: operaciones, rol registrado y contexto
+   operacion   |        tabla         |       rol        | por_mec_a |    ip    | request_id | resultado | count 
+---------------+----------------------+------------------+-----------+----------+------------+-----------+-------
+ INSERT        | taller               | postgres         |           |          |            | exito     |     1
+ INSERT        | taller_configuracion | postgres         |           |          |            | exito     |     1
+ INSERT        | usuario              | postgres         |           |          |            | exito     |     3
+ LOGIN         |                      | app_backend_user | t         |          |            | exito     |     1
+ LOGIN_FALLIDO |                      | app_backend_user | t         |          |            | fallo     |     1
+ INSERT        | titular              | taller_mecanico  | t         | 10.0.0.7 | req-humo-1 | exito     |     1
+ INSERT        | vehiculo             | taller_mecanico  | t         | 10.0.0.7 | req-humo-1 | exito     |     1
+ INSERT        | sesion_diagnostico   | taller_mecanico  | t         | 10.0.0.7 | req-humo-1 | exito     |     1
+ INSERT        | falla_sesion         | taller_mecanico  | t         | 10.0.0.7 | req-humo-1 | exito     |     1
+ INSERT        | cotizacion           | taller_mecanico  | t         | 10.0.0.7 | req-humo-1 | exito     |     1
+ INSERT        | cotizacion_detalle   | taller_mecanico  | t         | 10.0.0.7 | req-humo-1 | exito     |     1
+ UPDATE        | cotizacion           | taller_mecanico  | t         | 10.0.0.7 | req-humo-1 | exito     |     1
+ UPDATE        | sesion_diagnostico   | taller_mecanico  | t         | 10.0.0.7 | req-humo-1 | exito     |     2
+(13 rows)
+
+-- 4e. columnas enmascaradas: ninguna debe aparecer
+ registros_con_dato_personal 
+-----------------------------
+                           0
+(1 row)
+
+                                                                                                                                         datos_nuevos                                                                                                                                          
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"id": 1, "anio": 2021, "motor": "2.4 Diesel", "creado_en": "2026-10-04T05:49:33.519589+00:00", "taller_id": 1, "id_publico": "1a607812-62c4-4b62-895a-96d229acbbbd", "titular_id": 1, "actualizado_en": "2026-10-04T05:49:33.519589+00:00", "anonimizado_en": null, "modelo_vehiculo_id": 1}
+(1 row)
+
+-- 4f. auditoria inmutable (se espera error)
+psql:/db/tests/humo/fase2_humo.sql:139: ERROR:  permission denied for table auditoria_operacion
+
+=== 5. Administrador del taller A: contrasenas y supresion ===
+ taller | usuario 
+--------+---------
+ 1      | 1
+(1 row)
+
+-- 5a. fijar contrasena de un usuario de otro taller (se espera error RE009)
+psql:/db/tests/humo/fase2_humo.sql:147: ERROR:  el usuario 4 no existe o no es visible
+-- 5b. fijar contrasena de un usuario propio y autenticar con ella
+ fn_establecer_contrasena 
+--------------------------
+ 
+(1 row)
+
+ autenticado 
+-------------
+ t
+(1 row)
+
+-- 5c. supresion: hay una atencion completada hoy -> bloqueado por retencion
+ estado_resultante 
+-------------------
+ bloqueado
+(1 row)
+
+ estado_tratamiento | vence_en_6_anios 
+--------------------+------------------
+ bloqueado          | t
+(1 row)
+
+   tipo    |   estado   
+-----------+------------
+ supresion | en_proceso
+(1 row)
+
+-- 5d. el administrador no puede anonimizar directamente (se espera error)
+psql:/db/tests/humo/fase2_humo.sql:158: ERROR:  permission denied for function fn_anonimizar_titular
+-- 5e. el administrador no puede modificar precios maestros (se espera error)
+psql:/db/tests/humo/fase2_humo.sql:160: ERROR:  permission denied for table repuesto
+
+=== 6. Tras el bloqueo, el mecanico ya no ve al titular ni su vehiculo; la sesion sigue visible ===
+ taller | usuario 
+--------+---------
+ 1      | 2
+(1 row)
+
+ titulares | vehiculos | sesiones 
+-----------+-----------+----------
+         0 |         0 |        1
+(1 row)
+
+
+=== 6b. Rol asumido pero SIN app.taller_id: cero filas (falla cerrado) ===
+ taller_vacio 
+--------------
+ 
+(1 row)
+
+ sesiones | talleres | cotizaciones 
+----------+----------+--------------
+        0 |        0 |            0
+(1 row)
+
+-- 6c. app.taller_id con un valor no numerico (se espera error de conversion)
+ taller_invalido 
+-----------------
+ abc
+(1 row)
+
+psql:/db/tests/humo/fase2_humo.sql:179: ERROR:  invalid input syntax for type bigint: "abc"
+
+=== 7. Anonimizacion (proceso de mantenimiento) ===
+ anonimizados 
+--------------
+            1
+(1 row)
+
+ nombre | telefono | identificador_hmac | estado_tratamiento | con_fecha 
+--------+----------+--------------------+--------------------+-----------
+        |          |                    | anonimizado        | t
+(1 row)
+
+ patente | vin |   motor    | anio | anonimizado 
+---------+-----+------------+------+-------------
+         |     | 2.4 Diesel | 2021 | t
+(1 row)
+
+  estado  
+----------
+ resuelta
+(1 row)
+
+   estado   | total 
+------------+-------
+ completado | 98748
+(1 row)
+
+-- 7a. TRUNCATE de la auditoria como superusuario (se espera error RE005)
+psql:/db/tests/humo/fase2_humo.sql:195: ERROR:  auditoria_operacion es de solo insercion: TRUNCATE no permitido
+
+=== 8. SET LOCAL fuera de una transaccion no tiene efecto: falla cerrado ===
+psql:/db/tests/humo/fase2_humo.sql:201: WARNING:  SET LOCAL can only be used in transaction blocks
+   rol_efectivo   
+------------------
+ app_backend_user
+(1 row)
+
+psql:/db/tests/humo/fase2_humo.sql:203: ERROR:  permission denied for table sesion_diagnostico
+ talleres_tras_rollback | auditoria_tras_rollback 
+------------------------+-------------------------
+                      0 |                       0
+(1 row)
+

@@ -1,8 +1,8 @@
 # Decisiones de diseño — Repuestos Exactos (Fase 0)
 
-> Estado: **Fase 0 aprobada; Fase 1 cerrada, esperando revisión** (ver sección 6). Nada de este documento
-> está implementado en SQL todavía; las migraciones se escriben en la Fase 2. Lo ejecutado hasta ahora es
-> el entorno (sección 5) y experimentos reversibles que respaldan el modelo (`docs/evidencia/`).
+> Estado: **Fases 0 y 1 aprobadas; Fase 2 cerrada, esperando revisión** (ver sección 7). El esquema
+> está implementado en `db/migrations/` y verificado sobre PostgreSQL 16.15; faltan semillas, consultas,
+> pruebas formales, rendimiento y operación (Fases 3 a 7).
 
 Clasificación usada: **[OBLIGATORIA]** la exige el enunciado o la integridad del modelo ·
 **[RECOMENDADA]** se implementa porque el costo es bajo y el beneficio defendible ·
@@ -302,3 +302,89 @@ La fase es documental, pero las afirmaciones estructurales del modelo lógico se
 
 **No verificado:** los diagramas Mermaid no se renderizaron (no hay herramienta instalada para hacerlo);
 la sintaxis se revisó a mano. Conviene abrir `docs/modelo/02_modelo_conceptual.md` en un visor.
+
+---
+
+## 7. Fase 2: lo que cambió al implementar
+
+### 7.1 Ajustes respecto de lo planificado
+
+Ninguno reabre una decisión tomada; son correcciones que solo aparecieron al ejecutar.
+
+| # | Ajuste | Motivo |
+|---|---|---|
+| 1 | El trigger del detalle bloquea la cabecera con **`FOR SHARE`**, no `FOR KEY SHARE` (refina T-8) | Un cierre hecho con `UPDATE` directo toma `FOR NO KEY UPDATE`, que **no** entra en conflicto con `FOR KEY SHARE`. `FOR SHARE` cubre tanto el cierre por función (`FOR UPDATE`) como el directo. |
+| 2 | `migrate.sh` ejecuta cada archivo con `--single-transaction` | La primera ejecución de `V005` falló a mitad y dejó la migración aplicada a medias. Ahora un fallo no deja nada. |
+| 3 | En `V005`, los `COMMENT ON FUNCTION` van **antes** del cambio de propietario | `COMMENT` exige ser el dueño; tras `OWNER TO app_funciones`, `app_owner` ya no lo es. |
+| 4 | Los índices únicos parciales están en `V003`, no en `V006` | Son reglas de integridad (una vigente, un borrador, VIN y patente por taller), no optimizaciones. |
+| 5 | Los `GRANT EXECUTE` de las funciones definidoras se hacen con `SET ROLE app_funciones` dentro de `V007` | Solo el dueño de una función puede otorgar privilegios sobre ella. |
+| 6 | `usuario_credencial` tiene RLS activo y **ninguna** política | Segunda barrera además de la ausencia de `GRANT`. |
+| 7 | `REVOKE` a `PUBLIC` sobre las vistas de `pg_stat_statements` | La extensión las crea legibles por todos. |
+| 8 | Códigos `SQLSTATE` propios `RE001`–`RE012` | Para que la API distinga los errores de negocio sin analizar textos. |
+| 9 | Nombre de política `pol_<tabla>_miembros_<operacion>` | Cuando una política aplica a los tres grupos; evita triplicar políticas idénticas. |
+
+### 7.2 Objetos que el enunciado no pedía
+
+| Objeto | Por qué fue necesario |
+|---|---|
+| `fn_establecer_contrasena` | Ningún rol puede escribir en `usuario_credencial`; sin esta función el administrador podría crear usuarios pero no darles contraseña. |
+| `fn_crear_cotizacion` | Encapsula el `INSERT ... ON CONFLICT` de la idempotencia. |
+| `fn_registrar_auditoria`, `fn_contexto_*` | Punto único de escritura en la auditoría y de lectura del contexto. |
+| `fn_trg_cotizacion_preparar` | Garantiza que toda cotización nace como borrador (revisión, moneda, `vigente = false`). |
+
+### 7.3 Reglas que quedaron fijadas en el código
+
+- **Cierre de cotización:** `cerrada_en` es siempre la hora del servidor; no se puede cerrar sin detalle
+  (`RE008`) ni si la sesión está en estado terminal (`RE004`); cerrar una ya cerrada la devuelve sin cambios.
+- **Login:** 5 intentos fallidos consecutivos bloquean la cuenta 15 minutos (constantes de la función).
+- **Contraseñas:** entre 8 caracteres y 72 bytes.
+- **Retención:** cuentan las sesiones **no canceladas** de los vehículos del titular.
+- **Repuesto no disponible:** no se puede agregar a una cotización (`RE010`).
+
+### 7.4 Temas nuevos
+
+Si no dices nada, queda como está.
+
+**T-31 El mecánico puede "apagar" la cotización vigente sin cerrar otra.**
+Necesita `UPDATE (vigente)` para que `fn_cerrar_cotizacion` funcione con sus privilegios, y el trigger
+permite `vigente: true → false` en una cotización cerrada. Un `UPDATE` directo dejaría una sesión
+`cotizado` sin cotización vigente; no corrompe nada (no podrá pasar a `completado` hasta cerrar otra
+revisión), pero es un estado raro. Alternativa: hacer `fn_cerrar_cotizacion` `SECURITY DEFINER` y quitar
+el privilegio, a costa de una función privilegiada más. No lo propongo.
+
+**T-32 El administrador no puede cambiar el estado de una sesión.**
+Siguiendo el enunciado, solo el mecánico escribe en sesiones y cotizaciones; el administrador las lee. Si
+un administrador debe poder cancelar atenciones, es un `GRANT` y una política más.
+
+**T-33 Cambio de contraseña por el propio usuario: no implementado.**
+Solo el administrador fija contraseñas. El autoservicio exigiría verificar la contraseña actual →
+**[AVANZADA]**, junto con el paso del hash al backend.
+
+**T-34 Efecto sobre las semillas (Fase 3).**
+Como `cerrada_en` y los timestamps de estado son siempre la hora del servidor, los datos de demostración
+tendrán `iniciada_en` en el pasado pero fechas de cierre del momento de la carga. Es el precio de no
+permitir que nadie —ni el superusuario— antedate un cierre. Las semillas recorrerán el flujo real
+(crear, cotizar, cerrar, cambiar estado) en lugar de insertar estados finales a mano.
+
+### 7.5 Verificación de la Fase 2
+
+| Comprobación | Resultado | Evidencia |
+|---|---|---|
+| `reset` + `migrate` (V000–V008) sobre base vacía | 9 migraciones, código 0 | salida de la ejecución |
+| Objetos | 21 tablas, 1 vista, 14 enums, 21 funciones, 32 triggers, 49 políticas | `esquema.txt` |
+| Propietario de todos los objetos = `app_owner` (funciones definidoras = `app_funciones`) | 0 excepciones | `esquema.txt` §5, §13 |
+| Tablas y columnas sin comentario, columnas `SERIAL`, tiempos sin zona, tablas con `taller_id` sin RLS forzado | 0 en todas | `esquema.txt` §13 |
+| Funciones `SECURITY DEFINER` sin `search_path` | 0 | `esquema.txt` §5 |
+| Privilegios de tabla de `app_backend_user` y `PUBLIC` | 0 | `esquema.txt` §7 |
+| Flujo completo con `app_backend_user` (sin `BYPASSRLS`) | 25 errores, todos esperados | `fase2_humo.txt` |
+| Secretos en archivos versionados | ninguno | búsqueda de los valores de `.env` |
+
+**Riesgos que la ejecución no cubrió:**
+- **Concurrencia real.** La prueba de humo es una sola sesión. El razonamiento sobre `FOR SHARE`, el orden
+  de bloqueos y la idempotencia concurrente se demuestra en `db/tests/concurrencia.sh` (Fase 4).
+- **PgBouncer.** No forma parte del prototipo.
+- **Dependencias de versión:** `GRANT ... WITH INHERIT FALSE, SET TRUE` (PostgreSQL 16+), vistas
+  `security_invoker` (15+). Probado solo en 16.15.
+- **Rendimiento de las políticas con subconsulta** (`vehiculo`, `consentimiento_titular`) y utilidad real
+  de cada índice: se miden en la Fase 5.
+- La prueba de humo **no** es la suite formal: no imprime PASS/FAIL ni corta la ejecución. Eso es la Fase 4.

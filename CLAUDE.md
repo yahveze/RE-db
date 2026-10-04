@@ -105,7 +105,3 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
 - Dentro de `SECURITY DEFINER`, `current_user` es `app_funciones`: el rol real se lee con `current_setting('role')`.
 - Aislamiento: `UNIQUE (id, taller_id)` en tablas padre y FK compuestas `(padre_id, taller_id)` en las hijas.
 
-## Estado
-
-- Fases 0 y 1 completas. Modelo en `docs/modelo/` (01 dominio y reglas RN-xx, 02 conceptual, 03 lógico, 04 normalización).
-- Siguiente: Fase 2 (migraciones V000–V008). El modelo lógico de `docs/modelo/03_modelo_logico.md` es la especificación a implementar.

@@ -3,7 +3,7 @@
 Base de datos PostgreSQL 16 del sistema **Repuestos Exactos** (diagnóstico OBD-II y matriz comparativa de
 repuestos para talleres mecánicos). Proyecto universitario de Ingeniería en Computación e Informática.
 
-> Estado: **Fase 1** (modelo y normalización). Este README se completa en la Fase 7.
+> Estado: **Fase 2** (esquema y seguridad implementados; faltan semillas, consultas y pruebas). Este README se completa en la Fase 7.
 
 ## Requisitos
 
@@ -36,6 +36,7 @@ La base queda publicada solo en `127.0.0.1:5433`. `.env` nunca se versiona.
 ## Documentación
 
 - `docs/decisiones.md` — resumen ejecutivo, decisiones abiertas, supuestos y temas para conversar.
-- `docs/modelo/` — dominio y reglas de negocio, modelo conceptual (Mermaid), modelo lógico y normalización.
-- `docs/seguridad.md`, `docs/privacidad.md`, `docs/operacion.md` — Fases 2 y 6.
+- `docs/modelo/` — dominio y reglas de negocio, modelo conceptual (Mermaid), modelo lógico, normalización y diccionario de datos (generado).
+- `docs/seguridad.md`, `docs/privacidad.md` — roles, RBAC y RLS, autenticación, auditoría, supresión y anonimización.
+- `docs/operacion.md` — Fase 6.
 - `docs/evidencia/` — salidas reales de las ejecuciones.

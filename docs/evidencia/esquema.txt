@@ -1,0 +1,1676 @@
+# Esquema real de la base (generado por db/scripts/evidencia_esquema.sh)
+# Fecha: 2026-10-04T05:49Z
+
+################################################################
+# 1. Version y parametros
+################################################################
+                                                       version                                                        
+----------------------------------------------------------------------------------------------------------------------
+ PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+(1 row)
+
+             name              |      setting       
+-------------------------------+--------------------
+ default_transaction_isolation | read committed
+ log_statement                 | none
+ password_encryption           | scram-sha-256
+ row_security                  | on
+ shared_preload_libraries      | pg_stat_statements
+(5 rows)
+
+################################################################
+# 2. Roles (\du) y membresias
+################################################################
+                                 List of roles
+    Role name     |                         Attributes                         
+------------------+------------------------------------------------------------
+ app_backend_user | No inheritance
+ app_funciones    | Cannot login, Bypass RLS
+ app_owner        | Cannot login
+ postgres         | Superuser, Create role, Create DB, Replication, Bypass RLS
+ taller_admin     | Cannot login
+ taller_auditor   | Cannot login
+ taller_mecanico  | Cannot login
+
+       rol       |     miembro      | hereda | puede_set_role | admin 
+-----------------+------------------+--------+----------------+-------
+ app_funciones   | app_owner        | f      | t              | f
+ taller_admin    | app_backend_user | f      | t              | f
+ taller_auditor  | app_backend_user | f      | t              | f
+ taller_mecanico | app_backend_user | f      | t              | f
+(4 rows)
+
+################################################################
+# 3. Tablas y vistas (\dt, \dv), tipos enumerados (\dT+)
+################################################################
+                   List of relations
+ Schema |           Name            | Type  |   Owner   
+--------+---------------------------+-------+-----------
+ public | auditoria_operacion       | table | app_owner
+ public | compatibilidad_repuesto   | table | app_owner
+ public | componente_repuesto       | table | app_owner
+ public | consentimiento_titular    | table | app_owner
+ public | cotizacion                | table | app_owner
+ public | cotizacion_detalle        | table | app_owner
+ public | dispositivo_diagnostico   | table | app_owner
+ public | dtc_catalogo              | table | app_owner
+ public | dtc_componente            | table | app_owner
+ public | falla_sesion              | table | app_owner
+ public | marca_vehiculo            | table | app_owner
+ public | modelo_vehiculo           | table | app_owner
+ public | repuesto                  | table | app_owner
+ public | sesion_diagnostico        | table | app_owner
+ public | solicitud_derecho_titular | table | app_owner
+ public | taller                    | table | app_owner
+ public | taller_configuracion      | table | app_owner
+ public | titular                   | table | app_owner
+ public | usuario                   | table | app_owner
+ public | usuario_credencial        | table | app_owner
+ public | vehiculo                  | table | app_owner
+(21 rows)
+
+             List of relations
+ Schema |      Name      | Type |   Owner   
+--------+----------------+------+-----------
+ public | v_dtc_repuesto | view | app_owner
+(1 row)
+
+            tipo            |                              valores                               
+----------------------------+--------------------------------------------------------------------
+ tipo_estado_atencion       | pendiente, cotizado, completado, cancelado
+ tipo_estado_dispositivo    | activo, inactivo, baja
+ tipo_estado_solicitud      | recibida, en_proceso, resuelta, rechazada
+ tipo_estado_tratamiento    | activo, bloqueado, anonimizado
+ tipo_finalidad_tratamiento | prestacion_servicio, contacto_seguimiento, marketing
+ tipo_metodo_ingreso        | obd_bluetooth, manual
+ tipo_nivel_riesgo          | bajo, medio, alto
+ tipo_operacion_auditoria   | INSERT, UPDATE, DELETE, LOGIN, LOGIN_FALLIDO
+ tipo_perfil_repuesto       | genuino, oem, generico
+ tipo_resultado_auditoria   | exito, fallo, denegado
+ tipo_rol_usuario           | admin, mecanico, auditor
+ tipo_severidad             | baja, media, alta, critica
+ tipo_solicitud_derecho     | acceso, rectificacion, supresion, oposicion, portabilidad, bloqueo
+ tipo_tema_visual           | claro, oscuro
+(14 rows)
+
+################################################################
+# 4. Detalle de cada tabla (\d+): columnas, restricciones, indices, triggers, politicas
+################################################################
+                                                                                                    Table "public.taller"
+     Column     |           Type           | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                                    Description                                     
+----------------+--------------------------+-----------+----------+------------------------------+----------+-------------+--------------+------------------------------------------------------------------------------------
+ id             | bigint                   |           | not null | generated always as identity | plain    |             |              | Identificador interno. Es el valor de app.taller_id en el contexto de la peticion.
+ id_publico     | uuid                     |           | not null | gen_random_uuid()            | plain    |             |              | Identificador publico que expone la API.
+ nombre         | text                     |           | not null |                              | extended |             |              | Nombre del taller.
+ activo         | boolean                  |           | not null | true                         | plain    |             |              | Baja logica del taller. Un taller inactivo no puede autenticar usuarios.
+ creado_en      | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de creacion del registro.
+ actualizado_en | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_taller" PRIMARY KEY, btree (id)
+    "uq_taller_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+Check constraints:
+    "ck_taller_nombre_no_vacio" CHECK (btrim(nombre) <> ''::text)
+Referenced by:
+    TABLE "consentimiento_titular" CONSTRAINT "fk_consentimiento_titular_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    TABLE "cotizacion_detalle" CONSTRAINT "fk_cotizacion_detalle_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    TABLE "cotizacion" CONSTRAINT "fk_cotizacion_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    TABLE "dispositivo_diagnostico" CONSTRAINT "fk_dispositivo_diagnostico_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    TABLE "falla_sesion" CONSTRAINT "fk_falla_sesion_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    TABLE "sesion_diagnostico" CONSTRAINT "fk_sesion_diagnostico_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    TABLE "solicitud_derecho_titular" CONSTRAINT "fk_solicitud_derecho_titular_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    TABLE "taller_configuracion" CONSTRAINT "fk_taller_configuracion_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    TABLE "titular" CONSTRAINT "fk_titular_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    TABLE "usuario" CONSTRAINT "fk_usuario_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    TABLE "vehiculo" CONSTRAINT "fk_vehiculo_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+Policies (forced row security enabled):
+    POLICY "pol_taller_miembros_select" FOR SELECT
+      TO taller_admin,taller_auditor,taller_mecanico
+      USING ((id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_taller_auditar AFTER INSERT OR DELETE OR UPDATE ON taller FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+    trg_taller_marcar_actualizado BEFORE UPDATE ON taller FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+Access method: heap
+
+                                                                                                               Table "public.taller_configuracion"
+     Column      |           Type           | Collation | Nullable |          Default          | Storage  | Compression | Stats target |                                                       Description                                                        
+-----------------+--------------------------+-----------+----------+---------------------------+----------+-------------+--------------+--------------------------------------------------------------------------------------------------------------------------
+ taller_id       | bigint                   |           | not null |                           | plain    |             |              | Taller al que pertenece la configuracion. Es la clave primaria.
+ moneda          | character(3)             |           | not null | 'CLP'::bpchar             | extended |             |              | Codigo ISO 4217 de la moneda del taller. Por defecto CLP.
+ tema            | tipo_tema_visual         |           | not null | 'claro'::tipo_tema_visual | plain    |             |              | Tema visual de la interfaz.
+ margen_pct      | numeric(5,2)             |           | not null | 30.00                     | main     |             |              | Margen (markup sobre costo) en porcentaje, de 0 a 200. precio_venta = ROUND(precio_referencia * (1 + margen_pct / 100)).
+ retencion_anios | smallint                 |           | not null | 6                         | plain    |             |              | Anios de conservacion de datos tras la ultima atencion antes de anonimizar. Supuesto a validar con asesoria legal.
+ actualizado_en  | timestamp with time zone |           | not null | now()                     | plain    |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_taller_configuracion" PRIMARY KEY, btree (taller_id)
+Check constraints:
+    "ck_taller_configuracion_margen_rango" CHECK (margen_pct >= 0::numeric AND margen_pct <= 200::numeric)
+    "ck_taller_configuracion_moneda_formato" CHECK (moneda ~ '^[A-Z]{3}$'::text)
+    "ck_taller_configuracion_retencion_rango" CHECK (retencion_anios >= 0 AND retencion_anios <= 30)
+Foreign-key constraints:
+    "fk_taller_configuracion_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+Policies (forced row security enabled):
+    POLICY "pol_taller_configuracion_admin_update" FOR UPDATE
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_taller_configuracion_miembros_select" FOR SELECT
+      TO taller_admin,taller_auditor,taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_taller_configuracion_auditar AFTER INSERT OR DELETE OR UPDATE ON taller_configuracion FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+    trg_taller_configuracion_marcar_actualizado BEFORE UPDATE ON taller_configuracion FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+Access method: heap
+
+                                                                                                           Table "public.usuario"
+     Column     |           Type           | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                                           Description                                            
+----------------+--------------------------+-----------+----------+------------------------------+----------+-------------+--------------+--------------------------------------------------------------------------------------------------
+ id             | bigint                   |           | not null | generated always as identity | plain    |             |              | Identificador interno. Es el valor de app.usuario_id en el contexto de la peticion.
+ id_publico     | uuid                     |           | not null | gen_random_uuid()            | plain    |             |              | Identificador publico que expone la API.
+ taller_id      | bigint                   |           | not null |                              | plain    |             |              | Taller al que pertenece el usuario.
+ email          | text                     |           | not null |                              | extended |             |              | Email de inicio de sesion, en minusculas. Unico global. Dato personal: excluido de la auditoria.
+ nombre         | text                     |           | not null |                              | extended |             |              | Nombre del usuario. Dato personal: excluido de la auditoria.
+ rol            | tipo_rol_usuario         |           | not null |                              | plain    |             |              | Rol del usuario: admin, mecanico o auditor.
+ activo         | boolean                  |           | not null | true                         | plain    |             |              | Baja logica. Un usuario inactivo no puede iniciar sesion.
+ creado_en      | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de creacion del registro.
+ actualizado_en | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_usuario" PRIMARY KEY, btree (id)
+    "ix_usuario_taller" btree (taller_id)
+    "uq_usuario_email" UNIQUE CONSTRAINT, btree (email)
+    "uq_usuario_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+    "uq_usuario_id_taller" UNIQUE CONSTRAINT, btree (id, taller_id)
+Check constraints:
+    "ck_usuario_email_formato" CHECK (email ~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'::text)
+    "ck_usuario_email_minusculas" CHECK (email = lower(email))
+    "ck_usuario_nombre_no_vacio" CHECK (btrim(nombre) <> ''::text)
+Foreign-key constraints:
+    "fk_usuario_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "sesion_diagnostico" CONSTRAINT "fk_sesion_diagnostico_usuario" FOREIGN KEY (usuario_id, taller_id) REFERENCES usuario(id, taller_id) ON DELETE RESTRICT
+    TABLE "solicitud_derecho_titular" CONSTRAINT "fk_solicitud_derecho_titular_usuario" FOREIGN KEY (usuario_responsable_id, taller_id) REFERENCES usuario(id, taller_id) ON DELETE RESTRICT
+    TABLE "usuario_credencial" CONSTRAINT "fk_usuario_credencial_usuario" FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+Policies (forced row security enabled):
+    POLICY "pol_usuario_admin_insert" FOR INSERT
+      TO taller_admin
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_usuario_admin_update" FOR UPDATE
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_usuario_miembros_select" FOR SELECT
+      TO taller_admin,taller_auditor,taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_usuario_auditar AFTER INSERT OR DELETE OR UPDATE ON usuario FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar('email', 'nombre')
+    trg_usuario_marcar_actualizado BEFORE UPDATE ON usuario FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+Access method: heap
+
+                                                                                       Table "public.usuario_credencial"
+      Column       |           Type           | Collation | Nullable | Default | Storage  | Compression | Stats target |                                      Description                                       
+-------------------+--------------------------+-----------+----------+---------+----------+-------------+--------------+----------------------------------------------------------------------------------------
+ usuario_id        | bigint                   |           | not null |         | plain    |             |              | Usuario dueno de la credencial. Es la clave primaria.
+ hash_contrasena   | text                     |           | not null |         | extended |             |              | Hash bcrypt de la contrasena (crypt con gen_salt bf, costo 10). Nunca sale de la base.
+ intentos_fallidos | integer                  |           | not null | 0       | plain    |             |              | Intentos fallidos consecutivos de inicio de sesion.
+ bloqueado_hasta   | timestamp with time zone |           |          |         | plain    |             |              | Momento hasta el que la cuenta rechaza inicios de sesion por exceso de intentos.
+ ultimo_login_en   | timestamp with time zone |           |          |         | plain    |             |              | Momento del ultimo inicio de sesion exitoso.
+ actualizado_en    | timestamp with time zone |           | not null | now()   | plain    |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_usuario_credencial" PRIMARY KEY, btree (usuario_id)
+Check constraints:
+    "ck_usuario_credencial_hash_no_vacio" CHECK (btrim(hash_contrasena) <> ''::text)
+    "ck_usuario_credencial_intentos_no_negativos" CHECK (intentos_fallidos >= 0)
+Foreign-key constraints:
+    "fk_usuario_credencial_usuario" FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+Policies (forced row security enabled): (none)
+Triggers:
+    trg_usuario_credencial_marcar_actualizado BEFORE UPDATE ON usuario_credencial FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+Access method: heap
+
+                                                                                                                                          Table "public.titular"
+       Column       |           Type           | Collation | Nullable |              Default              | Storage  | Compression | Stats target |                                                                      Description                                                                      
+--------------------+--------------------------+-----------+----------+-----------------------------------+----------+-------------+--------------+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ id                 | bigint                   |           | not null | generated always as identity      | plain    |             |              | Identificador interno. Nunca se expone por la API.
+ id_publico         | uuid                     |           | not null | gen_random_uuid()                 | plain    |             |              | Identificador publico que expone la API.
+ taller_id          | bigint                   |           | not null |                                   | plain    |             |              | Taller responsable de los datos del titular.
+ nombre             | text                     |           |          |                                   | extended |             |              | Nombre del titular. Obligatorio salvo anonimizado. Dato personal: excluido de la auditoria.
+ telefono           | text                     |           |          |                                   | extended |             |              | Telefono de contacto, opcional. Dato personal: excluido de la auditoria.
+ email              | text                     |           |          |                                   | extended |             |              | Email de contacto, opcional. Dato personal: excluido de la auditoria.
+ identificador_hmac | bytea                    |           |          |                                   | extended |             |              | HMAC-SHA-256 (32 bytes) de un identificador del titular, calculado por el backend con un secreto que nunca llega a la base. Excluido de la auditoria.
+ estado_tratamiento | tipo_estado_tratamiento  |           | not null | 'activo'::tipo_estado_tratamiento | plain    |             |              | activo, bloqueado (conservado solo por retencion legal) o anonimizado.
+ bloqueado_hasta    | date                     |           |          |                                   | plain    |             |              | Fecha en que vence la retencion y corresponde anonimizar. Solo en estado bloqueado.
+ anonimizado_en     | timestamp with time zone |           |          |                                   | plain    |             |              | Momento de la anonimizacion irreversible.
+ creado_en          | timestamp with time zone |           | not null | now()                             | plain    |             |              | Fecha de creacion del registro.
+ actualizado_en     | timestamp with time zone |           | not null | now()                             | plain    |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_titular" PRIMARY KEY, btree (id)
+    "ix_titular_bloqueado_hasta" btree (bloqueado_hasta) WHERE estado_tratamiento = 'bloqueado'::tipo_estado_tratamiento
+    "ix_titular_taller" btree (taller_id)
+    "uq_titular_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+    "uq_titular_id_taller" UNIQUE CONSTRAINT, btree (id, taller_id)
+    "uq_titular_taller_identificador_hmac" UNIQUE, btree (taller_id, identificador_hmac) WHERE identificador_hmac IS NOT NULL
+Check constraints:
+    "ck_titular_anonimizado_sin_datos" CHECK (
+CASE
+    WHEN anonimizado_en IS NOT NULL THEN nombre IS NULL AND telefono IS NULL AND email IS NULL AND identificador_hmac IS NULL
+    ELSE nombre IS NOT NULL AND btrim(nombre) <> ''::text
+END)
+    "ck_titular_estado_anonimizado" CHECK ((estado_tratamiento = 'anonimizado'::tipo_estado_tratamiento) = (anonimizado_en IS NOT NULL))
+    "ck_titular_estado_bloqueado" CHECK ((estado_tratamiento = 'bloqueado'::tipo_estado_tratamiento) = (bloqueado_hasta IS NOT NULL))
+    "ck_titular_hmac_largo" CHECK (identificador_hmac IS NULL OR octet_length(identificador_hmac) = 32)
+Foreign-key constraints:
+    "fk_titular_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "consentimiento_titular" CONSTRAINT "fk_consentimiento_titular_titular" FOREIGN KEY (titular_id, taller_id) REFERENCES titular(id, taller_id) ON DELETE RESTRICT
+    TABLE "solicitud_derecho_titular" CONSTRAINT "fk_solicitud_derecho_titular_titular" FOREIGN KEY (titular_id, taller_id) REFERENCES titular(id, taller_id) ON DELETE RESTRICT
+    TABLE "vehiculo" CONSTRAINT "fk_vehiculo_titular" FOREIGN KEY (titular_id, taller_id) REFERENCES titular(id, taller_id) ON DELETE RESTRICT
+Policies (forced row security enabled):
+    POLICY "pol_titular_admin_insert" FOR INSERT
+      TO taller_admin
+      WITH CHECK (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento)))
+    POLICY "pol_titular_admin_select" FOR SELECT
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_titular_admin_update" FOR UPDATE
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_titular_auditor_select" FOR SELECT
+      TO taller_auditor
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_titular_mecanico_insert" FOR INSERT
+      TO taller_mecanico
+      WITH CHECK (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento)))
+    POLICY "pol_titular_mecanico_select" FOR SELECT
+      TO taller_mecanico
+      USING (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento)))
+    POLICY "pol_titular_mecanico_update" FOR UPDATE
+      TO taller_mecanico
+      USING (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento)))
+      WITH CHECK (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento)))
+Triggers:
+    trg_titular_auditar AFTER INSERT OR DELETE OR UPDATE ON titular FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar('nombre', 'telefono', 'email', 'identificador_hmac')
+    trg_titular_marcar_actualizado BEFORE UPDATE ON titular FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+Access method: heap
+
+                                                                                      Table "public.consentimiento_titular"
+      Column      |            Type            | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                            Description                            
+------------------+----------------------------+-----------+----------+------------------------------+----------+-------------+--------------+-------------------------------------------------------------------
+ id               | bigint                     |           | not null | generated always as identity | plain    |             |              | Identificador interno.
+ taller_id        | bigint                     |           | not null |                              | plain    |             |              | Taller del titular (desnormalizacion protegida por FK compuesta).
+ titular_id       | bigint                     |           | not null |                              | plain    |             |              | Titular que otorga el consentimiento.
+ finalidad        | tipo_finalidad_tratamiento |           | not null |                              | plain    |             |              | Finalidad consentida.
+ version_terminos | text                       |           | not null |                              | extended |             |              | Version del texto de terminos que acepto el titular.
+ canal            | text                       |           | not null |                              | extended |             |              | Canal por el que se otorgo: presencial, app, web o telefono.
+ otorgado_en      | timestamp with time zone   |           | not null | now()                        | plain    |             |              | Momento en que se otorgo.
+ revocado_en      | timestamp with time zone   |           |          |                              | plain    |             |              | Momento en que se revoco. Nulo mientras esta activo.
+Indexes:
+    "pk_consentimiento_titular" PRIMARY KEY, btree (id)
+    "ix_consentimiento_titular_taller_titular" btree (taller_id, titular_id)
+    "uq_consentimiento_titular_activo" UNIQUE, btree (titular_id, finalidad) WHERE revocado_en IS NULL
+Check constraints:
+    "ck_consentimiento_titular_canal" CHECK (canal = ANY (ARRAY['presencial'::text, 'app'::text, 'web'::text, 'telefono'::text]))
+    "ck_consentimiento_titular_revocacion_posterior" CHECK (revocado_en IS NULL OR revocado_en >= otorgado_en)
+    "ck_consentimiento_titular_version_no_vacia" CHECK (btrim(version_terminos) <> ''::text)
+Foreign-key constraints:
+    "fk_consentimiento_titular_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    "fk_consentimiento_titular_titular" FOREIGN KEY (titular_id, taller_id) REFERENCES titular(id, taller_id) ON DELETE RESTRICT
+Policies (forced row security enabled):
+    POLICY "pol_consentimiento_titular_admin_insert" FOR INSERT
+      TO taller_admin
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_consentimiento_titular_admin_select" FOR SELECT
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_consentimiento_titular_admin_update" FOR UPDATE
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_consentimiento_titular_auditor_select" FOR SELECT
+      TO taller_auditor
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_consentimiento_titular_mecanico_insert" FOR INSERT
+      TO taller_mecanico
+      WITH CHECK (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (EXISTS ( SELECT 1
+   FROM titular t
+  WHERE (t.id = consentimiento_titular.titular_id)))))
+    POLICY "pol_consentimiento_titular_mecanico_select" FOR SELECT
+      TO taller_mecanico
+      USING (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (EXISTS ( SELECT 1
+   FROM titular t
+  WHERE (t.id = consentimiento_titular.titular_id)))))
+    POLICY "pol_consentimiento_titular_mecanico_update" FOR UPDATE
+      TO taller_mecanico
+      USING (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (EXISTS ( SELECT 1
+   FROM titular t
+  WHERE (t.id = consentimiento_titular.titular_id)))))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_consentimiento_titular_auditar AFTER INSERT OR DELETE OR UPDATE ON consentimiento_titular FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+Access method: heap
+
+                                                                                                Table "public.solicitud_derecho_titular"
+         Column         |           Type           | Collation | Nullable |              Default              | Storage | Compression | Stats target |                                    Description                                    
+------------------------+--------------------------+-----------+----------+-----------------------------------+---------+-------------+--------------+-----------------------------------------------------------------------------------
+ id                     | bigint                   |           | not null | generated always as identity      | plain   |             |              | Identificador interno. Nunca se expone por la API.
+ id_publico             | uuid                     |           | not null | gen_random_uuid()                 | plain   |             |              | Identificador publico que expone la API.
+ taller_id              | bigint                   |           | not null |                                   | plain   |             |              | Taller del titular (desnormalizacion protegida por FK compuesta).
+ titular_id             | bigint                   |           | not null |                                   | plain   |             |              | Titular que presenta la solicitud.
+ tipo                   | tipo_solicitud_derecho   |           | not null |                                   | plain   |             |              | Derecho que se ejerce.
+ estado                 | tipo_estado_solicitud    |           | not null | 'recibida'::tipo_estado_solicitud | plain   |             |              | Estado de tramitacion.
+ usuario_responsable_id | bigint                   |           |          |                                   | plain   |             |              | Usuario que gestiona la solicitud. Opcional.
+ recibida_en            | timestamp with time zone |           | not null | now()                             | plain   |             |              | Momento en que se recibio la solicitud.
+ resuelta_en            | timestamp with time zone |           |          |                                   | plain   |             |              | Momento de la resolucion. No nulo si y solo si el estado es resuelta o rechazada.
+ actualizado_en         | timestamp with time zone |           | not null | now()                             | plain   |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_solicitud_derecho_titular" PRIMARY KEY, btree (id)
+    "ix_solicitud_derecho_titular_taller_titular" btree (taller_id, titular_id)
+    "uq_solicitud_derecho_titular_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+Check constraints:
+    "ck_solicitud_derecho_titular_resolucion" CHECK ((estado = ANY (ARRAY['resuelta'::tipo_estado_solicitud, 'rechazada'::tipo_estado_solicitud])) = (resuelta_en IS NOT NULL))
+Foreign-key constraints:
+    "fk_solicitud_derecho_titular_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    "fk_solicitud_derecho_titular_titular" FOREIGN KEY (titular_id, taller_id) REFERENCES titular(id, taller_id) ON DELETE RESTRICT
+    "fk_solicitud_derecho_titular_usuario" FOREIGN KEY (usuario_responsable_id, taller_id) REFERENCES usuario(id, taller_id) ON DELETE RESTRICT
+Policies (forced row security enabled):
+    POLICY "pol_solicitud_derecho_titular_admin_insert" FOR INSERT
+      TO taller_admin
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_solicitud_derecho_titular_admin_select" FOR SELECT
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_solicitud_derecho_titular_admin_update" FOR UPDATE
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_solicitud_derecho_titular_auditor_select" FOR SELECT
+      TO taller_auditor
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_solicitud_derecho_titular_auditar AFTER INSERT OR DELETE OR UPDATE ON solicitud_derecho_titular FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+    trg_solicitud_derecho_titular_marcar_actualizado BEFORE UPDATE ON solicitud_derecho_titular FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+Access method: heap
+
+                                                                              Table "public.marca_vehiculo"
+   Column   |           Type           | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                    Description                     
+------------+--------------------------+-----------+----------+------------------------------+----------+-------------+--------------+----------------------------------------------------
+ id         | bigint                   |           | not null | generated always as identity | plain    |             |              | Identificador interno. Nunca se expone por la API.
+ id_publico | uuid                     |           | not null | gen_random_uuid()            | plain    |             |              | Identificador publico que expone la API.
+ nombre     | text                     |           | not null |                              | extended |             |              | Nombre de la marca. Unico.
+ creado_en  | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de creacion del registro.
+Indexes:
+    "pk_marca_vehiculo" PRIMARY KEY, btree (id)
+    "uq_marca_vehiculo_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+    "uq_marca_vehiculo_nombre" UNIQUE CONSTRAINT, btree (nombre)
+Check constraints:
+    "ck_marca_vehiculo_nombre_no_vacio" CHECK (btrim(nombre) <> ''::text)
+Referenced by:
+    TABLE "modelo_vehiculo" CONSTRAINT "fk_modelo_vehiculo_marca_vehiculo" FOREIGN KEY (marca_vehiculo_id) REFERENCES marca_vehiculo(id) ON DELETE RESTRICT
+Access method: heap
+
+                                                                                 Table "public.modelo_vehiculo"
+      Column       |           Type           | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                    Description                     
+-------------------+--------------------------+-----------+----------+------------------------------+----------+-------------+--------------+----------------------------------------------------
+ id                | bigint                   |           | not null | generated always as identity | plain    |             |              | Identificador interno. Nunca se expone por la API.
+ id_publico        | uuid                     |           | not null | gen_random_uuid()            | plain    |             |              | Identificador publico que expone la API.
+ marca_vehiculo_id | bigint                   |           | not null |                              | plain    |             |              | Marca a la que pertenece el modelo.
+ nombre            | text                     |           | not null |                              | extended |             |              | Nombre del modelo. Unico dentro de su marca.
+ creado_en         | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de creacion del registro.
+Indexes:
+    "pk_modelo_vehiculo" PRIMARY KEY, btree (id)
+    "uq_modelo_vehiculo_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+    "uq_modelo_vehiculo_marca_nombre" UNIQUE CONSTRAINT, btree (marca_vehiculo_id, nombre)
+Check constraints:
+    "ck_modelo_vehiculo_nombre_no_vacio" CHECK (btrim(nombre) <> ''::text)
+Foreign-key constraints:
+    "fk_modelo_vehiculo_marca_vehiculo" FOREIGN KEY (marca_vehiculo_id) REFERENCES marca_vehiculo(id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "compatibilidad_repuesto" CONSTRAINT "fk_compatibilidad_repuesto_modelo_vehiculo" FOREIGN KEY (modelo_vehiculo_id) REFERENCES modelo_vehiculo(id) ON DELETE RESTRICT
+    TABLE "vehiculo" CONSTRAINT "fk_vehiculo_modelo_vehiculo" FOREIGN KEY (modelo_vehiculo_id) REFERENCES modelo_vehiculo(id) ON DELETE RESTRICT
+Access method: heap
+
+                                                                                                 Table "public.dtc_catalogo"
+       Column       |           Type           | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                                  Description                                  
+--------------------+--------------------------+-----------+----------+------------------------------+----------+-------------+--------------+-------------------------------------------------------------------------------
+ id                 | bigint                   |           | not null | generated always as identity | plain    |             |              | Identificador interno. La API identifica el DTC por su codigo.
+ codigo             | text                     |           | not null |                              | extended |             |              | Codigo DTC, por ejemplo P0301. Formato ^[PCBU][0-3][0-9A-F]{3}$. Unico.
+ descripcion        | text                     |           | not null |                              | extended |             |              | Descripcion de la falla.
+ severidad_sugerida | tipo_severidad           |           | not null |                              | plain    |             |              | Severidad propuesta por el catalogo; valor inicial de falla_sesion.severidad.
+ creado_en          | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de creacion del registro.
+Indexes:
+    "pk_dtc_catalogo" PRIMARY KEY, btree (id)
+    "uq_dtc_catalogo_codigo" UNIQUE CONSTRAINT, btree (codigo)
+Check constraints:
+    "ck_dtc_catalogo_codigo_formato" CHECK (codigo ~ '^[PCBU][0-3][0-9A-F]{3}$'::text)
+    "ck_dtc_catalogo_descripcion_no_vacia" CHECK (btrim(descripcion) <> ''::text)
+Referenced by:
+    TABLE "dtc_componente" CONSTRAINT "fk_dtc_componente_dtc_catalogo" FOREIGN KEY (dtc_id) REFERENCES dtc_catalogo(id) ON DELETE RESTRICT
+    TABLE "falla_sesion" CONSTRAINT "fk_falla_sesion_dtc_catalogo" FOREIGN KEY (dtc_id) REFERENCES dtc_catalogo(id) ON DELETE RESTRICT
+Access method: heap
+
+                                                                            Table "public.componente_repuesto"
+   Column    |           Type           | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                    Description                     
+-------------+--------------------------+-----------+----------+------------------------------+----------+-------------+--------------+----------------------------------------------------
+ id          | bigint                   |           | not null | generated always as identity | plain    |             |              | Identificador interno. Nunca se expone por la API.
+ id_publico  | uuid                     |           | not null | gen_random_uuid()            | plain    |             |              | Identificador publico que expone la API.
+ nombre      | text                     |           | not null |                              | extended |             |              | Nombre del componente, por ejemplo Bujia. Unico.
+ descripcion | text                     |           |          |                              | extended |             |              | Descripcion opcional del componente.
+ creado_en   | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de creacion del registro.
+Indexes:
+    "pk_componente_repuesto" PRIMARY KEY, btree (id)
+    "uq_componente_repuesto_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+    "uq_componente_repuesto_nombre" UNIQUE CONSTRAINT, btree (nombre)
+Check constraints:
+    "ck_componente_repuesto_nombre_no_vacio" CHECK (btrim(nombre) <> ''::text)
+Referenced by:
+    TABLE "dtc_componente" CONSTRAINT "fk_dtc_componente_componente_repuesto" FOREIGN KEY (componente_id) REFERENCES componente_repuesto(id) ON DELETE RESTRICT
+    TABLE "repuesto" CONSTRAINT "fk_repuesto_componente_repuesto" FOREIGN KEY (componente_id) REFERENCES componente_repuesto(id) ON DELETE RESTRICT
+Access method: heap
+
+                                                Table "public.dtc_componente"
+    Column     |  Type  | Collation | Nullable | Default | Storage | Compression | Stats target |         Description         
+---------------+--------+-----------+----------+---------+---------+-------------+--------------+-----------------------------
+ dtc_id        | bigint |           | not null |         | plain   |             |              | DTC del catalogo.
+ componente_id | bigint |           | not null |         | plain   |             |              | Componente asociado al DTC.
+Indexes:
+    "pk_dtc_componente" PRIMARY KEY, btree (dtc_id, componente_id)
+    "ix_dtc_componente_componente" btree (componente_id)
+Foreign-key constraints:
+    "fk_dtc_componente_componente_repuesto" FOREIGN KEY (componente_id) REFERENCES componente_repuesto(id) ON DELETE RESTRICT
+    "fk_dtc_componente_dtc_catalogo" FOREIGN KEY (dtc_id) REFERENCES dtc_catalogo(id) ON DELETE RESTRICT
+Access method: heap
+
+                                                                                                           Table "public.repuesto"
+         Column          |           Type           | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                                       Description                                        
+-------------------------+--------------------------+-----------+----------+------------------------------+----------+-------------+--------------+------------------------------------------------------------------------------------------
+ id                      | bigint                   |           | not null | generated always as identity | plain    |             |              | Identificador interno. Nunca se expone por la API.
+ id_publico              | uuid                     |           | not null | gen_random_uuid()            | plain    |             |              | Identificador publico que expone la API.
+ componente_id           | bigint                   |           | not null |                              | plain    |             |              | Componente al que pertenece el repuesto.
+ perfil                  | tipo_perfil_repuesto     |           | not null |                              | plain    |             |              | Perfil comercial: genuino, oem o generico.
+ marca                   | text                     |           | not null |                              | extended |             |              | Marca del repuesto. Texto y no catalogo: no existe atributo que dependa de la marca.
+ nombre                  | text                     |           | not null |                              | extended |             |              | Nombre comercial del repuesto.
+ codigo_fabricante       | text                     |           | not null |                              | extended |             |              | Numero de parte del fabricante. Unico junto con componente y marca.
+ durabilidad_estimada_km | integer                  |           | not null |                              | plain    |             |              | Durabilidad estimada en kilometros. Mayor que cero.
+ riesgo                  | tipo_nivel_riesgo        |           | not null |                              | plain    |             |              | Nivel de riesgo estimado del repuesto.
+ precio_referencia       | bigint                   |           | not null |                              | plain    |             |              | Precio maestro (costo) en la unidad minima de la moneda. Lo mantiene solo la plataforma.
+ disponible              | boolean                  |           | not null | true                         | plain    |             |              | Si puede cotizarse. Un repuesto no se borra: se marca no disponible.
+ creado_en               | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de creacion del registro.
+ actualizado_en          | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_repuesto" PRIMARY KEY, btree (id)
+    "uq_repuesto_componente_marca_codigo" UNIQUE CONSTRAINT, btree (componente_id, marca, codigo_fabricante)
+    "uq_repuesto_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+Check constraints:
+    "ck_repuesto_codigo_fabricante_no_vacio" CHECK (btrim(codigo_fabricante) <> ''::text)
+    "ck_repuesto_durabilidad_positiva" CHECK (durabilidad_estimada_km > 0)
+    "ck_repuesto_marca_no_vacia" CHECK (btrim(marca) <> ''::text)
+    "ck_repuesto_nombre_no_vacio" CHECK (btrim(nombre) <> ''::text)
+    "ck_repuesto_precio_no_negativo" CHECK (precio_referencia >= 0)
+Foreign-key constraints:
+    "fk_repuesto_componente_repuesto" FOREIGN KEY (componente_id) REFERENCES componente_repuesto(id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "compatibilidad_repuesto" CONSTRAINT "fk_compatibilidad_repuesto_repuesto" FOREIGN KEY (repuesto_id) REFERENCES repuesto(id) ON DELETE RESTRICT
+    TABLE "cotizacion_detalle" CONSTRAINT "fk_cotizacion_detalle_repuesto" FOREIGN KEY (repuesto_id) REFERENCES repuesto(id) ON DELETE RESTRICT
+Triggers:
+    trg_repuesto_auditar AFTER INSERT OR DELETE OR UPDATE ON repuesto FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+    trg_repuesto_marcar_actualizado BEFORE UPDATE ON repuesto FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+Access method: heap
+
+                                                            Table "public.compatibilidad_repuesto"
+       Column       |   Type   | Collation | Nullable | Default | Storage | Compression | Stats target |                     Description                      
+--------------------+----------+-----------+----------+---------+---------+-------------+--------------+------------------------------------------------------
+ repuesto_id        | bigint   |           | not null |         | plain   |             |              | Repuesto compatible.
+ modelo_vehiculo_id | bigint   |           | not null |         | plain   |             |              | Modelo de vehiculo con el que es compatible.
+ anio_desde         | smallint |           | not null |         | plain   |             |              | Primer anio del rango de compatibilidad (inclusive).
+ anio_hasta         | smallint |           | not null |         | plain   |             |              | Ultimo anio del rango de compatibilidad (inclusive).
+Indexes:
+    "pk_compatibilidad_repuesto" PRIMARY KEY, btree (repuesto_id, modelo_vehiculo_id, anio_desde)
+    "ix_compatibilidad_repuesto_modelo" btree (modelo_vehiculo_id)
+Check constraints:
+    "ck_compatibilidad_repuesto_limites" CHECK (anio_desde >= 1981 AND anio_hasta <= 2100)
+    "ck_compatibilidad_repuesto_rango" CHECK (anio_desde <= anio_hasta)
+Foreign-key constraints:
+    "fk_compatibilidad_repuesto_modelo_vehiculo" FOREIGN KEY (modelo_vehiculo_id) REFERENCES modelo_vehiculo(id) ON DELETE RESTRICT
+    "fk_compatibilidad_repuesto_repuesto" FOREIGN KEY (repuesto_id) REFERENCES repuesto(id) ON DELETE RESTRICT
+Access method: heap
+
+                                                View "public.v_dtc_repuesto"
+    Column     |  Type  | Collation | Nullable | Default | Storage |                       Description                       
+---------------+--------+-----------+----------+---------+---------+---------------------------------------------------------
+ dtc_id        | bigint |           |          |         | plain   | DTC del catalogo.
+ componente_id | bigint |           |          |         | plain   | Componente que vincula el DTC con el repuesto.
+ repuesto_id   | bigint |           |          |         | plain   | Repuesto que resuelve el DTC a traves de su componente.
+View definition:
+ SELECT dc.dtc_id,
+    dc.componente_id,
+    r.id AS repuesto_id
+   FROM dtc_componente dc
+     JOIN repuesto r ON r.componente_id = dc.componente_id;
+Options: security_invoker=true
+
+                                                                                                                             Table "public.vehiculo"
+       Column       |           Type           | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                                                            Description                                                             
+--------------------+--------------------------+-----------+----------+------------------------------+----------+-------------+--------------+------------------------------------------------------------------------------------------------------------------------------------
+ id                 | bigint                   |           | not null | generated always as identity | plain    |             |              | Identificador interno. Nunca se expone por la API.
+ id_publico         | uuid                     |           | not null | gen_random_uuid()            | plain    |             |              | Identificador publico que expone la API.
+ taller_id          | bigint                   |           | not null |                              | plain    |             |              | Taller que registro el vehiculo.
+ titular_id         | bigint                   |           |          |                              | plain    |             |              | Titular del vehiculo. Opcional.
+ modelo_vehiculo_id | bigint                   |           | not null |                              | plain    |             |              | Modelo del vehiculo; la marca se obtiene del modelo.
+ anio               | smallint                 |           | not null |                              | plain    |             |              | Anio del vehiculo, entre 1981 y 2100.
+ motor              | text                     |           |          |                              | extended |             |              | Descripcion del motor. Obligatorio si no hay VIN.
+ vin                | text                     |           |          |                              | extended |             |              | Numero de identificacion del vehiculo (17 caracteres, sin I, O ni Q). Opcional. Dato personal indirecto: excluido de la auditoria.
+ patente            | text                     |           |          |                              | extended |             |              | Patente chilena en mayusculas (AA1234 o BBBB12). Obligatoria salvo anonimizado. Dato personal indirecto: excluido de la auditoria.
+ anonimizado_en     | timestamp with time zone |           |          |                              | plain    |             |              | Momento en que se anonimizo: patente y VIN pasan a nulo.
+ creado_en          | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de creacion del registro.
+ actualizado_en     | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_vehiculo" PRIMARY KEY, btree (id)
+    "ix_vehiculo_taller_modelo_anio" btree (taller_id, modelo_vehiculo_id, anio)
+    "ix_vehiculo_taller_titular" btree (taller_id, titular_id) WHERE titular_id IS NOT NULL
+    "uq_vehiculo_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+    "uq_vehiculo_id_taller" UNIQUE CONSTRAINT, btree (id, taller_id)
+    "uq_vehiculo_taller_patente" UNIQUE, btree (taller_id, patente) WHERE patente IS NOT NULL
+    "uq_vehiculo_taller_vin" UNIQUE, btree (taller_id, vin) WHERE vin IS NOT NULL
+Check constraints:
+    "ck_vehiculo_anio_rango" CHECK (anio >= 1981 AND anio <= 2100)
+    "ck_vehiculo_anonimizado_sin_identificadores" CHECK (anonimizado_en IS NULL OR patente IS NULL AND vin IS NULL)
+    "ck_vehiculo_identificacion_tecnica" CHECK (anonimizado_en IS NOT NULL OR vin IS NOT NULL OR motor IS NOT NULL)
+    "ck_vehiculo_motor_no_vacio" CHECK (motor IS NULL OR btrim(motor) <> ''::text)
+    "ck_vehiculo_patente_formato" CHECK (patente IS NULL OR patente ~ '^[A-Z]{2}[0-9]{4}$'::text OR patente ~ '^[BCDFGHJKLPRSTVWXYZ]{4}[0-9]{2}$'::text)
+    "ck_vehiculo_patente_obligatoria" CHECK (anonimizado_en IS NOT NULL OR patente IS NOT NULL)
+    "ck_vehiculo_vin_formato" CHECK (vin IS NULL OR vin ~ '^[A-HJ-NPR-Z0-9]{17}$'::text)
+Foreign-key constraints:
+    "fk_vehiculo_modelo_vehiculo" FOREIGN KEY (modelo_vehiculo_id) REFERENCES modelo_vehiculo(id) ON DELETE RESTRICT
+    "fk_vehiculo_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    "fk_vehiculo_titular" FOREIGN KEY (titular_id, taller_id) REFERENCES titular(id, taller_id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "sesion_diagnostico" CONSTRAINT "fk_sesion_diagnostico_vehiculo" FOREIGN KEY (vehiculo_id, taller_id) REFERENCES vehiculo(id, taller_id) ON DELETE RESTRICT
+Policies (forced row security enabled):
+    POLICY "pol_vehiculo_admin_insert" FOR INSERT
+      TO taller_admin
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_vehiculo_admin_select" FOR SELECT
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_vehiculo_admin_update" FOR UPDATE
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_vehiculo_auditor_select" FOR SELECT
+      TO taller_auditor
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_vehiculo_mecanico_insert" FOR INSERT
+      TO taller_mecanico
+      WITH CHECK (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (EXISTS ( SELECT 1
+   FROM titular t
+  WHERE (t.id = vehiculo.titular_id))))))
+    POLICY "pol_vehiculo_mecanico_select" FOR SELECT
+      TO taller_mecanico
+      USING (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (EXISTS ( SELECT 1
+   FROM titular t
+  WHERE (t.id = vehiculo.titular_id))))))
+    POLICY "pol_vehiculo_mecanico_update" FOR UPDATE
+      TO taller_mecanico
+      USING (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (EXISTS ( SELECT 1
+   FROM titular t
+  WHERE (t.id = vehiculo.titular_id))))))
+      WITH CHECK (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (EXISTS ( SELECT 1
+   FROM titular t
+  WHERE (t.id = vehiculo.titular_id))))))
+Triggers:
+    trg_vehiculo_auditar AFTER INSERT OR DELETE OR UPDATE ON vehiculo FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar('patente', 'vin')
+    trg_vehiculo_marcar_actualizado BEFORE UPDATE ON vehiculo FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+Access method: heap
+
+                                                                                              Table "public.dispositivo_diagnostico"
+     Column     |           Type           | Collation | Nullable |              Default              | Storage  | Compression | Stats target |                                    Description                                    
+----------------+--------------------------+-----------+----------+-----------------------------------+----------+-------------+--------------+-----------------------------------------------------------------------------------
+ id             | bigint                   |           | not null | generated always as identity      | plain    |             |              | Identificador interno. Nunca se expone por la API.
+ id_publico     | uuid                     |           | not null | gen_random_uuid()                 | plain    |             |              | Identificador publico que expone la API.
+ taller_id      | bigint                   |           | not null |                                   | plain    |             |              | Taller dueno del dispositivo.
+ mac            | macaddr                  |           | not null |                                   | plain    |             |              | Direccion MAC Bluetooth. El tipo macaddr la valida y normaliza. Unica por taller.
+ estado         | tipo_estado_dispositivo  |           | not null | 'activo'::tipo_estado_dispositivo | plain    |             |              | activo, inactivo o baja.
+ fabricante     | text                     |           |          |                                   | extended |             |              | Fabricante del dispositivo.
+ modelo         | text                     |           |          |                                   | extended |             |              | Modelo del dispositivo.
+ firmware       | text                     |           |          |                                   | extended |             |              | Version de firmware.
+ creado_en      | timestamp with time zone |           | not null | now()                             | plain    |             |              | Fecha de creacion del registro.
+ actualizado_en | timestamp with time zone |           | not null | now()                             | plain    |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_dispositivo_diagnostico" PRIMARY KEY, btree (id)
+    "uq_dispositivo_diagnostico_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+    "uq_dispositivo_diagnostico_id_taller" UNIQUE CONSTRAINT, btree (id, taller_id)
+    "uq_dispositivo_diagnostico_taller_mac" UNIQUE CONSTRAINT, btree (taller_id, mac)
+Foreign-key constraints:
+    "fk_dispositivo_diagnostico_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "sesion_diagnostico" CONSTRAINT "fk_sesion_diagnostico_dispositivo" FOREIGN KEY (dispositivo_id, taller_id) REFERENCES dispositivo_diagnostico(id, taller_id) ON DELETE RESTRICT
+Policies (forced row security enabled):
+    POLICY "pol_dispositivo_diagnostico_admin_insert" FOR INSERT
+      TO taller_admin
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_dispositivo_diagnostico_admin_update" FOR UPDATE
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_dispositivo_diagnostico_miembros_select" FOR SELECT
+      TO taller_admin,taller_auditor,taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_dispositivo_diagnostico_auditar AFTER INSERT OR DELETE OR UPDATE ON dispositivo_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+    trg_dispositivo_diagnostico_marcar_actualizado BEFORE UPDATE ON dispositivo_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+Access method: heap
+
+                                                                                                    Table "public.sesion_diagnostico"
+     Column     |           Type           | Collation | Nullable |              Default              | Storage | Compression | Stats target |                                        Description                                        
+----------------+--------------------------+-----------+----------+-----------------------------------+---------+-------------+--------------+-------------------------------------------------------------------------------------------
+ id             | bigint                   |           | not null | generated always as identity      | plain   |             |              | Identificador interno. Nunca se expone por la API.
+ id_publico     | uuid                     |           | not null | gen_random_uuid()                 | plain   |             |              | Identificador publico que expone la API.
+ taller_id      | bigint                   |           | not null |                                   | plain   |             |              | Taller donde se realiza la atencion.
+ vehiculo_id    | bigint                   |           | not null |                                   | plain   |             |              | Vehiculo diagnosticado.
+ usuario_id     | bigint                   |           | not null |                                   | plain   |             |              | Mecanico que realiza la atencion.
+ dispositivo_id | bigint                   |           |          |                                   | plain   |             |              | Dispositivo usado. Obligatorio si y solo si el metodo es obd_bluetooth.
+ metodo_ingreso | tipo_metodo_ingreso      |           | not null |                                   | plain   |             |              | Como se ingresaron los DTC: obd_bluetooth o manual.
+ kilometraje    | integer                  |           | not null |                                   | plain   |             |              | Kilometraje del vehiculo al momento de la atencion.
+ estado         | tipo_estado_atencion     |           | not null | 'pendiente'::tipo_estado_atencion | plain   |             |              | pendiente, cotizado, completado o cancelado. Las transiciones las valida un trigger.
+ iniciada_en    | timestamp with time zone |           | not null | now()                             | plain   |             |              | Momento de inicio de la sesion. Clave del historial y de la paginacion.
+ cotizada_en    | timestamp with time zone |           |          |                                   | plain   |             |              | Momento en que paso a cotizado. Lo fija el trigger de estados.
+ completada_en  | timestamp with time zone |           |          |                                   | plain   |             |              | Momento en que paso a completado. Lo fija el trigger de estados.
+ cancelada_en   | timestamp with time zone |           |          |                                   | plain   |             |              | Momento en que paso a cancelado. Lo fija el trigger de estados.
+ version        | integer                  |           | not null | 1                                 | plain   |             |              | Contador para control optimista de concurrencia. Lo incrementa un trigger en cada UPDATE.
+ actualizado_en | timestamp with time zone |           | not null | now()                             | plain   |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_sesion_diagnostico" PRIMARY KEY, btree (id)
+    "ix_sesion_diagnostico_estado" btree (taller_id, estado, iniciada_en DESC, id DESC)
+    "ix_sesion_diagnostico_historial" btree (taller_id, iniciada_en DESC, id DESC)
+    "ix_sesion_diagnostico_pendiente" btree (taller_id, iniciada_en DESC, id DESC) WHERE estado = 'pendiente'::tipo_estado_atencion
+    "ix_sesion_diagnostico_vehiculo" btree (taller_id, vehiculo_id, iniciada_en DESC)
+    "uq_sesion_diagnostico_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+    "uq_sesion_diagnostico_id_taller" UNIQUE CONSTRAINT, btree (id, taller_id)
+Check constraints:
+    "ck_sesion_diagnostico_dispositivo_segun_metodo" CHECK ((metodo_ingreso = 'obd_bluetooth'::tipo_metodo_ingreso) = (dispositivo_id IS NOT NULL))
+    "ck_sesion_diagnostico_estado_timestamps" CHECK (
+CASE estado
+    WHEN 'pendiente'::tipo_estado_atencion THEN cotizada_en IS NULL AND completada_en IS NULL AND cancelada_en IS NULL
+    WHEN 'cotizado'::tipo_estado_atencion THEN cotizada_en IS NOT NULL AND completada_en IS NULL AND cancelada_en IS NULL
+    WHEN 'completado'::tipo_estado_atencion THEN cotizada_en IS NOT NULL AND completada_en IS NOT NULL AND cancelada_en IS NULL
+    WHEN 'cancelado'::tipo_estado_atencion THEN completada_en IS NULL AND cancelada_en IS NOT NULL
+    ELSE NULL::boolean
+END)
+    "ck_sesion_diagnostico_kilometraje_no_negativo" CHECK (kilometraje >= 0)
+    "ck_sesion_diagnostico_version_positiva" CHECK (version > 0)
+Foreign-key constraints:
+    "fk_sesion_diagnostico_dispositivo" FOREIGN KEY (dispositivo_id, taller_id) REFERENCES dispositivo_diagnostico(id, taller_id) ON DELETE RESTRICT
+    "fk_sesion_diagnostico_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+    "fk_sesion_diagnostico_usuario" FOREIGN KEY (usuario_id, taller_id) REFERENCES usuario(id, taller_id) ON DELETE RESTRICT
+    "fk_sesion_diagnostico_vehiculo" FOREIGN KEY (vehiculo_id, taller_id) REFERENCES vehiculo(id, taller_id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "cotizacion" CONSTRAINT "fk_cotizacion_sesion_diagnostico" FOREIGN KEY (sesion_id, taller_id) REFERENCES sesion_diagnostico(id, taller_id) ON DELETE RESTRICT
+    TABLE "falla_sesion" CONSTRAINT "fk_falla_sesion_sesion_diagnostico" FOREIGN KEY (sesion_id, taller_id) REFERENCES sesion_diagnostico(id, taller_id) ON DELETE RESTRICT
+Policies (forced row security enabled):
+    POLICY "pol_sesion_diagnostico_mecanico_insert" FOR INSERT
+      TO taller_mecanico
+      WITH CHECK (((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (usuario_id = ( SELECT (NULLIF(current_setting('app.usuario_id'::text, true), ''::text))::bigint AS "nullif"))))
+    POLICY "pol_sesion_diagnostico_mecanico_update" FOR UPDATE
+      TO taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_sesion_diagnostico_miembros_select" FOR SELECT
+      TO taller_admin,taller_auditor,taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_sesion_diagnostico_auditar AFTER INSERT OR DELETE OR UPDATE ON sesion_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+    trg_sesion_diagnostico_incrementar_version BEFORE UPDATE ON sesion_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_incrementar_version()
+    trg_sesion_diagnostico_marcar_actualizado BEFORE UPDATE ON sesion_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+    trg_sesion_diagnostico_validar_transicion BEFORE UPDATE OF estado ON sesion_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_sesion_validar_transicion()
+Access method: heap
+
+                                                                                                 Table "public.falla_sesion"
+    Column    |           Type           | Collation | Nullable | Default | Storage  | Compression | Stats target |                                               Description                                                
+--------------+--------------------------+-----------+----------+---------+----------+-------------+--------------+----------------------------------------------------------------------------------------------------------
+ sesion_id    | bigint                   |           | not null |         | plain    |             |              | Sesion en la que se detecto la falla.
+ dtc_id       | bigint                   |           | not null |         | plain    |             |              | DTC detectado.
+ taller_id    | bigint                   |           | not null |         | plain    |             |              | Taller de la sesion (desnormalizacion protegida por FK compuesta; simplifica RLS).
+ severidad    | tipo_severidad           |           | not null |         | plain    |             |              | Severidad observada en esta sesion; puede diferir de la sugerida por el catalogo.
+ freeze_frame | jsonb                    |           |          |         | extended |             |              | Datos de freeze frame del escaner, opcional. Objeto JSON opaco para el modelo. Excluido de la auditoria.
+ creado_en    | timestamp with time zone |           | not null | now()   | plain    |             |              | Fecha de creacion del registro.
+Indexes:
+    "pk_falla_sesion" PRIMARY KEY, btree (sesion_id, dtc_id)
+    "ix_falla_sesion_critica" btree (taller_id, sesion_id) WHERE severidad = 'critica'::tipo_severidad
+    "ix_falla_sesion_dtc" btree (dtc_id)
+Check constraints:
+    "ck_falla_sesion_freeze_frame_objeto" CHECK (freeze_frame IS NULL OR jsonb_typeof(freeze_frame) = 'object'::text)
+Foreign-key constraints:
+    "fk_falla_sesion_dtc_catalogo" FOREIGN KEY (dtc_id) REFERENCES dtc_catalogo(id) ON DELETE RESTRICT
+    "fk_falla_sesion_sesion_diagnostico" FOREIGN KEY (sesion_id, taller_id) REFERENCES sesion_diagnostico(id, taller_id) ON DELETE RESTRICT
+    "fk_falla_sesion_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+Policies (forced row security enabled):
+    POLICY "pol_falla_sesion_mecanico_insert" FOR INSERT
+      TO taller_mecanico
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_falla_sesion_mecanico_update" FOR UPDATE
+      TO taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_falla_sesion_miembros_select" FOR SELECT
+      TO taller_admin,taller_auditor,taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_falla_sesion_auditar AFTER INSERT OR DELETE OR UPDATE ON falla_sesion FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar('freeze_frame')
+Access method: heap
+
+                                                                                                                 Table "public.cotizacion"
+       Column       |           Type           | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                                                 Description                                                 
+--------------------+--------------------------+-----------+----------+------------------------------+----------+-------------+--------------+-------------------------------------------------------------------------------------------------------------
+ id                 | bigint                   |           | not null | generated always as identity | plain    |             |              | Identificador interno. Nunca se expone por la API.
+ id_publico         | uuid                     |           | not null | gen_random_uuid()            | plain    |             |              | Identificador publico que expone la API.
+ taller_id          | bigint                   |           | not null |                              | plain    |             |              | Taller de la sesion (desnormalizacion protegida por FK compuesta).
+ sesion_id          | bigint                   |           | not null |                              | plain    |             |              | Sesion que se cotiza.
+ numero_revision    | integer                  |           | not null |                              | plain    |             |              | Numero correlativo de la revision dentro de la sesion. Lo asigna un trigger.
+ vigente            | boolean                  |           | not null | false                        | plain    |             |              | Si es la cotizacion valida de la sesion. A lo mas una por sesion, y solo si esta cerrada.
+ cerrada_en         | timestamp with time zone |           |          |                              | plain    |             |              | Momento del cierre. Nulo = abierta (borrador).
+ total              | bigint                   |           |          |                              | plain    |             |              | Suma de cantidad * precio_unitario del detalle. Se calcula y congela al cerrar; nulo mientras esta abierta.
+ moneda             | character(3)             |           | not null |                              | extended |             |              | Moneda de la cotizacion, copiada de la configuracion del taller al crearla.
+ clave_idempotencia | uuid                     |           | not null |                              | plain    |             |              | UUID generado por el cliente; reintentar con la misma clave devuelve la misma cotizacion.
+ version            | integer                  |           | not null | 1                            | plain    |             |              | Contador para control optimista de concurrencia. Lo incrementa un trigger en cada UPDATE.
+ creado_en          | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de creacion del registro.
+ actualizado_en     | timestamp with time zone |           | not null | now()                        | plain    |             |              | Fecha de la ultima modificacion. La mantiene un trigger.
+Indexes:
+    "pk_cotizacion" PRIMARY KEY, btree (id)
+    "uq_cotizacion_id_publico" UNIQUE CONSTRAINT, btree (id_publico)
+    "uq_cotizacion_id_taller" UNIQUE CONSTRAINT, btree (id, taller_id)
+    "uq_cotizacion_sesion_abierta" UNIQUE, btree (sesion_id) WHERE cerrada_en IS NULL
+    "uq_cotizacion_sesion_revision" UNIQUE CONSTRAINT, btree (sesion_id, numero_revision)
+    "uq_cotizacion_sesion_vigente" UNIQUE, btree (sesion_id) WHERE vigente
+    "uq_cotizacion_taller_clave_idempotencia" UNIQUE CONSTRAINT, btree (taller_id, clave_idempotencia)
+Check constraints:
+    "ck_cotizacion_moneda_formato" CHECK (moneda ~ '^[A-Z]{3}$'::text)
+    "ck_cotizacion_revision_positiva" CHECK (numero_revision > 0)
+    "ck_cotizacion_total_al_cerrar" CHECK ((cerrada_en IS NULL) = (total IS NULL))
+    "ck_cotizacion_total_no_negativo" CHECK (total IS NULL OR total >= 0)
+    "ck_cotizacion_version_positiva" CHECK (version > 0)
+    "ck_cotizacion_vigente_cerrada" CHECK (NOT vigente OR cerrada_en IS NOT NULL)
+Foreign-key constraints:
+    "fk_cotizacion_sesion_diagnostico" FOREIGN KEY (sesion_id, taller_id) REFERENCES sesion_diagnostico(id, taller_id) ON DELETE RESTRICT
+    "fk_cotizacion_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "cotizacion_detalle" CONSTRAINT "fk_cotizacion_detalle_cotizacion" FOREIGN KEY (cotizacion_id, taller_id) REFERENCES cotizacion(id, taller_id) ON DELETE CASCADE
+Policies (forced row security enabled):
+    POLICY "pol_cotizacion_mecanico_insert" FOR INSERT
+      TO taller_mecanico
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_cotizacion_mecanico_update" FOR UPDATE
+      TO taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_cotizacion_miembros_select" FOR SELECT
+      TO taller_admin,taller_auditor,taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_cotizacion_auditar AFTER INSERT OR DELETE OR UPDATE ON cotizacion FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+    trg_cotizacion_incrementar_version BEFORE UPDATE ON cotizacion FOR EACH ROW EXECUTE FUNCTION fn_trg_incrementar_version()
+    trg_cotizacion_marcar_actualizado BEFORE UPDATE ON cotizacion FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+    trg_cotizacion_preparar BEFORE INSERT ON cotizacion FOR EACH ROW EXECUTE FUNCTION fn_trg_cotizacion_preparar()
+    trg_cotizacion_validar_actualizacion BEFORE UPDATE ON cotizacion FOR EACH ROW EXECUTE FUNCTION fn_trg_cotizacion_validar_actualizacion()
+Access method: heap
+
+                                                                                                            Table "public.cotizacion_detalle"
+           Column           |           Type           | Collation | Nullable | Default | Storage  | Compression | Stats target |                                                      Description                                                       
+----------------------------+--------------------------+-----------+----------+---------+----------+-------------+--------------+------------------------------------------------------------------------------------------------------------------------
+ cotizacion_id              | bigint                   |           | not null |         | plain    |             |              | Cotizacion a la que pertenece la linea.
+ repuesto_id                | bigint                   |           | not null |         | plain    |             |              | Repuesto cotizado. Un repuesto aparece una vez por cotizacion.
+ taller_id                  | bigint                   |           | not null |         | plain    |             |              | Taller de la cotizacion (desnormalizacion protegida por FK compuesta; simplifica RLS).
+ cantidad                   | integer                  |           | not null |         | plain    |             |              | Unidades cotizadas. Mayor que cero. Unico dato modificable mientras la cotizacion esta abierta.
+ nombre_snapshot            | text                     |           | not null |         | extended |             |              | Nombre del repuesto al momento de cotizar. Lo llena un trigger.
+ marca_snapshot             | text                     |           | not null |         | extended |             |              | Marca del repuesto al momento de cotizar. La llena un trigger.
+ perfil_snapshot            | tipo_perfil_repuesto     |           | not null |         | plain    |             |              | Perfil del repuesto al momento de cotizar. Lo llena un trigger.
+ precio_referencia_snapshot | bigint                   |           | not null |         | plain    |             |              | Precio maestro del repuesto al momento de cotizar. Lo llena un trigger.
+ margen_pct_snapshot        | numeric(5,2)             |           | not null |         | main     |             |              | Margen del taller al momento de cotizar. Lo llena un trigger.
+ precio_unitario            | bigint                   |           | not null |         | plain    |             |              | Precio de venta unitario = ROUND(precio_referencia_snapshot * (1 + margen_pct_snapshot / 100)). Lo calcula un trigger.
+ creado_en                  | timestamp with time zone |           | not null | now()   | plain    |             |              | Fecha de creacion del registro.
+Indexes:
+    "pk_cotizacion_detalle" PRIMARY KEY, btree (cotizacion_id, repuesto_id)
+Check constraints:
+    "ck_cotizacion_detalle_cantidad_positiva" CHECK (cantidad > 0)
+    "ck_cotizacion_detalle_margen_rango" CHECK (margen_pct_snapshot >= 0::numeric AND margen_pct_snapshot <= 200::numeric)
+    "ck_cotizacion_detalle_precio_referencia_no_negativo" CHECK (precio_referencia_snapshot >= 0)
+    "ck_cotizacion_detalle_precio_unitario_formula" CHECK (precio_unitario::numeric = round(precio_referencia_snapshot::numeric * (1::numeric + margen_pct_snapshot / 100::numeric)))
+Foreign-key constraints:
+    "fk_cotizacion_detalle_cotizacion" FOREIGN KEY (cotizacion_id, taller_id) REFERENCES cotizacion(id, taller_id) ON DELETE CASCADE
+    "fk_cotizacion_detalle_repuesto" FOREIGN KEY (repuesto_id) REFERENCES repuesto(id) ON DELETE RESTRICT
+    "fk_cotizacion_detalle_taller" FOREIGN KEY (taller_id) REFERENCES taller(id) ON DELETE RESTRICT
+Policies (forced row security enabled):
+    POLICY "pol_cotizacion_detalle_mecanico_delete" FOR DELETE
+      TO taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_cotizacion_detalle_mecanico_insert" FOR INSERT
+      TO taller_mecanico
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_cotizacion_detalle_mecanico_update" FOR UPDATE
+      TO taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+      WITH CHECK ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_cotizacion_detalle_miembros_select" FOR SELECT
+      TO taller_admin,taller_auditor,taller_mecanico
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_cotizacion_detalle_auditar AFTER INSERT OR DELETE OR UPDATE ON cotizacion_detalle FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+    trg_cotizacion_detalle_validar BEFORE INSERT OR DELETE OR UPDATE ON cotizacion_detalle FOR EACH ROW EXECUTE FUNCTION fn_trg_cotizacion_detalle_validar()
+Access method: heap
+
+                                                                                                       Table "public.auditoria_operacion"
+      Column      |           Type           | Collation | Nullable |           Default            | Storage  | Compression | Stats target |                                            Description                                             
+------------------+--------------------------+-----------+----------+------------------------------+----------+-------------+--------------+----------------------------------------------------------------------------------------------------
+ id               | bigint                   |           | not null | generated always as identity | plain    |             |              | Identificador interno, correlativo.
+ ocurrido_en      | timestamp with time zone |           | not null | clock_timestamp()            | plain    |             |              | Momento real de la operacion (clock_timestamp).
+ taller_id        | bigint                   |           |          |                              | plain    |             |              | Taller afectado. Valor, no FK. Nulo si no se conoce (login de email inexistente, catalogos).
+ usuario_id       | bigint                   |           |          |                              | plain    |             |              | Usuario de la aplicacion que origino la operacion (app.usuario_id). Valor, no FK.
+ rol              | text                     |           | not null |                              | extended |             |              | Rol PostgreSQL efectivo de la peticion (el asumido con SET LOCAL ROLE o, si no hay, el de sesion).
+ operacion        | tipo_operacion_auditoria |           | not null |                              | plain    |             |              | INSERT, UPDATE, DELETE, LOGIN o LOGIN_FALLIDO.
+ tabla            | text                     |           |          |                              | extended |             |              | Tabla afectada. Nulo en operaciones de login.
+ registro_id      | bigint                   |           |          |                              | plain    |             |              | id de la fila afectada. Nulo en tablas de clave compuesta (la clave va en los datos).
+ datos_anteriores | jsonb                    |           |          |                              | extended |             |              | Fila antes de la operacion, sin las columnas sensibles excluidas.
+ datos_nuevos     | jsonb                    |           |          |                              | extended |             |              | Fila despues de la operacion, sin las columnas sensibles excluidas.
+ ip_origen        | inet                     |           |          |                              | main     |             |              | IP del cliente informada por el backend (app.ip_origen).
+ resultado        | tipo_resultado_auditoria |           | not null |                              | plain    |             |              | exito, fallo o denegado.
+ request_id       | text                     |           |          |                              | extended |             |              | Identificador de la peticion para correlacionar con los logs de la API (app.request_id).
+Indexes:
+    "pk_auditoria_operacion" PRIMARY KEY, btree (id)
+    "ix_auditoria_operacion_taller_fecha" btree (taller_id, ocurrido_en DESC, id DESC)
+Policies (forced row security enabled):
+    POLICY "pol_auditoria_operacion_admin_select" FOR SELECT
+      TO taller_admin
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+    POLICY "pol_auditoria_operacion_auditor_select" FOR SELECT
+      TO taller_auditor
+      USING ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")))
+Triggers:
+    trg_auditoria_operacion_inmutable_fila BEFORE DELETE OR UPDATE ON auditoria_operacion FOR EACH ROW EXECUTE FUNCTION fn_trg_auditoria_inmutable()
+    trg_auditoria_operacion_inmutable_truncate BEFORE TRUNCATE ON auditoria_operacion FOR EACH STATEMENT EXECUTE FUNCTION fn_trg_auditoria_inmutable()
+Access method: heap
+
+################################################################
+# 5. Funciones: propietario, SECURITY DEFINER y search_path
+################################################################
+                 funcion                 |                                                                                               argumentos                                                                                                |  propietario  | seguridad |         configuracion          
+-----------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+-----------+--------------------------------
+ fn_anonimizar_titular                   | p_titular_id bigint                                                                                                                                                                                     | app_funciones | DEFINER   | search_path=pg_catalog, public
+ fn_anonimizar_vencidos                  |                                                                                                                                                                                                         | app_funciones | DEFINER   | search_path=pg_catalog, public
+ fn_autenticar_usuario                   | p_email text, p_contrasena text                                                                                                                                                                         | app_funciones | DEFINER   | search_path=pg_catalog, public
+ fn_establecer_contrasena                | p_usuario_id bigint, p_contrasena text                                                                                                                                                                  | app_funciones | DEFINER   | search_path=pg_catalog, public
+ fn_solicitar_supresion_titular          | p_titular_id bigint                                                                                                                                                                                     | app_funciones | DEFINER   | search_path=pg_catalog, public
+ fn_trg_auditar                          |                                                                                                                                                                                                         | app_funciones | DEFINER   | search_path=pg_catalog, public
+ fn_cambiar_estado_sesion                | p_sesion_id bigint, p_nuevo_estado tipo_estado_atencion, p_version_esperada integer                                                                                                                     | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_cerrar_cotizacion                    | p_cotizacion_id bigint, p_version_esperada integer                                                                                                                                                      | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_contexto_ip_origen                   |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_contexto_rol                         |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_contexto_taller_id                   |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_contexto_usuario_id                  |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_crear_cotizacion                     | p_sesion_id bigint, p_clave_idempotencia uuid                                                                                                                                                           | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_registrar_auditoria                  | p_taller_id bigint, p_usuario_id bigint, p_operacion tipo_operacion_auditoria, p_tabla text, p_registro_id bigint, p_datos_anteriores jsonb, p_datos_nuevos jsonb, p_resultado tipo_resultado_auditoria | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_trg_auditoria_inmutable              |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_trg_cotizacion_detalle_validar       |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_trg_cotizacion_preparar              |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_trg_cotizacion_validar_actualizacion |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_trg_incrementar_version              |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_trg_marcar_actualizado               |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+ fn_trg_sesion_validar_transicion        |                                                                                                                                                                                                         | app_owner     | invoker   | search_path=pg_catalog, public
+(21 rows)
+
+-- Funciones SECURITY DEFINER sin search_path fijo (debe ser 0)
+ definidoras_sin_search_path 
+-----------------------------
+                           0
+(1 row)
+
+################################################################
+# 6. Privilegios de ejecucion sobre funciones
+################################################################
+                 funcion                 |                               con_execute                               
+-----------------------------------------+-------------------------------------------------------------------------
+ fn_anonimizar_titular                   | app_funciones, app_owner
+ fn_anonimizar_vencidos                  | app_funciones, app_owner
+ fn_autenticar_usuario                   | app_backend_user, app_funciones
+ fn_cambiar_estado_sesion                | app_owner, taller_mecanico
+ fn_cerrar_cotizacion                    | app_owner, taller_mecanico
+ fn_contexto_ip_origen                   | app_funciones, app_owner
+ fn_contexto_rol                         | app_funciones, app_owner
+ fn_contexto_taller_id                   | app_funciones, app_owner, taller_admin, taller_auditor, taller_mecanico
+ fn_contexto_usuario_id                  | app_funciones, app_owner, taller_admin, taller_auditor, taller_mecanico
+ fn_crear_cotizacion                     | app_owner, taller_mecanico
+ fn_establecer_contrasena                | app_funciones, taller_admin
+ fn_registrar_auditoria                  | app_funciones, app_owner
+ fn_solicitar_supresion_titular          | app_funciones, taller_admin
+ fn_trg_auditar                          | app_funciones
+ fn_trg_auditoria_inmutable              | app_owner
+ fn_trg_cotizacion_detalle_validar       | app_owner
+ fn_trg_cotizacion_preparar              | app_owner
+ fn_trg_cotizacion_validar_actualizacion | app_owner
+ fn_trg_incrementar_version              | app_owner
+ fn_trg_marcar_actualizado               | app_owner
+ fn_trg_sesion_validar_transicion        | app_owner
+(21 rows)
+
+################################################################
+# 7. Privilegios de TABLA (information_schema.role_table_grants)
+################################################################
+           tabla           |       rol       |      privilegios       
+---------------------------+-----------------+------------------------
+ auditoria_operacion       | app_funciones   | INSERT
+ auditoria_operacion       | taller_admin    | SELECT
+ auditoria_operacion       | taller_auditor  | SELECT
+ compatibilidad_repuesto   | taller_admin    | SELECT
+ compatibilidad_repuesto   | taller_auditor  | SELECT
+ compatibilidad_repuesto   | taller_mecanico | SELECT
+ componente_repuesto       | taller_admin    | SELECT
+ componente_repuesto       | taller_auditor  | SELECT
+ componente_repuesto       | taller_mecanico | SELECT
+ consentimiento_titular    | app_funciones   | SELECT, UPDATE
+ consentimiento_titular    | taller_admin    | SELECT
+ consentimiento_titular    | taller_auditor  | SELECT
+ consentimiento_titular    | taller_mecanico | SELECT
+ cotizacion                | taller_admin    | SELECT
+ cotizacion                | taller_auditor  | SELECT
+ cotizacion                | taller_mecanico | SELECT
+ cotizacion_detalle        | taller_admin    | SELECT
+ cotizacion_detalle        | taller_auditor  | SELECT
+ cotizacion_detalle        | taller_mecanico | DELETE, SELECT
+ dispositivo_diagnostico   | taller_admin    | SELECT
+ dispositivo_diagnostico   | taller_auditor  | SELECT
+ dispositivo_diagnostico   | taller_mecanico | SELECT
+ dtc_catalogo              | taller_admin    | SELECT
+ dtc_catalogo              | taller_auditor  | SELECT
+ dtc_catalogo              | taller_mecanico | SELECT
+ dtc_componente            | taller_admin    | SELECT
+ dtc_componente            | taller_auditor  | SELECT
+ dtc_componente            | taller_mecanico | SELECT
+ falla_sesion              | taller_admin    | SELECT
+ falla_sesion              | taller_auditor  | SELECT
+ falla_sesion              | taller_mecanico | SELECT
+ marca_vehiculo            | taller_admin    | SELECT
+ marca_vehiculo            | taller_auditor  | SELECT
+ marca_vehiculo            | taller_mecanico | SELECT
+ modelo_vehiculo           | taller_admin    | SELECT
+ modelo_vehiculo           | taller_auditor  | SELECT
+ modelo_vehiculo           | taller_mecanico | SELECT
+ repuesto                  | taller_admin    | SELECT
+ repuesto                  | taller_auditor  | SELECT
+ repuesto                  | taller_mecanico | SELECT
+ sesion_diagnostico        | app_funciones   | SELECT
+ sesion_diagnostico        | taller_admin    | SELECT
+ sesion_diagnostico        | taller_auditor  | SELECT
+ sesion_diagnostico        | taller_mecanico | SELECT
+ solicitud_derecho_titular | app_funciones   | INSERT, SELECT, UPDATE
+ solicitud_derecho_titular | taller_admin    | SELECT
+ solicitud_derecho_titular | taller_auditor  | SELECT
+ taller                    | app_funciones   | SELECT
+ taller                    | taller_admin    | SELECT
+ taller                    | taller_auditor  | SELECT
+ taller                    | taller_mecanico | SELECT
+ taller_configuracion      | app_funciones   | SELECT
+ taller_configuracion      | taller_admin    | SELECT
+ taller_configuracion      | taller_auditor  | SELECT
+ taller_configuracion      | taller_mecanico | SELECT
+ titular                   | app_funciones   | SELECT, UPDATE
+ titular                   | taller_admin    | SELECT
+ titular                   | taller_mecanico | SELECT
+ usuario                   | app_funciones   | SELECT
+ usuario                   | taller_admin    | SELECT
+ usuario                   | taller_auditor  | SELECT
+ usuario_credencial        | app_funciones   | INSERT, SELECT, UPDATE
+ v_dtc_repuesto            | taller_admin    | SELECT
+ v_dtc_repuesto            | taller_auditor  | SELECT
+ v_dtc_repuesto            | taller_mecanico | SELECT
+ vehiculo                  | app_funciones   | SELECT, UPDATE
+ vehiculo                  | taller_admin    | SELECT
+ vehiculo                  | taller_auditor  | SELECT
+ vehiculo                  | taller_mecanico | SELECT
+(69 rows)
+
+-- Privilegios de tabla de app_backend_user y PUBLIC (debe ser 0)
+ privilegios_de_tabla 
+----------------------
+                    0
+(1 row)
+
+-- Privilegios DELETE y TRUNCATE otorgados a roles de taller
+       tabla        |       rol       | privilege_type 
+--------------------+-----------------+----------------
+ cotizacion_detalle | taller_mecanico | DELETE
+(1 row)
+
+################################################################
+# 8. Privilegios por COLUMNA (solo los que no cubre un privilegio de tabla)
+################################################################
+           tabla           |       rol       | privilegio |                                                 columnas                                                  
+---------------------------+-----------------+------------+-----------------------------------------------------------------------------------------------------------
+ consentimiento_titular    | taller_admin    | INSERT     | taller_id, titular_id, finalidad, version_terminos, canal, otorgado_en
+ consentimiento_titular    | taller_admin    | UPDATE     | revocado_en
+ consentimiento_titular    | taller_mecanico | INSERT     | taller_id, titular_id, finalidad, version_terminos, canal, otorgado_en
+ consentimiento_titular    | taller_mecanico | UPDATE     | revocado_en
+ cotizacion                | taller_mecanico | INSERT     | taller_id, sesion_id, clave_idempotencia
+ cotizacion                | taller_mecanico | UPDATE     | vigente, cerrada_en
+ cotizacion_detalle        | taller_mecanico | INSERT     | cotizacion_id, repuesto_id, taller_id, cantidad
+ cotizacion_detalle        | taller_mecanico | UPDATE     | cantidad
+ dispositivo_diagnostico   | taller_admin    | INSERT     | taller_id, mac, estado, fabricante, modelo, firmware
+ dispositivo_diagnostico   | taller_admin    | UPDATE     | mac, estado, fabricante, modelo, firmware
+ falla_sesion              | taller_mecanico | INSERT     | sesion_id, dtc_id, taller_id, severidad, freeze_frame
+ falla_sesion              | taller_mecanico | UPDATE     | severidad, freeze_frame
+ sesion_diagnostico        | taller_mecanico | INSERT     | taller_id, vehiculo_id, usuario_id, dispositivo_id, metodo_ingreso, kilometraje, iniciada_en
+ sesion_diagnostico        | taller_mecanico | UPDATE     | kilometraje, estado
+ solicitud_derecho_titular | taller_admin    | INSERT     | taller_id, titular_id, tipo, estado, usuario_responsable_id, recibida_en
+ solicitud_derecho_titular | taller_admin    | UPDATE     | estado, usuario_responsable_id, resuelta_en
+ taller_configuracion      | taller_admin    | UPDATE     | moneda, tema, margen_pct, retencion_anios
+ titular                   | taller_admin    | INSERT     | taller_id, nombre, telefono, email, identificador_hmac
+ titular                   | taller_admin    | UPDATE     | nombre, telefono, email, identificador_hmac
+ titular                   | taller_auditor  | SELECT     | id, id_publico, taller_id, estado_tratamiento, bloqueado_hasta, anonimizado_en, creado_en, actualizado_en
+ titular                   | taller_mecanico | INSERT     | taller_id, nombre, telefono, email, identificador_hmac
+ titular                   | taller_mecanico | UPDATE     | nombre, telefono, email
+ usuario                   | taller_admin    | INSERT     | taller_id, email, nombre, rol, activo
+ usuario                   | taller_admin    | UPDATE     | email, nombre, rol, activo
+ usuario                   | taller_mecanico | SELECT     | id, id_publico, taller_id, nombre, rol, activo
+ vehiculo                  | taller_admin    | INSERT     | taller_id, titular_id, modelo_vehiculo_id, anio, motor, vin, patente
+ vehiculo                  | taller_admin    | UPDATE     | titular_id, modelo_vehiculo_id, anio, motor, vin, patente
+ vehiculo                  | taller_mecanico | INSERT     | taller_id, titular_id, modelo_vehiculo_id, anio, motor, vin, patente
+ vehiculo                  | taller_mecanico | UPDATE     | titular_id, modelo_vehiculo_id, anio, motor, vin, patente
+(29 rows)
+
+################################################################
+# 9. RLS: estado por tabla y politicas (pg_policies)
+################################################################
+           tabla           | rls | force | politicas 
+---------------------------+-----+-------+-----------
+ auditoria_operacion       | t   | t     |         2
+ consentimiento_titular    | t   | t     |         7
+ cotizacion                | t   | t     |         3
+ cotizacion_detalle        | t   | t     |         4
+ dispositivo_diagnostico   | t   | t     |         3
+ falla_sesion              | t   | t     |         3
+ sesion_diagnostico        | t   | t     |         3
+ solicitud_derecho_titular | t   | t     |         4
+ taller                    | t   | t     |         1
+ taller_configuracion      | t   | t     |         2
+ titular                   | t   | t     |         7
+ usuario                   | t   | t     |         3
+ usuario_credencial        | t   | t     |         0
+ vehiculo                  | t   | t     |         7
+ compatibilidad_repuesto   | f   | f     |         0
+ componente_repuesto       | f   | f     |         0
+ dtc_catalogo              | f   | f     |         0
+ dtc_componente            | f   | f     |         0
+ marca_vehiculo            | f   | f     |         0
+ modelo_vehiculo           | f   | f     |         0
+ repuesto                  | f   | f     |         0
+(21 rows)
+
+           tabla           |                   politica                   | operacion |                     roles                     
+---------------------------+----------------------------------------------+-----------+-----------------------------------------------
+ auditoria_operacion       | pol_auditoria_operacion_admin_select         | SELECT    | taller_admin
+ auditoria_operacion       | pol_auditoria_operacion_auditor_select       | SELECT    | taller_auditor
+ consentimiento_titular    | pol_consentimiento_titular_admin_insert      | INSERT    | taller_admin
+ consentimiento_titular    | pol_consentimiento_titular_admin_select      | SELECT    | taller_admin
+ consentimiento_titular    | pol_consentimiento_titular_admin_update      | UPDATE    | taller_admin
+ consentimiento_titular    | pol_consentimiento_titular_auditor_select    | SELECT    | taller_auditor
+ consentimiento_titular    | pol_consentimiento_titular_mecanico_insert   | INSERT    | taller_mecanico
+ consentimiento_titular    | pol_consentimiento_titular_mecanico_select   | SELECT    | taller_mecanico
+ consentimiento_titular    | pol_consentimiento_titular_mecanico_update   | UPDATE    | taller_mecanico
+ cotizacion                | pol_cotizacion_mecanico_insert               | INSERT    | taller_mecanico
+ cotizacion                | pol_cotizacion_mecanico_update               | UPDATE    | taller_mecanico
+ cotizacion                | pol_cotizacion_miembros_select               | SELECT    | taller_admin, taller_auditor, taller_mecanico
+ cotizacion_detalle        | pol_cotizacion_detalle_mecanico_delete       | DELETE    | taller_mecanico
+ cotizacion_detalle        | pol_cotizacion_detalle_mecanico_insert       | INSERT    | taller_mecanico
+ cotizacion_detalle        | pol_cotizacion_detalle_mecanico_update       | UPDATE    | taller_mecanico
+ cotizacion_detalle        | pol_cotizacion_detalle_miembros_select       | SELECT    | taller_admin, taller_auditor, taller_mecanico
+ dispositivo_diagnostico   | pol_dispositivo_diagnostico_admin_insert     | INSERT    | taller_admin
+ dispositivo_diagnostico   | pol_dispositivo_diagnostico_admin_update     | UPDATE    | taller_admin
+ dispositivo_diagnostico   | pol_dispositivo_diagnostico_miembros_select  | SELECT    | taller_admin, taller_auditor, taller_mecanico
+ falla_sesion              | pol_falla_sesion_mecanico_insert             | INSERT    | taller_mecanico
+ falla_sesion              | pol_falla_sesion_mecanico_update             | UPDATE    | taller_mecanico
+ falla_sesion              | pol_falla_sesion_miembros_select             | SELECT    | taller_admin, taller_auditor, taller_mecanico
+ sesion_diagnostico        | pol_sesion_diagnostico_mecanico_insert       | INSERT    | taller_mecanico
+ sesion_diagnostico        | pol_sesion_diagnostico_mecanico_update       | UPDATE    | taller_mecanico
+ sesion_diagnostico        | pol_sesion_diagnostico_miembros_select       | SELECT    | taller_admin, taller_auditor, taller_mecanico
+ solicitud_derecho_titular | pol_solicitud_derecho_titular_admin_insert   | INSERT    | taller_admin
+ solicitud_derecho_titular | pol_solicitud_derecho_titular_admin_select   | SELECT    | taller_admin
+ solicitud_derecho_titular | pol_solicitud_derecho_titular_admin_update   | UPDATE    | taller_admin
+ solicitud_derecho_titular | pol_solicitud_derecho_titular_auditor_select | SELECT    | taller_auditor
+ taller                    | pol_taller_miembros_select                   | SELECT    | taller_admin, taller_auditor, taller_mecanico
+ taller_configuracion      | pol_taller_configuracion_admin_update        | UPDATE    | taller_admin
+ taller_configuracion      | pol_taller_configuracion_miembros_select     | SELECT    | taller_admin, taller_auditor, taller_mecanico
+ titular                   | pol_titular_admin_insert                     | INSERT    | taller_admin
+ titular                   | pol_titular_admin_select                     | SELECT    | taller_admin
+ titular                   | pol_titular_admin_update                     | UPDATE    | taller_admin
+ titular                   | pol_titular_auditor_select                   | SELECT    | taller_auditor
+ titular                   | pol_titular_mecanico_insert                  | INSERT    | taller_mecanico
+ titular                   | pol_titular_mecanico_select                  | SELECT    | taller_mecanico
+ titular                   | pol_titular_mecanico_update                  | UPDATE    | taller_mecanico
+ usuario                   | pol_usuario_admin_insert                     | INSERT    | taller_admin
+ usuario                   | pol_usuario_admin_update                     | UPDATE    | taller_admin
+ usuario                   | pol_usuario_miembros_select                  | SELECT    | taller_admin, taller_auditor, taller_mecanico
+ vehiculo                  | pol_vehiculo_admin_insert                    | INSERT    | taller_admin
+ vehiculo                  | pol_vehiculo_admin_select                    | SELECT    | taller_admin
+ vehiculo                  | pol_vehiculo_admin_update                    | UPDATE    | taller_admin
+ vehiculo                  | pol_vehiculo_auditor_select                  | SELECT    | taller_auditor
+ vehiculo                  | pol_vehiculo_mecanico_insert                 | INSERT    | taller_mecanico
+ vehiculo                  | pol_vehiculo_mecanico_select                 | SELECT    | taller_mecanico
+ vehiculo                  | pol_vehiculo_mecanico_update                 | UPDATE    | taller_mecanico
+(49 rows)
+
+-[ RECORD 1 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | auditoria_operacion
+politica   | pol_auditoria_operacion_admin_select
+operacion  | SELECT
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 2 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | auditoria_operacion
+politica   | pol_auditoria_operacion_auditor_select
+operacion  | SELECT
+roles      | taller_auditor
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 3 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | consentimiento_titular
+politica   | pol_consentimiento_titular_admin_insert
+operacion  | INSERT
+roles      | taller_admin
+using      | 
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 4 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | consentimiento_titular
+politica   | pol_consentimiento_titular_admin_select
+operacion  | SELECT
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 5 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | consentimiento_titular
+politica   | pol_consentimiento_titular_admin_update
+operacion  | UPDATE
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 6 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | consentimiento_titular
+politica   | pol_consentimiento_titular_auditor_select
+operacion  | SELECT
+roles      | taller_auditor
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 7 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | consentimiento_titular
+politica   | pol_consentimiento_titular_mecanico_insert
+operacion  | INSERT
+roles      | taller_mecanico
+using      | 
+with_check | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (EXISTS ( SELECT 1                                                                                             +
+           |    FROM titular t                                                                                                                                                                                                                +
+           |   WHERE (t.id = consentimiento_titular.titular_id))))
+-[ RECORD 8 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | consentimiento_titular
+politica   | pol_consentimiento_titular_mecanico_select
+operacion  | SELECT
+roles      | taller_mecanico
+using      | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (EXISTS ( SELECT 1                                                                                             +
+           |    FROM titular t                                                                                                                                                                                                                +
+           |   WHERE (t.id = consentimiento_titular.titular_id))))
+with_check | 
+-[ RECORD 9 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | consentimiento_titular
+politica   | pol_consentimiento_titular_mecanico_update
+operacion  | UPDATE
+roles      | taller_mecanico
+using      | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (EXISTS ( SELECT 1                                                                                             +
+           |    FROM titular t                                                                                                                                                                                                                +
+           |   WHERE (t.id = consentimiento_titular.titular_id))))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 10 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | cotizacion
+politica   | pol_cotizacion_mecanico_insert
+operacion  | INSERT
+roles      | taller_mecanico
+using      | 
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 11 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | cotizacion
+politica   | pol_cotizacion_mecanico_update
+operacion  | UPDATE
+roles      | taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 12 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | cotizacion
+politica   | pol_cotizacion_miembros_select
+operacion  | SELECT
+roles      | taller_admin, taller_auditor, taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 13 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | cotizacion_detalle
+politica   | pol_cotizacion_detalle_mecanico_delete
+operacion  | DELETE
+roles      | taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 14 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | cotizacion_detalle
+politica   | pol_cotizacion_detalle_mecanico_insert
+operacion  | INSERT
+roles      | taller_mecanico
+using      | 
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 15 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | cotizacion_detalle
+politica   | pol_cotizacion_detalle_mecanico_update
+operacion  | UPDATE
+roles      | taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 16 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | cotizacion_detalle
+politica   | pol_cotizacion_detalle_miembros_select
+operacion  | SELECT
+roles      | taller_admin, taller_auditor, taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 17 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | dispositivo_diagnostico
+politica   | pol_dispositivo_diagnostico_admin_insert
+operacion  | INSERT
+roles      | taller_admin
+using      | 
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 18 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | dispositivo_diagnostico
+politica   | pol_dispositivo_diagnostico_admin_update
+operacion  | UPDATE
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 19 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | dispositivo_diagnostico
+politica   | pol_dispositivo_diagnostico_miembros_select
+operacion  | SELECT
+roles      | taller_admin, taller_auditor, taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 20 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | falla_sesion
+politica   | pol_falla_sesion_mecanico_insert
+operacion  | INSERT
+roles      | taller_mecanico
+using      | 
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 21 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | falla_sesion
+politica   | pol_falla_sesion_mecanico_update
+operacion  | UPDATE
+roles      | taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 22 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | falla_sesion
+politica   | pol_falla_sesion_miembros_select
+operacion  | SELECT
+roles      | taller_admin, taller_auditor, taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 23 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | sesion_diagnostico
+politica   | pol_sesion_diagnostico_mecanico_insert
+operacion  | INSERT
+roles      | taller_mecanico
+using      | 
+with_check | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (usuario_id = ( SELECT (NULLIF(current_setting('app.usuario_id'::text, true), ''::text))::bigint AS "nullif")))
+-[ RECORD 24 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | sesion_diagnostico
+politica   | pol_sesion_diagnostico_mecanico_update
+operacion  | UPDATE
+roles      | taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 25 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | sesion_diagnostico
+politica   | pol_sesion_diagnostico_miembros_select
+operacion  | SELECT
+roles      | taller_admin, taller_auditor, taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 26 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | solicitud_derecho_titular
+politica   | pol_solicitud_derecho_titular_admin_insert
+operacion  | INSERT
+roles      | taller_admin
+using      | 
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 27 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | solicitud_derecho_titular
+politica   | pol_solicitud_derecho_titular_admin_select
+operacion  | SELECT
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 28 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | solicitud_derecho_titular
+politica   | pol_solicitud_derecho_titular_admin_update
+operacion  | UPDATE
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 29 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | solicitud_derecho_titular
+politica   | pol_solicitud_derecho_titular_auditor_select
+operacion  | SELECT
+roles      | taller_auditor
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 30 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | taller
+politica   | pol_taller_miembros_select
+operacion  | SELECT
+roles      | taller_admin, taller_auditor, taller_mecanico
+using      | (id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 31 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | taller_configuracion
+politica   | pol_taller_configuracion_admin_update
+operacion  | UPDATE
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 32 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | taller_configuracion
+politica   | pol_taller_configuracion_miembros_select
+operacion  | SELECT
+roles      | taller_admin, taller_auditor, taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 33 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | titular
+politica   | pol_titular_admin_insert
+operacion  | INSERT
+roles      | taller_admin
+using      | 
+with_check | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento))
+-[ RECORD 34 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | titular
+politica   | pol_titular_admin_select
+operacion  | SELECT
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 35 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | titular
+politica   | pol_titular_admin_update
+operacion  | UPDATE
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 36 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | titular
+politica   | pol_titular_auditor_select
+operacion  | SELECT
+roles      | taller_auditor
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 37 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | titular
+politica   | pol_titular_mecanico_insert
+operacion  | INSERT
+roles      | taller_mecanico
+using      | 
+with_check | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento))
+-[ RECORD 38 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | titular
+politica   | pol_titular_mecanico_select
+operacion  | SELECT
+roles      | taller_mecanico
+using      | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento))
+with_check | 
+-[ RECORD 39 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | titular
+politica   | pol_titular_mecanico_update
+operacion  | UPDATE
+roles      | taller_mecanico
+using      | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento))
+with_check | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento))
+-[ RECORD 40 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | usuario
+politica   | pol_usuario_admin_insert
+operacion  | INSERT
+roles      | taller_admin
+using      | 
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 41 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | usuario
+politica   | pol_usuario_admin_update
+operacion  | UPDATE
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 42 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | usuario
+politica   | pol_usuario_miembros_select
+operacion  | SELECT
+roles      | taller_admin, taller_auditor, taller_mecanico
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 43 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | vehiculo
+politica   | pol_vehiculo_admin_insert
+operacion  | INSERT
+roles      | taller_admin
+using      | 
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 44 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | vehiculo
+politica   | pol_vehiculo_admin_select
+operacion  | SELECT
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 45 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | vehiculo
+politica   | pol_vehiculo_admin_update
+operacion  | UPDATE
+roles      | taller_admin
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+-[ RECORD 46 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | vehiculo
+politica   | pol_vehiculo_auditor_select
+operacion  | SELECT
+roles      | taller_auditor
+using      | (taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif"))
+with_check | 
+-[ RECORD 47 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | vehiculo
+politica   | pol_vehiculo_mecanico_insert
+operacion  | INSERT
+roles      | taller_mecanico
+using      | 
+with_check | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (EXISTS ( SELECT 1                                       +
+           |    FROM titular t                                                                                                                                                                                                                +
+           |   WHERE (t.id = vehiculo.titular_id)))))
+-[ RECORD 48 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | vehiculo
+politica   | pol_vehiculo_mecanico_select
+operacion  | SELECT
+roles      | taller_mecanico
+using      | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (EXISTS ( SELECT 1                                       +
+           |    FROM titular t                                                                                                                                                                                                                +
+           |   WHERE (t.id = vehiculo.titular_id)))))
+with_check | 
+-[ RECORD 49 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+tabla      | vehiculo
+politica   | pol_vehiculo_mecanico_update
+operacion  | UPDATE
+roles      | taller_mecanico
+using      | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (EXISTS ( SELECT 1                                       +
+           |    FROM titular t                                                                                                                                                                                                                +
+           |   WHERE (t.id = vehiculo.titular_id)))))
+with_check | ((taller_id = ( SELECT (NULLIF(current_setting('app.taller_id'::text, true), ''::text))::bigint AS "nullif")) AND (anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (EXISTS ( SELECT 1                                       +
+           |    FROM titular t                                                                                                                                                                                                                +
+           |   WHERE (t.id = vehiculo.titular_id)))))
+
+################################################################
+# 10. Indices
+################################################################
+           tabla           |                   indice                    |                                                                                   definicion                                                                                    
+---------------------------+---------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ auditoria_operacion       | ix_auditoria_operacion_taller_fecha         | CREATE INDEX ix_auditoria_operacion_taller_fecha ON public.auditoria_operacion USING btree (taller_id, ocurrido_en DESC, id DESC)
+ auditoria_operacion       | pk_auditoria_operacion                      | CREATE UNIQUE INDEX pk_auditoria_operacion ON public.auditoria_operacion USING btree (id)
+ compatibilidad_repuesto   | ix_compatibilidad_repuesto_modelo           | CREATE INDEX ix_compatibilidad_repuesto_modelo ON public.compatibilidad_repuesto USING btree (modelo_vehiculo_id)
+ compatibilidad_repuesto   | pk_compatibilidad_repuesto                  | CREATE UNIQUE INDEX pk_compatibilidad_repuesto ON public.compatibilidad_repuesto USING btree (repuesto_id, modelo_vehiculo_id, anio_desde)
+ componente_repuesto       | pk_componente_repuesto                      | CREATE UNIQUE INDEX pk_componente_repuesto ON public.componente_repuesto USING btree (id)
+ componente_repuesto       | uq_componente_repuesto_id_publico           | CREATE UNIQUE INDEX uq_componente_repuesto_id_publico ON public.componente_repuesto USING btree (id_publico)
+ componente_repuesto       | uq_componente_repuesto_nombre               | CREATE UNIQUE INDEX uq_componente_repuesto_nombre ON public.componente_repuesto USING btree (nombre)
+ consentimiento_titular    | ix_consentimiento_titular_taller_titular    | CREATE INDEX ix_consentimiento_titular_taller_titular ON public.consentimiento_titular USING btree (taller_id, titular_id)
+ consentimiento_titular    | pk_consentimiento_titular                   | CREATE UNIQUE INDEX pk_consentimiento_titular ON public.consentimiento_titular USING btree (id)
+ consentimiento_titular    | uq_consentimiento_titular_activo            | CREATE UNIQUE INDEX uq_consentimiento_titular_activo ON public.consentimiento_titular USING btree (titular_id, finalidad) WHERE (revocado_en IS NULL)
+ cotizacion                | pk_cotizacion                               | CREATE UNIQUE INDEX pk_cotizacion ON public.cotizacion USING btree (id)
+ cotizacion                | uq_cotizacion_id_publico                    | CREATE UNIQUE INDEX uq_cotizacion_id_publico ON public.cotizacion USING btree (id_publico)
+ cotizacion                | uq_cotizacion_id_taller                     | CREATE UNIQUE INDEX uq_cotizacion_id_taller ON public.cotizacion USING btree (id, taller_id)
+ cotizacion                | uq_cotizacion_sesion_abierta                | CREATE UNIQUE INDEX uq_cotizacion_sesion_abierta ON public.cotizacion USING btree (sesion_id) WHERE (cerrada_en IS NULL)
+ cotizacion                | uq_cotizacion_sesion_revision               | CREATE UNIQUE INDEX uq_cotizacion_sesion_revision ON public.cotizacion USING btree (sesion_id, numero_revision)
+ cotizacion                | uq_cotizacion_sesion_vigente                | CREATE UNIQUE INDEX uq_cotizacion_sesion_vigente ON public.cotizacion USING btree (sesion_id) WHERE vigente
+ cotizacion                | uq_cotizacion_taller_clave_idempotencia     | CREATE UNIQUE INDEX uq_cotizacion_taller_clave_idempotencia ON public.cotizacion USING btree (taller_id, clave_idempotencia)
+ cotizacion_detalle        | pk_cotizacion_detalle                       | CREATE UNIQUE INDEX pk_cotizacion_detalle ON public.cotizacion_detalle USING btree (cotizacion_id, repuesto_id)
+ dispositivo_diagnostico   | pk_dispositivo_diagnostico                  | CREATE UNIQUE INDEX pk_dispositivo_diagnostico ON public.dispositivo_diagnostico USING btree (id)
+ dispositivo_diagnostico   | uq_dispositivo_diagnostico_id_publico       | CREATE UNIQUE INDEX uq_dispositivo_diagnostico_id_publico ON public.dispositivo_diagnostico USING btree (id_publico)
+ dispositivo_diagnostico   | uq_dispositivo_diagnostico_id_taller        | CREATE UNIQUE INDEX uq_dispositivo_diagnostico_id_taller ON public.dispositivo_diagnostico USING btree (id, taller_id)
+ dispositivo_diagnostico   | uq_dispositivo_diagnostico_taller_mac       | CREATE UNIQUE INDEX uq_dispositivo_diagnostico_taller_mac ON public.dispositivo_diagnostico USING btree (taller_id, mac)
+ dtc_catalogo              | pk_dtc_catalogo                             | CREATE UNIQUE INDEX pk_dtc_catalogo ON public.dtc_catalogo USING btree (id)
+ dtc_catalogo              | uq_dtc_catalogo_codigo                      | CREATE UNIQUE INDEX uq_dtc_catalogo_codigo ON public.dtc_catalogo USING btree (codigo)
+ dtc_componente            | ix_dtc_componente_componente                | CREATE INDEX ix_dtc_componente_componente ON public.dtc_componente USING btree (componente_id)
+ dtc_componente            | pk_dtc_componente                           | CREATE UNIQUE INDEX pk_dtc_componente ON public.dtc_componente USING btree (dtc_id, componente_id)
+ falla_sesion              | ix_falla_sesion_critica                     | CREATE INDEX ix_falla_sesion_critica ON public.falla_sesion USING btree (taller_id, sesion_id) WHERE (severidad = 'critica'::tipo_severidad)
+ falla_sesion              | ix_falla_sesion_dtc                         | CREATE INDEX ix_falla_sesion_dtc ON public.falla_sesion USING btree (dtc_id)
+ falla_sesion              | pk_falla_sesion                             | CREATE UNIQUE INDEX pk_falla_sesion ON public.falla_sesion USING btree (sesion_id, dtc_id)
+ marca_vehiculo            | pk_marca_vehiculo                           | CREATE UNIQUE INDEX pk_marca_vehiculo ON public.marca_vehiculo USING btree (id)
+ marca_vehiculo            | uq_marca_vehiculo_id_publico                | CREATE UNIQUE INDEX uq_marca_vehiculo_id_publico ON public.marca_vehiculo USING btree (id_publico)
+ marca_vehiculo            | uq_marca_vehiculo_nombre                    | CREATE UNIQUE INDEX uq_marca_vehiculo_nombre ON public.marca_vehiculo USING btree (nombre)
+ modelo_vehiculo           | pk_modelo_vehiculo                          | CREATE UNIQUE INDEX pk_modelo_vehiculo ON public.modelo_vehiculo USING btree (id)
+ modelo_vehiculo           | uq_modelo_vehiculo_id_publico               | CREATE UNIQUE INDEX uq_modelo_vehiculo_id_publico ON public.modelo_vehiculo USING btree (id_publico)
+ modelo_vehiculo           | uq_modelo_vehiculo_marca_nombre             | CREATE UNIQUE INDEX uq_modelo_vehiculo_marca_nombre ON public.modelo_vehiculo USING btree (marca_vehiculo_id, nombre)
+ repuesto                  | pk_repuesto                                 | CREATE UNIQUE INDEX pk_repuesto ON public.repuesto USING btree (id)
+ repuesto                  | uq_repuesto_componente_marca_codigo         | CREATE UNIQUE INDEX uq_repuesto_componente_marca_codigo ON public.repuesto USING btree (componente_id, marca, codigo_fabricante)
+ repuesto                  | uq_repuesto_id_publico                      | CREATE UNIQUE INDEX uq_repuesto_id_publico ON public.repuesto USING btree (id_publico)
+ sesion_diagnostico        | ix_sesion_diagnostico_estado                | CREATE INDEX ix_sesion_diagnostico_estado ON public.sesion_diagnostico USING btree (taller_id, estado, iniciada_en DESC, id DESC)
+ sesion_diagnostico        | ix_sesion_diagnostico_historial             | CREATE INDEX ix_sesion_diagnostico_historial ON public.sesion_diagnostico USING btree (taller_id, iniciada_en DESC, id DESC)
+ sesion_diagnostico        | ix_sesion_diagnostico_pendiente             | CREATE INDEX ix_sesion_diagnostico_pendiente ON public.sesion_diagnostico USING btree (taller_id, iniciada_en DESC, id DESC) WHERE (estado = 'pendiente'::tipo_estado_atencion)
+ sesion_diagnostico        | ix_sesion_diagnostico_vehiculo              | CREATE INDEX ix_sesion_diagnostico_vehiculo ON public.sesion_diagnostico USING btree (taller_id, vehiculo_id, iniciada_en DESC)
+ sesion_diagnostico        | pk_sesion_diagnostico                       | CREATE UNIQUE INDEX pk_sesion_diagnostico ON public.sesion_diagnostico USING btree (id)
+ sesion_diagnostico        | uq_sesion_diagnostico_id_publico            | CREATE UNIQUE INDEX uq_sesion_diagnostico_id_publico ON public.sesion_diagnostico USING btree (id_publico)
+ sesion_diagnostico        | uq_sesion_diagnostico_id_taller             | CREATE UNIQUE INDEX uq_sesion_diagnostico_id_taller ON public.sesion_diagnostico USING btree (id, taller_id)
+ solicitud_derecho_titular | ix_solicitud_derecho_titular_taller_titular | CREATE INDEX ix_solicitud_derecho_titular_taller_titular ON public.solicitud_derecho_titular USING btree (taller_id, titular_id)
+ solicitud_derecho_titular | pk_solicitud_derecho_titular                | CREATE UNIQUE INDEX pk_solicitud_derecho_titular ON public.solicitud_derecho_titular USING btree (id)
+ solicitud_derecho_titular | uq_solicitud_derecho_titular_id_publico     | CREATE UNIQUE INDEX uq_solicitud_derecho_titular_id_publico ON public.solicitud_derecho_titular USING btree (id_publico)
+ taller                    | pk_taller                                   | CREATE UNIQUE INDEX pk_taller ON public.taller USING btree (id)
+ taller                    | uq_taller_id_publico                        | CREATE UNIQUE INDEX uq_taller_id_publico ON public.taller USING btree (id_publico)
+ taller_configuracion      | pk_taller_configuracion                     | CREATE UNIQUE INDEX pk_taller_configuracion ON public.taller_configuracion USING btree (taller_id)
+ titular                   | ix_titular_bloqueado_hasta                  | CREATE INDEX ix_titular_bloqueado_hasta ON public.titular USING btree (bloqueado_hasta) WHERE (estado_tratamiento = 'bloqueado'::tipo_estado_tratamiento)
+ titular                   | ix_titular_taller                           | CREATE INDEX ix_titular_taller ON public.titular USING btree (taller_id)
+ titular                   | pk_titular                                  | CREATE UNIQUE INDEX pk_titular ON public.titular USING btree (id)
+ titular                   | uq_titular_id_publico                       | CREATE UNIQUE INDEX uq_titular_id_publico ON public.titular USING btree (id_publico)
+ titular                   | uq_titular_id_taller                        | CREATE UNIQUE INDEX uq_titular_id_taller ON public.titular USING btree (id, taller_id)
+ titular                   | uq_titular_taller_identificador_hmac        | CREATE UNIQUE INDEX uq_titular_taller_identificador_hmac ON public.titular USING btree (taller_id, identificador_hmac) WHERE (identificador_hmac IS NOT NULL)
+ usuario                   | ix_usuario_taller                           | CREATE INDEX ix_usuario_taller ON public.usuario USING btree (taller_id)
+ usuario                   | pk_usuario                                  | CREATE UNIQUE INDEX pk_usuario ON public.usuario USING btree (id)
+ usuario                   | uq_usuario_email                            | CREATE UNIQUE INDEX uq_usuario_email ON public.usuario USING btree (email)
+ usuario                   | uq_usuario_id_publico                       | CREATE UNIQUE INDEX uq_usuario_id_publico ON public.usuario USING btree (id_publico)
+ usuario                   | uq_usuario_id_taller                        | CREATE UNIQUE INDEX uq_usuario_id_taller ON public.usuario USING btree (id, taller_id)
+ usuario_credencial        | pk_usuario_credencial                       | CREATE UNIQUE INDEX pk_usuario_credencial ON public.usuario_credencial USING btree (usuario_id)
+ vehiculo                  | ix_vehiculo_taller_modelo_anio              | CREATE INDEX ix_vehiculo_taller_modelo_anio ON public.vehiculo USING btree (taller_id, modelo_vehiculo_id, anio)
+ vehiculo                  | ix_vehiculo_taller_titular                  | CREATE INDEX ix_vehiculo_taller_titular ON public.vehiculo USING btree (taller_id, titular_id) WHERE (titular_id IS NOT NULL)
+ vehiculo                  | pk_vehiculo                                 | CREATE UNIQUE INDEX pk_vehiculo ON public.vehiculo USING btree (id)
+ vehiculo                  | uq_vehiculo_id_publico                      | CREATE UNIQUE INDEX uq_vehiculo_id_publico ON public.vehiculo USING btree (id_publico)
+ vehiculo                  | uq_vehiculo_id_taller                       | CREATE UNIQUE INDEX uq_vehiculo_id_taller ON public.vehiculo USING btree (id, taller_id)
+ vehiculo                  | uq_vehiculo_taller_patente                  | CREATE UNIQUE INDEX uq_vehiculo_taller_patente ON public.vehiculo USING btree (taller_id, patente) WHERE (patente IS NOT NULL)
+ vehiculo                  | uq_vehiculo_taller_vin                      | CREATE UNIQUE INDEX uq_vehiculo_taller_vin ON public.vehiculo USING btree (taller_id, vin) WHERE (vin IS NOT NULL)
+(70 rows)
+
+################################################################
+# 11. Triggers
+################################################################
+           tabla           |                     trigger                      |                                                                                       definicion                                                                                        
+---------------------------+--------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ auditoria_operacion       | trg_auditoria_operacion_inmutable_fila           | CREATE TRIGGER trg_auditoria_operacion_inmutable_fila BEFORE DELETE OR UPDATE ON public.auditoria_operacion FOR EACH ROW EXECUTE FUNCTION fn_trg_auditoria_inmutable()
+ auditoria_operacion       | trg_auditoria_operacion_inmutable_truncate       | CREATE TRIGGER trg_auditoria_operacion_inmutable_truncate BEFORE TRUNCATE ON public.auditoria_operacion FOR EACH STATEMENT EXECUTE FUNCTION fn_trg_auditoria_inmutable()
+ consentimiento_titular    | trg_consentimiento_titular_auditar               | CREATE TRIGGER trg_consentimiento_titular_auditar AFTER INSERT OR DELETE OR UPDATE ON public.consentimiento_titular FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+ cotizacion                | trg_cotizacion_auditar                           | CREATE TRIGGER trg_cotizacion_auditar AFTER INSERT OR DELETE OR UPDATE ON public.cotizacion FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+ cotizacion                | trg_cotizacion_incrementar_version               | CREATE TRIGGER trg_cotizacion_incrementar_version BEFORE UPDATE ON public.cotizacion FOR EACH ROW EXECUTE FUNCTION fn_trg_incrementar_version()
+ cotizacion                | trg_cotizacion_marcar_actualizado                | CREATE TRIGGER trg_cotizacion_marcar_actualizado BEFORE UPDATE ON public.cotizacion FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+ cotizacion                | trg_cotizacion_preparar                          | CREATE TRIGGER trg_cotizacion_preparar BEFORE INSERT ON public.cotizacion FOR EACH ROW EXECUTE FUNCTION fn_trg_cotizacion_preparar()
+ cotizacion                | trg_cotizacion_validar_actualizacion             | CREATE TRIGGER trg_cotizacion_validar_actualizacion BEFORE UPDATE ON public.cotizacion FOR EACH ROW EXECUTE FUNCTION fn_trg_cotizacion_validar_actualizacion()
+ cotizacion_detalle        | trg_cotizacion_detalle_auditar                   | CREATE TRIGGER trg_cotizacion_detalle_auditar AFTER INSERT OR DELETE OR UPDATE ON public.cotizacion_detalle FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+ cotizacion_detalle        | trg_cotizacion_detalle_validar                   | CREATE TRIGGER trg_cotizacion_detalle_validar BEFORE INSERT OR DELETE OR UPDATE ON public.cotizacion_detalle FOR EACH ROW EXECUTE FUNCTION fn_trg_cotizacion_detalle_validar()
+ dispositivo_diagnostico   | trg_dispositivo_diagnostico_auditar              | CREATE TRIGGER trg_dispositivo_diagnostico_auditar AFTER INSERT OR DELETE OR UPDATE ON public.dispositivo_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+ dispositivo_diagnostico   | trg_dispositivo_diagnostico_marcar_actualizado   | CREATE TRIGGER trg_dispositivo_diagnostico_marcar_actualizado BEFORE UPDATE ON public.dispositivo_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+ falla_sesion              | trg_falla_sesion_auditar                         | CREATE TRIGGER trg_falla_sesion_auditar AFTER INSERT OR DELETE OR UPDATE ON public.falla_sesion FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar('freeze_frame')
+ repuesto                  | trg_repuesto_auditar                             | CREATE TRIGGER trg_repuesto_auditar AFTER INSERT OR DELETE OR UPDATE ON public.repuesto FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+ repuesto                  | trg_repuesto_marcar_actualizado                  | CREATE TRIGGER trg_repuesto_marcar_actualizado BEFORE UPDATE ON public.repuesto FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+ sesion_diagnostico        | trg_sesion_diagnostico_auditar                   | CREATE TRIGGER trg_sesion_diagnostico_auditar AFTER INSERT OR DELETE OR UPDATE ON public.sesion_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+ sesion_diagnostico        | trg_sesion_diagnostico_incrementar_version       | CREATE TRIGGER trg_sesion_diagnostico_incrementar_version BEFORE UPDATE ON public.sesion_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_incrementar_version()
+ sesion_diagnostico        | trg_sesion_diagnostico_marcar_actualizado        | CREATE TRIGGER trg_sesion_diagnostico_marcar_actualizado BEFORE UPDATE ON public.sesion_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+ sesion_diagnostico        | trg_sesion_diagnostico_validar_transicion        | CREATE TRIGGER trg_sesion_diagnostico_validar_transicion BEFORE UPDATE OF estado ON public.sesion_diagnostico FOR EACH ROW EXECUTE FUNCTION fn_trg_sesion_validar_transicion()
+ solicitud_derecho_titular | trg_solicitud_derecho_titular_auditar            | CREATE TRIGGER trg_solicitud_derecho_titular_auditar AFTER INSERT OR DELETE OR UPDATE ON public.solicitud_derecho_titular FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+ solicitud_derecho_titular | trg_solicitud_derecho_titular_marcar_actualizado | CREATE TRIGGER trg_solicitud_derecho_titular_marcar_actualizado BEFORE UPDATE ON public.solicitud_derecho_titular FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+ taller                    | trg_taller_auditar                               | CREATE TRIGGER trg_taller_auditar AFTER INSERT OR DELETE OR UPDATE ON public.taller FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+ taller                    | trg_taller_marcar_actualizado                    | CREATE TRIGGER trg_taller_marcar_actualizado BEFORE UPDATE ON public.taller FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+ taller_configuracion      | trg_taller_configuracion_auditar                 | CREATE TRIGGER trg_taller_configuracion_auditar AFTER INSERT OR DELETE OR UPDATE ON public.taller_configuracion FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar()
+ taller_configuracion      | trg_taller_configuracion_marcar_actualizado      | CREATE TRIGGER trg_taller_configuracion_marcar_actualizado BEFORE UPDATE ON public.taller_configuracion FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+ titular                   | trg_titular_auditar                              | CREATE TRIGGER trg_titular_auditar AFTER INSERT OR DELETE OR UPDATE ON public.titular FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar('nombre', 'telefono', 'email', 'identificador_hmac')
+ titular                   | trg_titular_marcar_actualizado                   | CREATE TRIGGER trg_titular_marcar_actualizado BEFORE UPDATE ON public.titular FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+ usuario                   | trg_usuario_auditar                              | CREATE TRIGGER trg_usuario_auditar AFTER INSERT OR DELETE OR UPDATE ON public.usuario FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar('email', 'nombre')
+ usuario                   | trg_usuario_marcar_actualizado                   | CREATE TRIGGER trg_usuario_marcar_actualizado BEFORE UPDATE ON public.usuario FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+ usuario_credencial        | trg_usuario_credencial_marcar_actualizado        | CREATE TRIGGER trg_usuario_credencial_marcar_actualizado BEFORE UPDATE ON public.usuario_credencial FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+ vehiculo                  | trg_vehiculo_auditar                             | CREATE TRIGGER trg_vehiculo_auditar AFTER INSERT OR DELETE OR UPDATE ON public.vehiculo FOR EACH ROW EXECUTE FUNCTION fn_trg_auditar('patente', 'vin')
+ vehiculo                  | trg_vehiculo_marcar_actualizado                  | CREATE TRIGGER trg_vehiculo_marcar_actualizado BEFORE UPDATE ON public.vehiculo FOR EACH ROW EXECUTE FUNCTION fn_trg_marcar_actualizado()
+(32 rows)
+
+################################################################
+# 12. Claves foraneas y su regla de borrado
+################################################################
+           tabla           |                restriccion                 |       referencia        | on_delete | match  | columnas 
+---------------------------+--------------------------------------------+-------------------------+-----------+--------+----------
+ compatibilidad_repuesto   | fk_compatibilidad_repuesto_modelo_vehiculo | modelo_vehiculo         | RESTRICT  | SIMPLE |        1
+ compatibilidad_repuesto   | fk_compatibilidad_repuesto_repuesto        | repuesto                | RESTRICT  | SIMPLE |        1
+ consentimiento_titular    | fk_consentimiento_titular_taller           | taller                  | RESTRICT  | SIMPLE |        1
+ consentimiento_titular    | fk_consentimiento_titular_titular          | titular                 | RESTRICT  | SIMPLE |        2
+ cotizacion_detalle        | fk_cotizacion_detalle_cotizacion           | cotizacion              | CASCADE   | SIMPLE |        2
+ cotizacion_detalle        | fk_cotizacion_detalle_repuesto             | repuesto                | RESTRICT  | SIMPLE |        1
+ cotizacion_detalle        | fk_cotizacion_detalle_taller               | taller                  | RESTRICT  | SIMPLE |        1
+ cotizacion                | fk_cotizacion_sesion_diagnostico           | sesion_diagnostico      | RESTRICT  | SIMPLE |        2
+ cotizacion                | fk_cotizacion_taller                       | taller                  | RESTRICT  | SIMPLE |        1
+ dispositivo_diagnostico   | fk_dispositivo_diagnostico_taller          | taller                  | RESTRICT  | SIMPLE |        1
+ dtc_componente            | fk_dtc_componente_componente_repuesto      | componente_repuesto     | RESTRICT  | SIMPLE |        1
+ dtc_componente            | fk_dtc_componente_dtc_catalogo             | dtc_catalogo            | RESTRICT  | SIMPLE |        1
+ falla_sesion              | fk_falla_sesion_dtc_catalogo               | dtc_catalogo            | RESTRICT  | SIMPLE |        1
+ falla_sesion              | fk_falla_sesion_sesion_diagnostico         | sesion_diagnostico      | RESTRICT  | SIMPLE |        2
+ falla_sesion              | fk_falla_sesion_taller                     | taller                  | RESTRICT  | SIMPLE |        1
+ modelo_vehiculo           | fk_modelo_vehiculo_marca_vehiculo          | marca_vehiculo          | RESTRICT  | SIMPLE |        1
+ repuesto                  | fk_repuesto_componente_repuesto            | componente_repuesto     | RESTRICT  | SIMPLE |        1
+ sesion_diagnostico        | fk_sesion_diagnostico_dispositivo          | dispositivo_diagnostico | RESTRICT  | SIMPLE |        2
+ sesion_diagnostico        | fk_sesion_diagnostico_taller               | taller                  | RESTRICT  | SIMPLE |        1
+ sesion_diagnostico        | fk_sesion_diagnostico_usuario              | usuario                 | RESTRICT  | SIMPLE |        2
+ sesion_diagnostico        | fk_sesion_diagnostico_vehiculo             | vehiculo                | RESTRICT  | SIMPLE |        2
+ solicitud_derecho_titular | fk_solicitud_derecho_titular_taller        | taller                  | RESTRICT  | SIMPLE |        1
+ solicitud_derecho_titular | fk_solicitud_derecho_titular_titular       | titular                 | RESTRICT  | SIMPLE |        2
+ solicitud_derecho_titular | fk_solicitud_derecho_titular_usuario       | usuario                 | RESTRICT  | SIMPLE |        2
+ taller_configuracion      | fk_taller_configuracion_taller             | taller                  | RESTRICT  | SIMPLE |        1
+ titular                   | fk_titular_taller                          | taller                  | RESTRICT  | SIMPLE |        1
+ usuario_credencial        | fk_usuario_credencial_usuario              | usuario                 | CASCADE   | SIMPLE |        1
+ usuario                   | fk_usuario_taller                          | taller                  | RESTRICT  | SIMPLE |        1
+ vehiculo                  | fk_vehiculo_modelo_vehiculo                | modelo_vehiculo         | RESTRICT  | SIMPLE |        1
+ vehiculo                  | fk_vehiculo_taller                         | taller                  | RESTRICT  | SIMPLE |        1
+ vehiculo                  | fk_vehiculo_titular                        | titular                 | RESTRICT  | SIMPLE |        2
+(31 rows)
+
+################################################################
+# 13. Comprobaciones de calidad (todas deben dar 0)
+################################################################
+ columnas_sin_comentario | tablas_sin_comentario | objetos_con_otro_propietario | columnas_serial | columnas_sin_zona_horaria | tablas_con_taller_id_sin_rls_forzado 
+-------------------------+-----------------------+------------------------------+-----------------+---------------------------+--------------------------------------
+                       0 |                     0 |                            0 |               0 |                         0 |                                    0
+(1 row)
+
