@@ -1,0 +1,37 @@
+# Fase 0 - verificacion del entorno (2026-10-04T05:12Z)
+
+$ bash db/scripts/psql.sh -c "SELECT version();"   (equivale a: make psql)
+                                                       version                                                        
+----------------------------------------------------------------------------------------------------------------------
+ PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+(1 row)
+
+
+$ parametros del servidor
+             name              |             setting             
+-------------------------------+---------------------------------
+ default_transaction_isolation | read committed
+ log_statement                 | none
+ password_encryption           | scram-sha-256
+ server_version                | 16.15 (Debian 16.15-1.pgdg13+2)
+ shared_preload_libraries      | pg_stat_statements
+ TimeZone                      | Etc/UTC
+(6 rows)
+
+$ secretos: llegan a psql via -v y se interpolan en scripts (-f / stdin; psql no interpola en -c)
+$ solo se comprueba que esten definidos, no su valor
+ clave_backend_definida | clave_demo_definida 
+------------------------+---------------------
+ t                      | t
+(1 row)
+$ docker compose ps
+NAME                   IMAGE         STATUS                    PORTS
+repuestos_exactos_db   postgres:16   Up 14 seconds (healthy)   127.0.0.1:5433->5432/tcp
+
+$ montaje /db dentro del contenedor
+migrations
+perf
+queries
+scripts
+seeds
+tests

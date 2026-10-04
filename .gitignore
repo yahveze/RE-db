@@ -1,0 +1,15 @@
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Respaldos y volcados locales
+*.dump
+*.backup
+/backups/
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

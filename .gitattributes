@@ -1,0 +1,3 @@
+# Fin de linea LF siempre: los .sh se ejecutan en bash y los .sql se montan
+# en un contenedor Linux. Evita que Git en Windows los convierta a CRLF.
+* text=auto eol=lf

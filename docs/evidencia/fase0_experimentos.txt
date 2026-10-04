@@ -1,0 +1,46 @@
+== Experimentos de la Fase 0 (transaccion con ROLLBACK, no deja objetos) ==
+BEGIN
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+GRANT ROLE
+GRANT
+
+-- E1: ALTER FUNCTION ... OWNER TO sin membresia (se espera error)
+SET
+CREATE FUNCTION
+SAVEPOINT
+ERROR:  must be able to SET ROLE "x_func"
+ROLLBACK
+RESET
+-- E1b: con membresia (SET TRUE) pero sin CREATE en el esquema para el nuevo dueno (se espera error)
+GRANT ROLE
+SET
+SAVEPOINT
+ERROR:  permission denied for schema public
+ROLLBACK
+RESET
+-- E1c: con membresia y CREATE en el esquema (se espera ALTER FUNCTION)
+GRANT
+SET
+ALTER FUNCTION
+RESET
+
+-- E2: dentro de SECURITY DEFINER, current_user es el dueno; el rol real esta en current_setting('role')
+GRANT
+SET
+SET
+ fuera_current_user |              dentro_de_la_funcion              
+--------------------+------------------------------------------------
+ x_grupo            | x_func | role=x_grupo | session_user=x_backend
+(1 row)
+
+RESET
+RESET
+ROLLBACK
+ roles_x_restantes 
+-------------------
+                 0
+(1 row)
+

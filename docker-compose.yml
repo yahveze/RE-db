@@ -1,0 +1,39 @@
+# Repuestos Exactos - PostgreSQL 16 para desarrollo y pruebas.
+# El nombre de proyecto es fijo para que contenedor y volumen no dependan
+# del nombre de la carpeta.
+name: repuestos-exactos-db
+
+services:
+  db:
+    image: postgres:16
+    container_name: repuestos_exactos_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - password_encryption=scram-sha-256
+      - -c
+      - log_statement=none
+    ports:
+      # Solo loopback: la base nunca queda expuesta en la red local.
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Scripts SQL en solo lectura, para ejecutarlos con el psql 16 del contenedor.
+      - ./db:/db:ro
+    healthcheck:
+      # -h 127.0.0.1: durante la inicializacion el servidor temporal solo escucha
+      # en el socket Unix, asi el contenedor no se reporta sano antes de tiempo.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
+    name: repuestos_exactos_pgdata
