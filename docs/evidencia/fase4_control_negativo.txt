@@ -1,0 +1,15 @@
+# Control negativo de concurrencia (db/tests/control_negativo.sh) (generado por db/scripts/evidencia_fase4.sh)
+# Fecha: 2026-10-04T06:34Z
+
+### Control negativo: fn_trg_cotizacion_detalle_validar SIN el bloqueo FOR SHARE
+FAIL | CON-01 linea que llega durante el cierre: espera y es rechazada; el total no la incluye (T-8) -> SQLSTATE de B '00000' (esperado RE003), B espero: 'true', estado final correcto: 'false'
+PASS | CON-02 cierre durante una insercion de linea: espera y el total incluye la linea (B espero a A; SQLSTATE 00000)
+
+### Funcion restaurada
+PASS | CON-01 linea que llega durante el cierre: espera y es rechazada; el total no la incluye (T-8) (B espero a A; SQLSTATE RE003)
+PASS | CON-02 cierre durante una insercion de linea: espera y el total incluye la linea (B espero a A; SQLSTATE 00000)
+
+defecto detectado por la prueba: si
+prueba en verde tras restaurar:  si
+
+# codigo de salida: 0

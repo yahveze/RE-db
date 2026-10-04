@@ -1,8 +1,8 @@
 # Decisiones de diseño — Repuestos Exactos (Fase 0)
 
-> Estado: **Fases 0 a 3 completas** (ver secciones 7 y 8). Esquema en `db/migrations/`, semillas en
-> `db/seeds/` y consultas y transacciones en `db/queries/`, verificado sobre PostgreSQL 16.15; faltan
-> pruebas formales, rendimiento y operación (Fases 4 a 7).
+> Estado: **Fases 0 a 4 completas** (ver secciones 7 a 9). Esquema en `db/migrations/`, semillas en
+> `db/seeds/`, consultas y transacciones en `db/queries/` y suite de 468 pruebas en `db/tests/`, verificado
+> sobre PostgreSQL 16.15; faltan rendimiento y operación (Fases 5 a 7).
 
 Clasificación usada: **[OBLIGATORIA]** la exige el enunciado o la integridad del modelo ·
 **[RECOMENDADA]** se implementa porque el costo es bajo y el beneficio defendible ·
@@ -487,3 +487,73 @@ conviene contrastarlo.
 - **Sentencias de escritura no ejercitadas** por la demostración: `tx_cambiar_activo_usuario` y
   `tx_registrar_dispositivo` (solo se comprobó que se preparan).
 - **`make`** sigue sin instalarse (T-1): se verificó con los scripts.
+
+---
+
+## 9. Fase 4: pruebas
+
+Detalle en `docs/pruebas.md`. Ninguna migración cambió en esta fase: la suite no encontró defectos en el
+esquema. Los fallos que aparecieron al escribirla eran de las propias pruebas (un conteo mal calculado, una
+expectativa de `SQLSTATE` equivocada, una aserción que dependía del orden de ejecución); se corrigió la
+prueba explicando por qué, sin relajar lo que comprueba.
+
+### 9.1 Qué se construyó
+
+| Entregable | Dónde |
+|---|---|
+| 9 archivos SQL, 456 pruebas | `db/tests/01`–`09_*.sql` |
+| Aserciones y cambio de rol | `db/tests/incluir/` |
+| Concurrencia, 12 pruebas con dos conexiones reales | `db/tests/concurrencia.sh` |
+| Control negativo de la concurrencia | `db/tests/control_negativo.sh` |
+| Ejecutor | `db/tests/run_all.sh` (`make test`) |
+| Evidencia | `db/scripts/evidencia_fase4.sh` → `docs/evidencia/fase4_*.txt` |
+
+### 9.2 Temas nuevos
+
+Si no dices nada, queda como está. ⚠ marca lo que conviene leer.
+
+**T-43 ⚠ El contenedor acepta conexiones locales sin contraseña.**
+La prueba de concurrencia se conecta como `app_backend_user` por el socket Unix del contenedor, y funciona
+sin clave porque la imagen `postgres:16` deja `local all all trust` en `pg_hba.conf`. Es una propiedad del
+entorno de desarrollo (quien entra al contenedor ya es administrador), no del diseño: por TCP sí se exige
+SCRAM. Lo dejo anotado para `docs/operacion.md` (Fase 6): en producción `pg_hba.conf` debe exigir
+`scram-sha-256` también en `local`.
+
+**T-44 Un trigger `BEFORE` se ejecuta antes que el `WITH CHECK` de RLS.**
+Insertar una línea de detalle con el `taller_id` de otro taller se rechaza con `RE009` (el trigger no
+encuentra la configuración de ese taller) y no con `42501`. El rechazo es el mismo; cambia el código. Lo
+dejo así: forzar el `42501` exigiría que el trigger no leyera nada antes de la política.
+
+**T-45 Las operaciones de la plataforma aparecen en la bitácora del taller, sin usuario.**
+Un cambio hecho como superusuario sobre filas de un taller queda auditado con el `taller_id` de la fila y el
+rol de sesión, y el administrador de ese taller lo ve con `usuario_nombre` vacío. Me parece el
+comportamiento correcto (el taller ve que la plataforma tocó sus datos); lo señalo porque la API debe
+mostrar "plataforma" en lugar de un nombre vacío.
+
+**T-46 La prueba de concurrencia confirma transacciones y deja auditoría.**
+Es inevitable (dos conexiones solo se ven tras un `COMMIT`). Crea y borra sus propios datos, pero sus
+registros de auditoría permanecen: tras `make test` la bitácora del taller 1 tiene más filas que tras
+`make seed`. Ninguna prueba depende de conteos absolutos de la auditoría, y `make all` parte de `reset`.
+
+**T-47 Los roles de taller no tienen `TEMPORARY` sobre la base.**
+Es consecuencia del `REVOKE ALL ON DATABASE ... FROM PUBLIC` de `V000` y es lo deseable. `09_consultas.sql`
+lo otorga dentro de su transacción y el `ROLLBACK` lo revierte.
+
+**T-48 Las pruebas contienen contraseñas literales de usar y tirar.**
+Por ejemplo `Clave-Restablecida-9`, fijada y descartada dentro de una transacción con `ROLLBACK`. No son
+secretos de ningún entorno; las claves reales siguen llegando solo por `psql -v`.
+
+### 9.3 Verificación de la Fase 4
+
+| Comprobación | Resultado | Evidencia |
+|---|---|---|
+| `reset` → `migrate` → `seed` → `test` sobre base vacía | código 0; 468 PASS, 0 FAIL | `fase4_pruebas.txt` |
+| Repetir la suite sobre la misma base | código 0; 468 PASS | ejecución repetida |
+| Errores SQL frente a pruebas de error, por archivo | coinciden en los 9 archivos (193 en total) | `fase4_pruebas.txt` |
+| Concurrencia | 10 escenarios: B esperó a A en todos; sin interbloqueos | `fase4_pruebas.txt` |
+| Control negativo de CON-01 | sin `FOR SHARE` la prueba falla; restaurado, pasa | `fase4_control_negativo.txt` |
+| La base tras la suite | mismos conteos que tras las semillas, salvo la auditoría (T-46) | consulta tras la ejecución |
+| Secretos en archivos versionados y en la evidencia | ninguno | búsqueda de los valores de `.env` |
+
+**Riesgos que la ejecución no cubrió:** los de `docs/pruebas.md` §5 (rendimiento, PgBouncer, canal de
+tiempo del login, concurrencia de la anonimización, controles negativos del resto de la suite).

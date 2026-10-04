@@ -1,0 +1,708 @@
+# Suite de pruebas (db/tests/run_all.sh) (generado por db/scripts/evidencia_fase4.sh)
+# Fecha: 2026-10-04T06:33Z
+
+### 01 Esquema
+PASS | ESQ-01 hay 21 tablas y 1 vista en public
+PASS | ESQ-02 ninguna columna usa SERIAL (default nextval)
+PASS | ESQ-03 toda columna id es BIGINT GENERATED ALWAYS AS IDENTITY
+PASS | ESQ-04 ninguna columna de tiempo es TIMESTAMP sin zona
+PASS | ESQ-05 todas las tablas y todas sus columnas tienen COMMENT
+PASS | ESQ-06 toda tabla con taller_id, mas taller y usuario_credencial, tiene RLS activo y forzado
+PASS | ESQ-07 los 7 catalogos globales no tienen RLS
+PASS | ESQ-08 usuario_credencial no tiene ninguna politica; el resto de tablas con RLS si
+PASS | ESQ-09 ninguna politica aplica a PUBLIC
+PASS | ESQ-10 hay 6 funciones SECURITY DEFINER, todas de app_funciones y con search_path fijo
+PASS | ESQ-11 toda funcion fn_ fija search_path y las no definidoras son de app_owner
+PASS | ESQ-12 tablas, vista y tipos enumerados pertenecen a app_owner
+PASS | ESQ-13 atributos de los roles (LOGIN, BYPASSRLS, SUPERUSER)
+PASS | ESQ-14 app_backend_user es miembro de los 3 grupos con INHERIT FALSE y SET TRUE
+PASS | ESQ-15 app_backend_user y PUBLIC no tienen privilegios sobre ninguna tabla ni columna
+PASS | ESQ-16 PUBLIC no tiene EXECUTE sobre ninguna funcion fn_
+PASS | ESQ-17 el unico privilegio propio de app_backend_user es EXECUTE sobre fn_autenticar_usuario
+PASS | ESQ-18 ningun rol de taller tiene TRUNCATE; el unico DELETE es de taller_mecanico sobre cotizacion_detalle
+PASS | ESQ-19 ningun rol de taller puede escribir en catalogos ni en la auditoria
+PASS | ESQ-20 ningun CHECK usa now(), current_date ni subconsultas
+PASS | ESQ-21 las 10 FK entre tablas de taller son compuestas e incluyen taller_id (aislamiento estructural)
+PASS | ESQ-22 toda FK es ON DELETE RESTRICT, salvo las dos CASCADE declaradas
+PASS | ESQ-23 convencion de nombres: restricciones, indices, triggers, politicas
+PASS | ESQ-24 las entidades expuestas tienen id_publico UUID NOT NULL con default y UNIQUE
+PASS | ESQ-25 objetos del esquema: 21 funciones fn_, 32 triggers, 49 politicas
+PASS | ESQ-26 servidor: PostgreSQL 16, UTC, READ COMMITTED, scram-sha-256, log_statement none
+PASS | ESQ-27 la clave de app_backend_user esta guardada como verificador SCRAM
+==> 01_esquema.sql: 27 PASS, 0 FAIL, 0 errores esperados [ok]
+
+### 02 Restricciones
+psql:/db/tests/02_restricciones.sql:26: ERROR:  null value in column "taller_id" of relation "sesion_diagnostico" violates not-null constraint
+PASS | [E] RN-01 una sesion sin taller_id se rechaza -> 23502
+psql:/db/tests/02_restricciones.sql:32: ERROR:  insert or update on table "sesion_diagnostico" violates foreign key constraint "fk_sesion_diagnostico_vehiculo"
+PASS | [E] RN-02 FK compuesta: una sesion del taller 2 no puede apuntar a un vehiculo del taller 1 -> 23503
+psql:/db/tests/02_restricciones.sql:38: ERROR:  insert or update on table "sesion_diagnostico" violates foreign key constraint "fk_sesion_diagnostico_usuario"
+PASS | [E] RN-02 FK compuesta: una sesion del taller 1 no puede quedar a nombre de un usuario del taller 2 -> 23503
+psql:/db/tests/02_restricciones.sql:44: ERROR:  insert or update on table "vehiculo" violates foreign key constraint "fk_vehiculo_titular"
+PASS | [E] RN-02 FK compuesta: un vehiculo del taller 2 no puede tener un titular del taller 1 -> 23503
+psql:/db/tests/02_restricciones.sql:49: ERROR:  update or delete on table "vehiculo" violates foreign key constraint "fk_sesion_diagnostico_vehiculo" on table "sesion_diagnostico"
+PASS | [E] RN-02 un vehiculo con sesiones no puede cambiar de taller -> 23503
+psql:/db/tests/02_restricciones.sql:54: ERROR:  new row for relation "usuario" violates check constraint "ck_usuario_email_minusculas"
+PASS | [E] RN-03 email con mayusculas se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:59: ERROR:  new row for relation "usuario" violates check constraint "ck_usuario_email_formato"
+PASS | [E] RN-03 email sin formato valido se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:64: ERROR:  duplicate key value violates unique constraint "uq_usuario_email"
+PASS | [E] RN-03 el email es unico entre TODOS los talleres -> 23505
+psql:/db/tests/02_restricciones.sql:69: ERROR:  new row for relation "taller_configuracion" violates check constraint "ck_taller_configuracion_margen_rango"
+PASS | [E] RN-04 margen sobre 200 % se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:74: ERROR:  new row for relation "taller_configuracion" violates check constraint "ck_taller_configuracion_margen_rango"
+PASS | [E] RN-04 margen negativo se rechaza -> 23514
+PASS | RN-04 los limites 0 y 200 se aceptan
+psql:/db/tests/02_restricciones.sql:85: ERROR:  new row for relation "taller_configuracion" violates check constraint "ck_taller_configuracion_retencion_rango"
+PASS | [E] Retencion fuera de 0-30 anios se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:90: ERROR:  new row for relation "taller_configuracion" violates check constraint "ck_taller_configuracion_moneda_formato"
+PASS | [E] Moneda que no es un codigo de 3 letras mayusculas se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:97: ERROR:  new row for relation "vehiculo" violates check constraint "ck_vehiculo_vin_formato"
+PASS | [E] RN-10 VIN con la letra I se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:103: ERROR:  new row for relation "vehiculo" violates check constraint "ck_vehiculo_vin_formato"
+PASS | [E] RN-10 VIN de 16 caracteres se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:109: ERROR:  new row for relation "vehiculo" violates check constraint "ck_vehiculo_patente_formato"
+PASS | [E] RN-11 patente en minusculas se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:115: ERROR:  new row for relation "vehiculo" violates check constraint "ck_vehiculo_patente_formato"
+PASS | [E] RN-11 patente nueva con vocales se rechaza -> 23514
+PASS | RN-11 los dos formatos validos (AA1234 y BBBB12) se aceptan
+psql:/db/tests/02_restricciones.sql:127: ERROR:  new row for relation "vehiculo" violates check constraint "ck_vehiculo_patente_obligatoria"
+PASS | [E] RN-12 vehiculo no anonimizado sin patente se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:132: ERROR:  new row for relation "vehiculo" violates check constraint "ck_vehiculo_identificacion_tecnica"
+PASS | [E] RN-13 sin VIN y sin motor se rechaza -> 23514
+PASS | RN-13 con VIN el motor es opcional
+psql:/db/tests/02_restricciones.sql:142: ERROR:  new row for relation "vehiculo" violates check constraint "ck_vehiculo_anio_rango"
+PASS | [E] RN-14 anio 1980 se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:147: ERROR:  duplicate key value violates unique constraint "uq_vehiculo_taller_patente"
+PASS | [E] RN-15 patente repetida en el mismo taller se rechaza -> 23505
+psql:/db/tests/02_restricciones.sql:153: ERROR:  duplicate key value violates unique constraint "uq_vehiculo_taller_vin"
+PASS | [E] RN-15 VIN repetido en el mismo taller se rechaza -> 23505
+PASS | RN-15 la misma patente y el mismo VIN en OTRO taller se aceptan
+psql:/db/tests/02_restricciones.sql:163: ERROR:  new row for relation "vehiculo" violates check constraint "ck_vehiculo_anonimizado_sin_identificadores"
+PASS | [E] RN-16 marcar anonimizado un vehiculo que conserva la patente se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:170: ERROR:  new row for relation "sesion_diagnostico" violates check constraint "ck_sesion_diagnostico_dispositivo_segun_metodo"
+PASS | [E] RN-20 metodo obd_bluetooth sin dispositivo se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:176: ERROR:  new row for relation "sesion_diagnostico" violates check constraint "ck_sesion_diagnostico_dispositivo_segun_metodo"
+PASS | [E] RN-20 metodo manual con dispositivo se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:182: ERROR:  new row for relation "sesion_diagnostico" violates check constraint "ck_sesion_diagnostico_kilometraje_no_negativo"
+PASS | [E] RN-21 kilometraje negativo se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:188: ERROR:  duplicate key value violates unique constraint "pk_falla_sesion"
+PASS | [E] RN-22 el mismo DTC dos veces en una sesion se rechaza -> 23505
+psql:/db/tests/02_restricciones.sql:193: ERROR:  new row for relation "dtc_catalogo" violates check constraint "ck_dtc_catalogo_codigo_formato"
+PASS | [E] RN-23 codigo DTC con formato invalido se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:198: ERROR:  insert or update on table "falla_sesion" violates foreign key constraint "fk_falla_sesion_dtc_catalogo"
+PASS | [E] RN-23 falla con un DTC que no existe en el catalogo se rechaza -> 23503
+psql:/db/tests/02_restricciones.sql:203: ERROR:  new row for relation "falla_sesion" violates check constraint "ck_falla_sesion_freeze_frame_objeto"
+PASS | [E] freeze_frame que no es un objeto JSON se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:208: ERROR:  invalid input syntax for type macaddr: "00:1D:A5:ZZ" at character 65
+PASS | [E] RN-24 MAC mal formada se rechaza (tipo macaddr) -> 22P02
+psql:/db/tests/02_restricciones.sql:213: ERROR:  duplicate key value violates unique constraint "uq_dispositivo_diagnostico_taller_mac"
+PASS | [E] RN-24 MAC repetida en el taller se rechaza, aunque se escriba con otro formato -> 23505
+psql:/db/tests/02_restricciones.sql:219: ERROR:  new row for relation "repuesto" violates check constraint "ck_repuesto_durabilidad_positiva"
+PASS | [E] RN-41 durabilidad 0 se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:224: ERROR:  new row for relation "repuesto" violates check constraint "ck_repuesto_precio_no_negativo"
+PASS | [E] RN-41 precio de referencia negativo se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:230: ERROR:  duplicate key value violates unique constraint "uq_repuesto_componente_marca_codigo"
+PASS | [E] RN-42 (componente, marca, codigo_fabricante) repetido se rechaza -> 23505
+psql:/db/tests/02_restricciones.sql:236: ERROR:  new row for relation "compatibilidad_repuesto" violates check constraint "ck_compatibilidad_repuesto_rango"
+PASS | [E] RN-46 compatibilidad con anio_desde > anio_hasta se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:241: ERROR:  update or delete on table "dtc_catalogo" violates foreign key constraint "fk_dtc_componente_dtc_catalogo" on table "dtc_componente"
+PASS | [E] RN-72 un DTC en uso no se puede borrar (ON DELETE RESTRICT) -> 23503
+psql:/db/tests/02_restricciones.sql:246: ERROR:  update or delete on table "usuario" violates foreign key constraint "fk_sesion_diagnostico_usuario" on table "sesion_diagnostico"
+PASS | [E] RN-72 un usuario con sesiones no se puede borrar -> 23503
+psql:/db/tests/02_restricciones.sql:251: ERROR:  update or delete on table "vehiculo" violates foreign key constraint "fk_sesion_diagnostico_vehiculo" on table "sesion_diagnostico"
+PASS | [E] RN-72 un vehiculo con sesiones no se puede borrar -> 23503
+psql:/db/tests/02_restricciones.sql:257: ERROR:  duplicate key value violates unique constraint "uq_cotizacion_sesion_abierta"
+PASS | [E] RN-52 un segundo borrador en la misma sesion se rechaza -> 23505
+psql:/db/tests/02_restricciones.sql:262: ERROR:  new row for relation "cotizacion" violates check constraint "ck_cotizacion_vigente_cerrada"
+PASS | [E] RN-53 un borrador no puede marcarse vigente -> 23514
+PASS | RN-54 un borrador no puede tener total (el trigger lo anula aunque se envie)
+psql:/db/tests/02_restricciones.sql:275: ERROR:  duplicate key value violates unique constraint "uq_cotizacion_taller_clave_idempotencia"
+PASS | [E] RN-57 la clave de idempotencia es unica por taller -> 23505
+psql:/db/tests/02_restricciones.sql:280: ERROR:  new row for relation "cotizacion_detalle" violates check constraint "ck_cotizacion_detalle_cantidad_positiva"
+PASS | [E] RN-58 cantidad 0 se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:286: ERROR:  duplicate key value violates unique constraint "pk_cotizacion_detalle"
+PASS | [E] RN-58 el mismo repuesto dos veces en una cotizacion se rechaza -> 23505
+psql:/db/tests/02_restricciones.sql:291: ERROR:  en el detalle de una cotizacion solo se puede modificar la cantidad
+PASS | [E] RN-56 ni la plataforma puede cambiar el precio de una linea (RE012) -> RE012
+PASS | RN-45 toda linea cumple precio_unitario = ROUND(precio_referencia * (1 + margen / 100))
+PASS | RN-51 a lo mas una cotizacion vigente y un borrador por sesion (datos actuales)
+psql:/db/tests/02_restricciones.sql:307: ERROR:  new row for relation "titular" violates check constraint "ck_titular_hmac_largo"
+PASS | [E] RN-60 identificador_hmac que no mide 32 bytes se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:313: ERROR:  duplicate key value violates unique constraint "uq_titular_taller_identificador_hmac"
+PASS | [E] RN-60 el mismo identificador_hmac dos veces en un taller se rechaza -> 23505
+PASS | RN-60 el mismo identificador_hmac en otro taller se acepta
+psql:/db/tests/02_restricciones.sql:323: ERROR:  new row for relation "titular" violates check constraint "ck_titular_anonimizado_sin_datos"
+PASS | [E] Titular activo sin nombre se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:328: ERROR:  new row for relation "titular" violates check constraint "ck_titular_estado_bloqueado"
+PASS | [E] Estado bloqueado sin fecha de vencimiento se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:333: ERROR:  new row for relation "titular" violates check constraint "ck_titular_anonimizado_sin_datos"
+PASS | [E] RN-63 estado anonimizado conservando el nombre se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:339: ERROR:  duplicate key value violates unique constraint "uq_consentimiento_titular_activo"
+PASS | [E] RN-65 un segundo consentimiento activo para la misma finalidad se rechaza -> 23505
+PASS | RN-65 tras una revocacion se puede otorgar de nuevo la misma finalidad
+psql:/db/tests/02_restricciones.sql:350: ERROR:  new row for relation "consentimiento_titular" violates check constraint "ck_consentimiento_titular_canal"
+PASS | [E] Canal de consentimiento fuera de la lista se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:356: ERROR:  new row for relation "consentimiento_titular" violates check constraint "ck_consentimiento_titular_revocacion_posterior"
+PASS | [E] Revocacion anterior al otorgamiento se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:361: ERROR:  new row for relation "solicitud_derecho_titular" violates check constraint "ck_solicitud_derecho_titular_resolucion"
+PASS | [E] Solicitud resuelta sin fecha de resolucion se rechaza -> 23514
+psql:/db/tests/02_restricciones.sql:366: ERROR:  invalid input value for enum tipo_estado_atencion: "en_proceso" at character 40
+PASS | [E] Valor fuera de un tipo enumerado se rechaza -> 22P02
+==> 02_restricciones.sql: 63 PASS, 0 FAIL, 54 errores esperados [ok]
+
+### 03 Estados y cotizaciones
+PASS | La sesion nace pendiente, version 1, manual, a nombre del usuario del contexto y con la hora del servidor
+PASS | Las fallas quedan con la severidad enviada o, si falta, con la sugerida por el catalogo
+psql:/db/tests/03_estados_y_cotizaciones.sql:35: ERROR:  transicion de estado invalida: pendiente -> completado
+PASS | [E] RN-30 pendiente -> completado es una transicion invalida -> RE001
+psql:/db/tests/03_estados_y_cotizaciones.sql:40: ERROR:  el estado cotizado exige una cotizacion vigente cerrada
+PASS | [E] RN-32 pendiente -> cotizado sin cotizacion vigente cerrada -> RE002
+psql:/db/tests/03_estados_y_cotizaciones.sql:45: ERROR:  la sesion 999999999 no existe o no es visible
+PASS | [E] RE009 cambiar el estado de una sesion inexistente -> RE009
+PASS | El kilometraje se puede corregir y la version se incrementa
+PASS | RN-50 la cotizacion nace como borrador: revision 1, no vigente, sin total, moneda del taller
+PASS | RN-57 reintentar con la misma clave devuelve la misma cotizacion y no crea otra
+psql:/db/tests/03_estados_y_cotizaciones.sql:69: ERROR:  duplicate key value violates unique constraint "uq_cotizacion_sesion_abierta"
+PASS | [E] RN-52 un segundo borrador con otra clave se rechaza -> 23505
+psql:/db/tests/03_estados_y_cotizaciones.sql:74: ERROR:  la cotizacion 38 no tiene detalle y no se puede cerrar
+PASS | [E] RE008 no se puede cerrar una cotizacion sin detalle -> RE008
+psql:/db/tests/03_estados_y_cotizaciones.sql:80: ERROR:  permission denied for table cotizacion_detalle
+PASS | [E] RN-56 el cliente no puede enviar el precio de una linea -> 42501
+psql:/db/tests/03_estados_y_cotizaciones.sql:85: ERROR:  el repuesto 30 no esta disponible
+PASS | [E] RE010 un repuesto no disponible no se puede cotizar -> RE010
+PASS | RN-56 el trigger llena el snapshot desde el catalogo y el margen del taller
+PASS | RN-58 repetir un repuesto reemplaza la cantidad en lugar de duplicar la linea
+psql:/db/tests/03_estados_y_cotizaciones.sql:108: ERROR:  conflicto de version en la cotizacion 38: esperada 99, actual 1
+PASS | [E] RE007 cerrar con una version distinta de la actual -> RE007
+PASS | RN-54 al cerrar, el trigger fija cerrada_en = hora del servidor y total = suma del detalle
+PASS | Cerrar una cotizacion ya cerrada la devuelve sin cambios (idempotente)
+psql:/db/tests/03_estados_y_cotizaciones.sql:128: ERROR:  la cotizacion 38 esta cerrada: su detalle es inmutable
+PASS | [E] RN-55 cotizacion cerrada: no admite lineas nuevas -> RE003
+psql:/db/tests/03_estados_y_cotizaciones.sql:133: ERROR:  la cotizacion 38 esta cerrada: su detalle es inmutable
+PASS | [E] RN-55 cotizacion cerrada: no admite cambiar cantidades -> RE003
+psql:/db/tests/03_estados_y_cotizaciones.sql:138: ERROR:  la cotizacion 38 esta cerrada: su detalle es inmutable
+PASS | [E] RN-55 cotizacion cerrada: no admite borrar lineas -> RE003
+psql:/db/tests/03_estados_y_cotizaciones.sql:143: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+PASS | [E] RN-55 cotizacion cerrada: no se puede reabrir -> RE003
+psql:/db/tests/03_estados_y_cotizaciones.sql:148: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+PASS | [E] RN-55 cotizacion cerrada: no se puede cambiar la fecha de cierre -> RE003
+PASS | RN-33 pendiente -> cotizado fija cotizada_en e incrementa la version
+psql:/db/tests/03_estados_y_cotizaciones.sql:161: ERROR:  transicion de estado invalida: cotizado -> pendiente
+PASS | [E] RN-30 cotizado -> pendiente es una transicion invalida -> RE001
+PASS | RN-50 la segunda revision recibe el numero 2
+PASS | RN-51 al cerrar la revision 2 pasa a ser la unica vigente; la 1 conserva su total
+psql:/db/tests/03_estados_y_cotizaciones.sql:182: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+PASS | [E] RN-55 la revision reemplazada no puede volver a ser vigente -> RE003
+psql:/db/tests/03_estados_y_cotizaciones.sql:192: ERROR:  los datos de identidad de una cotizacion no se pueden modificar
+PASS | [E] RE012 ni la plataforma puede cambiar la identidad de una cotizacion -> RE012
+psql:/db/tests/03_estados_y_cotizaciones.sql:197: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+PASS | [E] RN-55 ni la plataforma puede cambiar el total de una cotizacion cerrada -> RE003
+PASS | RN-59 cambiar el precio maestro, el nombre o el margen no altera lo ya cotizado
+psql:/db/tests/03_estados_y_cotizaciones.sql:217: ERROR:  conflicto de version en la sesion 47: esperada 2, actual 3
+PASS | [E] RE007 completar con la version que el cliente vio antes de cotizar -> RE007
+PASS | RN-33 cotizado -> completado fija completada_en y conserva cotizada_en
+psql:/db/tests/03_estados_y_cotizaciones.sql:230: ERROR:  transicion de estado invalida: completado -> cancelado
+PASS | [E] RN-31 completado -> cancelado se rechaza (estado terminal) -> RE001
+psql:/db/tests/03_estados_y_cotizaciones.sql:235: ERROR:  transicion de estado invalida: completado -> cotizado
+PASS | [E] RN-31 completado -> cotizado se rechaza (estado terminal) -> RE001
+psql:/db/tests/03_estados_y_cotizaciones.sql:240: ERROR:  la sesion 47 esta en estado completado y no admite cotizaciones nuevas
+PASS | [E] RN-34 una sesion completada no admite cotizaciones nuevas -> RE004
+PASS | RN-30 pendiente -> cancelado fija cancelada_en y deja cotizada_en vacio
+psql:/db/tests/03_estados_y_cotizaciones.sql:256: ERROR:  la sesion 48 esta en estado cancelado y su cotizacion no se puede cerrar
+PASS | [E] RE004 el borrador de una sesion cancelada no se puede cerrar -> RE004
+psql:/db/tests/03_estados_y_cotizaciones.sql:261: ERROR:  transicion de estado invalida: cancelado -> pendiente
+PASS | [E] RN-31 cancelado -> pendiente se rechaza (estado terminal) -> RE001
+PASS | RN-30 cotizado -> cancelado esta permitido y conserva cotizada_en (dato de las semillas)
+PASS | RN-32 toda sesion cotizada o completada tiene exactamente una cotizacion vigente cerrada
+psql:/db/tests/03_estados_y_cotizaciones.sql:279: ERROR:  no hay contexto de taller
+PASS | [E] RE006 crear una cotizacion sin contexto de taller -> RE006
+psql:/db/tests/03_estados_y_cotizaciones.sql:285: ERROR:  la cotizacion 999999999 no existe o no es visible
+PASS | [E] RE009 cerrar una cotizacion inexistente -> RE009
+==> 03_estados_y_cotizaciones.sql: 42 PASS, 0 FAIL, 25 errores esperados [ok]
+
+### 04 RBAC
+--- conexion del backend sin SET LOCAL ROLE
+psql:/db/tests/04_rbac.sql:28: ERROR:  permission denied for table sesion_diagnostico
+PASS | [E] backend sin rol: no lee tablas operativas -> 42501
+psql:/db/tests/04_rbac.sql:33: ERROR:  permission denied for table repuesto
+PASS | [E] backend sin rol: no lee catalogos -> 42501
+psql:/db/tests/04_rbac.sql:38: ERROR:  permission denied for table usuario_credencial
+PASS | [E] backend sin rol: no lee credenciales -> 42501
+psql:/db/tests/04_rbac.sql:43: ERROR:  permission denied for function fn_crear_cotizacion
+PASS | [E] backend sin rol: no ejecuta funciones de negocio -> 42501
+psql:/db/tests/04_rbac.sql:48: ERROR:  permission denied for function fn_anonimizar_vencidos
+PASS | [E] backend sin rol: no puede anonimizar -> 42501
+psql:/db/tests/04_rbac.sql:53: ERROR:  permission denied to set role "app_funciones"
+PASS | [E] backend sin rol: no puede asumir app_owner ni app_funciones -> 42501
+PASS | backend sin rol: si puede autenticar (unico privilegio propio)
+--- taller_mecanico
+PASS | mecanico: q_configuracion
+PASS | mecanico: q_marcas
+PASS | mecanico: q_dtc_buscar
+PASS | mecanico: q_repuestos_por_dtc
+PASS | mecanico: q_buscar_vehiculo_patente
+PASS | mecanico: q_buscar_vehiculo_vin
+PASS | mecanico: q_buscar_vehiculo_modelo
+PASS | mecanico: q_historial
+PASS | mecanico: q_historial_vehiculo
+PASS | mecanico: q_sesion
+PASS | mecanico: q_sesion_fallas
+PASS | mecanico: q_matriz
+PASS | mecanico: q_cotizaciones_sesion
+PASS | mecanico: q_cotizacion_detalle
+PASS | mecanico: q_dashboard_resumen
+PASS | mecanico: q_dashboard_dtc_frecuentes
+PASS | mecanico: q_dispositivos
+psql:/db/tests/04_rbac.sql:119: ERROR:  permission denied for table usuario
+PASS | [E] mecanico: q_usuarios denegada (no lee usuario.email) -> 42501
+psql:/db/tests/04_rbac.sql:123: ERROR:  permission denied for table auditoria_operacion
+PASS | [E] mecanico: q_auditoria denegada -> 42501
+psql:/db/tests/04_rbac.sql:127: ERROR:  permission denied for table solicitud_derecho_titular
+PASS | [E] mecanico: q_solicitudes_derecho denegada -> 42501
+psql:/db/tests/04_rbac.sql:131: ERROR:  permission denied for table usuario
+PASS | [E] mecanico: tx_crear_usuario denegada -> 42501
+psql:/db/tests/04_rbac.sql:135: ERROR:  permission denied for function fn_establecer_contrasena
+PASS | [E] mecanico: tx_establecer_contrasena denegada -> 42501
+psql:/db/tests/04_rbac.sql:139: ERROR:  permission denied for table usuario
+PASS | [E] mecanico: tx_cambiar_activo_usuario denegada -> 42501
+psql:/db/tests/04_rbac.sql:143: ERROR:  permission denied for table taller_configuracion
+PASS | [E] mecanico: tx_actualizar_configuracion denegada -> 42501
+psql:/db/tests/04_rbac.sql:147: ERROR:  permission denied for table dispositivo_diagnostico
+PASS | [E] mecanico: tx_registrar_dispositivo denegada -> 42501
+psql:/db/tests/04_rbac.sql:151: ERROR:  permission denied for function fn_solicitar_supresion_titular
+PASS | [E] mecanico: tx_solicitar_supresion denegada -> 42501
+psql:/db/tests/04_rbac.sql:156: ERROR:  permission denied for table repuesto
+PASS | [E] mecanico: no modifica precios maestros -> 42501
+psql:/db/tests/04_rbac.sql:160: ERROR:  permission denied for table marca_vehiculo
+PASS | [E] mecanico: no inserta en catalogos -> 42501
+psql:/db/tests/04_rbac.sql:164: ERROR:  permission denied for table usuario_credencial
+PASS | [E] mecanico: no lee credenciales -> 42501
+psql:/db/tests/04_rbac.sql:168: ERROR:  permission denied for table usuario
+PASS | [E] mecanico: no lee el email de los usuarios -> 42501
+psql:/db/tests/04_rbac.sql:173: ERROR:  permission denied for table sesion_diagnostico
+PASS | [E] mecanico: no crea una sesion con estado elegido -> 42501
+psql:/db/tests/04_rbac.sql:177: ERROR:  permission denied for table sesion_diagnostico
+PASS | [E] mecanico: no fija a mano los timestamps de estado (RN-33) -> 42501
+psql:/db/tests/04_rbac.sql:181: ERROR:  permission denied for table sesion_diagnostico
+PASS | [E] mecanico: no reasigna una sesion a otro usuario -> 42501
+psql:/db/tests/04_rbac.sql:185: ERROR:  permission denied for table sesion_diagnostico
+PASS | [E] mecanico: no cambia la version a mano -> 42501
+psql:/db/tests/04_rbac.sql:189: ERROR:  permission denied for table cotizacion
+PASS | [E] mecanico: no escribe el total de una cotizacion -> 42501
+psql:/db/tests/04_rbac.sql:193: ERROR:  permission denied for table cotizacion_detalle
+PASS | [E] mecanico: no cambia el precio de una linea -> 42501
+psql:/db/tests/04_rbac.sql:197: ERROR:  permission denied for table cotizacion
+PASS | [E] mecanico: no borra cotizaciones -> 42501
+psql:/db/tests/04_rbac.sql:201: ERROR:  permission denied for table falla_sesion
+PASS | [E] mecanico: no borra fallas -> 42501
+psql:/db/tests/04_rbac.sql:205: ERROR:  permission denied for table sesion_diagnostico
+PASS | [E] mecanico: no borra sesiones (RN-72) -> 42501
+psql:/db/tests/04_rbac.sql:209: ERROR:  permission denied for table titular
+PASS | [E] mecanico: no cambia el estado de tratamiento de un titular -> 42501
+psql:/db/tests/04_rbac.sql:213: ERROR:  permission denied for table titular
+PASS | [E] mecanico: no cambia el identificador HMAC de un titular -> 42501
+psql:/db/tests/04_rbac.sql:217: ERROR:  permission denied for table vehiculo
+PASS | [E] mecanico: no marca un vehiculo como anonimizado -> 42501
+psql:/db/tests/04_rbac.sql:221: ERROR:  permission denied for table vehiculo
+PASS | [E] mecanico: no muda un vehiculo de taller -> 42501
+psql:/db/tests/04_rbac.sql:225: ERROR:  permission denied for function fn_anonimizar_titular
+PASS | [E] mecanico: no anonimiza directamente -> 42501
+psql:/db/tests/04_rbac.sql:229: ERROR:  permission denied for function fn_registrar_auditoria
+PASS | [E] mecanico: no escribe en la auditoria -> 42501
+psql:/db/tests/04_rbac.sql:233: ERROR:  permission denied for table cotizacion_detalle
+PASS | [E] mecanico: no hace TRUNCATE -> 42501
+PASS | mecanico: si corrige el telefono de un titular
+PASS | mecanico: si corrige la severidad de una falla
+PASS | mecanico: si revoca un consentimiento
+--- taller_admin
+PASS | admin: q_configuracion
+PASS | admin: q_buscar_vehiculo_patente
+PASS | admin: q_historial
+PASS | admin: q_sesion
+PASS | admin: q_matriz
+PASS | admin: q_cotizacion_detalle
+PASS | admin: q_dashboard_resumen
+PASS | admin: q_usuarios
+PASS | admin: q_dispositivos
+PASS | admin: q_solicitudes_derecho
+PASS | admin: q_auditoria
+PASS | admin: tx_cambiar_activo_usuario
+PASS | admin: tx_registrar_dispositivo
+PASS | admin: tx_actualizar_configuracion
+PASS | admin: tx_crear_titular
+psql:/db/tests/04_rbac.sql:304: ERROR:  permission denied for table sesion_diagnostico
+PASS | [E] admin: tx_crear_sesion denegada (solo el mecanico atiende) -> 42501
+psql:/db/tests/04_rbac.sql:308: ERROR:  permission denied for function fn_cambiar_estado_sesion
+PASS | [E] admin: tx_cambiar_estado denegada (T-32) -> 42501
+psql:/db/tests/04_rbac.sql:312: ERROR:  permission denied for function fn_crear_cotizacion
+PASS | [E] admin: tx_crear_cotizacion denegada -> 42501
+psql:/db/tests/04_rbac.sql:316: ERROR:  permission denied for table cotizacion_detalle
+PASS | [E] admin: tx_guardar_linea denegada -> 42501
+psql:/db/tests/04_rbac.sql:320: ERROR:  permission denied for table cotizacion_detalle
+PASS | [E] admin: tx_quitar_linea denegada -> 42501
+psql:/db/tests/04_rbac.sql:324: ERROR:  permission denied for function fn_cerrar_cotizacion
+PASS | [E] admin: tx_cerrar_cotizacion denegada -> 42501
+psql:/db/tests/04_rbac.sql:328: ERROR:  permission denied for table repuesto
+PASS | [E] admin: no modifica precios maestros (afectarian a otros talleres) -> 42501
+psql:/db/tests/04_rbac.sql:332: ERROR:  permission denied for table taller
+PASS | [E] admin: no renombra ni desactiva su taller -> 42501
+psql:/db/tests/04_rbac.sql:336: ERROR:  permission denied for table taller_configuracion
+PASS | [E] admin: no cambia el taller de su configuracion -> 42501
+psql:/db/tests/04_rbac.sql:340: ERROR:  permission denied for table usuario
+PASS | [E] admin: no muda un usuario de taller -> 42501
+psql:/db/tests/04_rbac.sql:344: ERROR:  permission denied for table usuario
+PASS | [E] admin: no borra usuarios (baja logica) -> 42501
+psql:/db/tests/04_rbac.sql:348: ERROR:  permission denied for table usuario_credencial
+PASS | [E] admin: no lee credenciales -> 42501
+psql:/db/tests/04_rbac.sql:352: ERROR:  permission denied for table usuario_credencial
+PASS | [E] admin: no escribe credenciales directamente -> 42501
+psql:/db/tests/04_rbac.sql:356: ERROR:  permission denied for table titular
+PASS | [E] admin: no cambia el estado de tratamiento a mano (solo via funcion) -> 42501
+psql:/db/tests/04_rbac.sql:360: ERROR:  permission denied for function fn_anonimizar_titular
+PASS | [E] admin: no anonimiza directamente (saltaria la retencion) -> 42501
+psql:/db/tests/04_rbac.sql:364: ERROR:  permission denied for function fn_anonimizar_vencidos
+PASS | [E] admin: no ejecuta el proceso de anonimizacion de vencidos -> 42501
+psql:/db/tests/04_rbac.sql:368: ERROR:  permission denied for table auditoria_operacion
+PASS | [E] admin: no inserta en la auditoria -> 42501
+psql:/db/tests/04_rbac.sql:372: ERROR:  permission denied for table auditoria_operacion
+PASS | [E] admin: no modifica la auditoria (RN-70) -> 42501
+psql:/db/tests/04_rbac.sql:376: ERROR:  permission denied for table auditoria_operacion
+PASS | [E] admin: no borra la auditoria (RN-70) -> 42501
+--- taller_auditor
+PASS | auditor: q_configuracion
+PASS | auditor: q_historial
+PASS | auditor: q_historial_vehiculo
+PASS | auditor: q_sesion
+PASS | auditor: q_sesion_fallas
+PASS | auditor: q_matriz
+PASS | auditor: q_cotizaciones_sesion
+PASS | auditor: q_cotizacion_detalle
+PASS | auditor: q_dashboard_resumen
+PASS | auditor: q_usuarios
+PASS | auditor: q_dispositivos
+PASS | auditor: q_solicitudes_derecho
+PASS | auditor: q_auditoria
+PASS | auditor: lee el estado de tratamiento de los titulares
+psql:/db/tests/04_rbac.sql:428: ERROR:  permission denied for table titular
+PASS | [E] auditor: no lee el nombre del titular -> 42501
+psql:/db/tests/04_rbac.sql:432: ERROR:  permission denied for table titular
+PASS | [E] auditor: no lee telefono, email ni HMAC del titular -> 42501
+psql:/db/tests/04_rbac.sql:436: ERROR:  permission denied for table titular
+PASS | [E] auditor: SELECT * FROM titular falla (privilegio por columna) -> 42501
+psql:/db/tests/04_rbac.sql:440: ERROR:  permission denied for table titular
+PASS | [E] auditor: q_buscar_vehiculo_patente denegada (devuelve el nombre del titular) -> 42501
+psql:/db/tests/04_rbac.sql:444: ERROR:  permission denied for table titular
+PASS | [E] auditor: q_buscar_vehiculo_vin denegada -> 42501
+psql:/db/tests/04_rbac.sql:448: ERROR:  permission denied for table titular
+PASS | [E] auditor: q_buscar_vehiculo_modelo denegada -> 42501
+psql:/db/tests/04_rbac.sql:452: ERROR:  permission denied for table titular
+PASS | [E] auditor: tx_crear_titular denegada -> 42501
+psql:/db/tests/04_rbac.sql:456: ERROR:  permission denied for table consentimiento_titular
+PASS | [E] auditor: tx_registrar_consentimiento denegada -> 42501
+psql:/db/tests/04_rbac.sql:460: ERROR:  permission denied for table vehiculo
+PASS | [E] auditor: tx_crear_vehiculo denegada -> 42501
+psql:/db/tests/04_rbac.sql:464: ERROR:  permission denied for table sesion_diagnostico
+PASS | [E] auditor: tx_crear_sesion denegada -> 42501
+psql:/db/tests/04_rbac.sql:468: ERROR:  permission denied for function fn_cambiar_estado_sesion
+PASS | [E] auditor: tx_cambiar_estado denegada -> 42501
+psql:/db/tests/04_rbac.sql:472: ERROR:  permission denied for function fn_crear_cotizacion
+PASS | [E] auditor: tx_crear_cotizacion denegada -> 42501
+psql:/db/tests/04_rbac.sql:476: ERROR:  permission denied for table cotizacion_detalle
+PASS | [E] auditor: tx_guardar_linea denegada -> 42501
+psql:/db/tests/04_rbac.sql:480: ERROR:  permission denied for table cotizacion_detalle
+PASS | [E] auditor: tx_quitar_linea denegada -> 42501
+psql:/db/tests/04_rbac.sql:484: ERROR:  permission denied for function fn_cerrar_cotizacion
+PASS | [E] auditor: tx_cerrar_cotizacion denegada -> 42501
+psql:/db/tests/04_rbac.sql:488: ERROR:  permission denied for table usuario
+PASS | [E] auditor: tx_crear_usuario denegada -> 42501
+psql:/db/tests/04_rbac.sql:492: ERROR:  permission denied for function fn_establecer_contrasena
+PASS | [E] auditor: tx_establecer_contrasena denegada -> 42501
+psql:/db/tests/04_rbac.sql:496: ERROR:  permission denied for table usuario
+PASS | [E] auditor: tx_cambiar_activo_usuario denegada -> 42501
+psql:/db/tests/04_rbac.sql:500: ERROR:  permission denied for table taller_configuracion
+PASS | [E] auditor: tx_actualizar_configuracion denegada -> 42501
+psql:/db/tests/04_rbac.sql:504: ERROR:  permission denied for table dispositivo_diagnostico
+PASS | [E] auditor: tx_registrar_dispositivo denegada -> 42501
+psql:/db/tests/04_rbac.sql:508: ERROR:  permission denied for function fn_solicitar_supresion_titular
+PASS | [E] auditor: tx_solicitar_supresion denegada -> 42501
+psql:/db/tests/04_rbac.sql:512: ERROR:  permission denied for table usuario_credencial
+PASS | [E] auditor: no lee credenciales -> 42501
+psql:/db/tests/04_rbac.sql:516: ERROR:  permission denied for table auditoria_operacion
+PASS | [E] auditor: no modifica la auditoria -> 42501
+==> 04_rbac.sql: 127 PASS, 0 FAIL, 77 errores esperados [ok]
+
+### 05 Aislamiento y RLS
+--- lectura: cada rol ve solo las filas de su taller
+PASS | taller: solo la fila propia
+PASS | taller_configuracion: solo la fila propia
+PASS | usuario: todas las del taller y ninguna ajena
+PASS | titular: todas las del taller y ninguna ajena
+PASS | consentimiento_titular: todas las del taller y ninguna ajena
+PASS | solicitud_derecho_titular: todas las del taller y ninguna ajena
+PASS | vehiculo: todas las del taller y ninguna ajena
+PASS | dispositivo_diagnostico: todas las del taller y ninguna ajena
+PASS | sesion_diagnostico: todas las del taller y ninguna ajena
+PASS | falla_sesion: todas las del taller y ninguna ajena
+PASS | cotizacion: todas las del taller y ninguna ajena
+PASS | cotizacion_detalle: todas las del taller y ninguna ajena
+PASS | auditoria_operacion: la del taller; ni la ajena ni la que no tiene taller (hay registros sin taller)
+PASS | catalogos globales: se ven completos desde cualquier taller
+PASS | auditor del taller 2: ve las sesiones y la auditoria de su taller, y nada mas
+--- escritura: el taller 2 no alcanza filas del taller 1
+PASS | UPDATE de una sesion ajena: 0 filas
+PASS | UPDATE de un titular ajeno: 0 filas
+PASS | UPDATE de un vehiculo ajeno: 0 filas
+PASS | UPDATE de fallas ajenas: 0 filas
+PASS | UPDATE de una cotizacion ajena: 0 filas
+PASS | UPDATE de lineas ajenas: 0 filas
+PASS | DELETE de lineas ajenas: 0 filas
+PASS | UPDATE de consentimientos ajenos: 0 filas
+psql:/db/tests/05_aislamiento_rls.sql:126: ERROR:  new row violates row-level security policy for table "titular"
+PASS | [E] INSERT de un titular con taller_id ajeno: lo rechaza la politica -> 42501
+psql:/db/tests/05_aislamiento_rls.sql:130: ERROR:  new row violates row-level security policy for table "vehiculo"
+PASS | [E] INSERT de un vehiculo con taller_id ajeno: lo rechaza la politica -> 42501
+psql:/db/tests/05_aislamiento_rls.sql:135: ERROR:  new row violates row-level security policy for table "sesion_diagnostico"
+PASS | [E] INSERT de una sesion con taller_id ajeno: lo rechaza la politica -> 42501
+psql:/db/tests/05_aislamiento_rls.sql:139: ERROR:  new row violates row-level security policy for table "falla_sesion"
+PASS | [E] INSERT de una falla con taller_id ajeno: lo rechaza la politica -> 42501
+psql:/db/tests/05_aislamiento_rls.sql:145: ERROR:  el taller 1 no tiene configuracion
+PASS | [E] INSERT de una linea con taller_id ajeno: lo rechaza el trigger, que no ve ese taller -> RE009
+psql:/db/tests/05_aislamiento_rls.sql:151: ERROR:  insert or update on table "sesion_diagnostico" violates foreign key constraint "fk_sesion_diagnostico_vehiculo"
+PASS | [E] Sesion propia sobre un vehiculo ajeno: la rechaza la FK compuesta (RLS no interviene en las FK) -> 23503
+psql:/db/tests/05_aislamiento_rls.sql:155: ERROR:  insert or update on table "falla_sesion" violates foreign key constraint "fk_falla_sesion_sesion_diagnostico"
+PASS | [E] Falla con taller propio sobre una sesion ajena: la rechaza la FK compuesta -> 23503
+psql:/db/tests/05_aislamiento_rls.sql:159: ERROR:  insert or update on table "cotizacion_detalle" violates foreign key constraint "fk_cotizacion_detalle_cotizacion"
+PASS | [E] Linea con taller propio sobre una cotizacion ajena: la rechaza la FK compuesta -> 23503
+psql:/db/tests/05_aislamiento_rls.sql:163: ERROR:  la sesion 7 no existe o no es visible
+PASS | [E] Cotizacion con taller propio sobre una sesion ajena: el trigger no encuentra la sesion -> RE009
+psql:/db/tests/05_aislamiento_rls.sql:168: ERROR:  la sesion 7 no existe o no es visible
+PASS | [E] fn_cambiar_estado_sesion sobre una sesion ajena -> RE009
+psql:/db/tests/05_aislamiento_rls.sql:172: ERROR:  la cotizacion 8 no existe o no es visible
+PASS | [E] fn_cerrar_cotizacion sobre una cotizacion ajena -> RE009
+psql:/db/tests/05_aislamiento_rls.sql:176: ERROR:  la sesion 7 no existe o no es visible
+PASS | [E] fn_crear_cotizacion sobre una sesion ajena -> RE009
+--- sentencias del backend con ids publicos ajenos: cero filas
+PASS | q_sesion con id publico ajeno
+PASS | q_sesion_fallas con id publico ajeno
+PASS | q_matriz con id publico ajeno
+PASS | q_cotizaciones_sesion con id publico ajeno
+PASS | q_cotizacion_detalle con id publico ajeno
+PASS | q_historial_vehiculo con id publico ajeno
+PASS | q_buscar_vehiculo_vin con un VIN del otro taller
+PASS | tx_crear_sesion sobre un vehiculo ajeno
+PASS | tx_cambiar_estado sobre una sesion ajena
+PASS | tx_crear_cotizacion sobre una sesion ajena
+PASS | tx_guardar_linea sobre una cotizacion ajena
+PASS | tx_quitar_linea sobre una cotizacion ajena
+PASS | tx_cerrar_cotizacion sobre una cotizacion ajena
+PASS | tx_registrar_consentimiento sobre un titular ajeno
+PASS | tx_crear_vehiculo con un titular ajeno: no crea un vehiculo sin titular
+PASS | tx_establecer_contrasena sobre un usuario ajeno
+PASS | tx_cambiar_activo_usuario sobre un usuario ajeno
+PASS | tx_solicitar_supresion sobre un titular ajeno
+PASS | tx_actualizar_configuracion (UPDATE sin WHERE) toca solo la fila del taller propio
+psql:/db/tests/05_aislamiento_rls.sql:244: ERROR:  el usuario 3 no existe o no es visible
+PASS | [E] fn_establecer_contrasena con el id interno de un usuario ajeno (definidora: valida ella misma) -> RE009
+psql:/db/tests/05_aislamiento_rls.sql:248: ERROR:  el titular 1 no existe o no es visible
+PASS | [E] fn_solicitar_supresion_titular con el id interno de un titular ajeno -> RE009
+psql:/db/tests/05_aislamiento_rls.sql:252: ERROR:  new row violates row-level security policy for table "usuario"
+PASS | [E] INSERT de un usuario en otro taller: lo rechaza la politica -> 42501
+psql:/db/tests/05_aislamiento_rls.sql:256: ERROR:  new row violates row-level security policy for table "dispositivo_diagnostico"
+PASS | [E] INSERT de un dispositivo en otro taller: lo rechaza la politica -> 42501
+PASS | Tras todos los intentos, el taller 1 no cambio (margen, sesion, titular, lineas, credencial)
+--- contexto ausente o invalido: falla cerrado
+PASS | Rol asumido sin app.taller_id: cero filas en todas las tablas de taller
+psql:/db/tests/05_aislamiento_rls.sql:285: ERROR:  new row violates row-level security policy for table "titular"
+PASS | [E] Rol asumido sin app.taller_id: no puede insertar en ningun taller -> 42501
+PASS | Rol asumido sin app.taller_id: UPDATE sin WHERE no toca nada
+PASS | app.taller_id de un taller que no existe: cero filas
+psql:/db/tests/05_aislamiento_rls.sql:300: ERROR:  invalid input syntax for type bigint: "1 OR 1=1"
+PASS | [E] app.taller_id no numerico: la consulta falla en lugar de devolver datos -> 22P02
+PASS | FORCE RLS: el propietario app_owner, sin politica propia, no ve ninguna fila
+--- visibilidad del mecanico sobre titulares bloqueados o anonimizados (RN-64)
+PASS | admin del taller 1: ve los 5 titulares, los 8 vehiculos y las 12 sesiones
+PASS | auditor del taller 1: ve los 5 titulares (sin identidad), los 8 vehiculos y las 12 sesiones
+PASS | RN-64 mecanico: solo los 3 titulares activos y sus 6 vehiculos; las 12 sesiones siguen visibles
+PASS | RN-64 mecanico: no ve los consentimientos de titulares que no ve
+PASS | RN-64 mecanico: no modifica el vehiculo de un titular bloqueado (0 filas)
+psql:/db/tests/05_aislamiento_rls.sql:341: ERROR:  new row violates row-level security policy for table "vehiculo"
+PASS | [E] RN-64 mecanico: no registra un vehiculo a nombre de un titular bloqueado -> 42501
+psql:/db/tests/05_aislamiento_rls.sql:346: ERROR:  new row violates row-level security policy for table "consentimiento_titular"
+PASS | [E] RN-64 mecanico: no registra consentimientos de un titular bloqueado -> 42501
+psql:/db/tests/05_aislamiento_rls.sql:351: ERROR:  new row violates row-level security policy for table "sesion_diagnostico"
+PASS | [E] RN-25 mecanico: no crea una sesion a nombre de otro mecanico de su taller -> 42501
+PASS | mecanico: si puede cotizar sobre la sesion de un companero del mismo taller
+--- SET LOCAL fuera de una transaccion no tiene efecto
+psql:/db/tests/05_aislamiento_rls.sql:362: WARNING:  SET LOCAL can only be used in transaction blocks
+psql:/db/tests/05_aislamiento_rls.sql:365: ERROR:  permission denied for table sesion_diagnostico
+PASS | [E] SET LOCAL ROLE sin BEGIN no asume el rol: la consulta siguiente es denegada -> 42501
+==> 05_aislamiento_rls.sql: 75 PASS, 0 FAIL, 22 errores esperados [ok]
+
+### 06 Autenticacion
+PASS | Login correcto: devuelve usuario, taller, rol y nombre (ids internos y publicos)
+PASS | La funcion de login no devuelve el hash ni ningun dato de la credencial
+PASS | Login correcto: el email se normaliza (mayusculas y espacios)
+PASS | Clave incorrecta: una fila con autenticado = false y todo lo demas NULL
+PASS | Email inexistente: misma respuesta que una clave incorrecta (no delata que emails existen)
+PASS | Email y clave NULL o vacios: no autentica y no falla
+PASS | Usuario dado de baja: no autentica aunque la clave sea correcta
+PASS | Taller inactivo: sus usuarios no autentican
+PASS | Usuario sin credencial: no autentica
+PASS | Cada clave incorrecta incrementa intentos_fallidos
+PASS | Un login correcto pone el contador en cero y registra ultimo_login_en
+PASS | Tras 4 fallos consecutivos la cuenta aun no esta bloqueada
+PASS | El 5.o fallo consecutivo bloquea la cuenta 15 minutos
+PASS | Cuenta bloqueada: ni la clave correcta autentica
+PASS | El bloqueo es por cuenta: otro usuario del mismo taller sigue autenticando
+PASS | Bloqueo vencido: la clave correcta autentica y limpia el bloqueo
+PASS | Auditoria: LOGIN con exito y LOGIN_FALLIDO con fallo o denegado, con el rol de conexion y sin datos
+PASS | Auditoria: el fallo de un email inexistente queda sin taller ni usuario (T-14)
+PASS | Auditoria: ningun registro contiene un email (ni el intentado ni el del usuario)
+PASS | Los hashes son bcrypt de costo 10 (60 caracteres)
+PASS | La misma clave produce hashes distintos por usuario (sal aleatoria)
+PASS | La clave de demostracion no aparece en texto plano en ninguna columna de credenciales
+psql:/db/tests/06_autenticacion.sql:159: ERROR:  la contrasena debe tener entre 8 caracteres y 72 bytes
+PASS | [E] RE011 contrasena de 7 caracteres -> RE011
+psql:/db/tests/06_autenticacion.sql:163: ERROR:  la contrasena debe tener entre 8 caracteres y 72 bytes
+PASS | [E] RE011 contrasena de 73 bytes (bcrypt la truncaria en silencio) -> RE011
+psql:/db/tests/06_autenticacion.sql:167: ERROR:  la contrasena debe tener entre 8 caracteres y 72 bytes
+PASS | [E] RE011 contrasena de 37 caracteres que ocupan 74 bytes -> RE011
+psql:/db/tests/06_autenticacion.sql:171: ERROR:  la contrasena debe tener entre 8 caracteres y 72 bytes
+PASS | [E] RE011 contrasena NULL -> RE011
+psql:/db/tests/06_autenticacion.sql:175: ERROR:  el usuario 999999999 no existe o no es visible
+PASS | [E] RE009 usuario inexistente -> RE009
+psql:/db/tests/06_autenticacion.sql:181: ERROR:  operacion reservada al administrador con contexto de taller
+PASS | [E] RE006 rol de administrador sin contexto de taller -> RE006
+PASS | Contrasena de exactamente 72 bytes: se acepta y autentica
+PASS | Tras el cambio, la contrasena anterior deja de servir
+PASS | Restablecer la contrasena levanta el bloqueo de la cuenta
+PASS | El cambio de contrasena queda auditado sin datos (ni hash ni clave)
+PASS | usuario_credencial no tiene trigger de auditoria (un hash jamas se copia)
+==> 06_autenticacion.sql: 33 PASS, 0 FAIL, 6 errores esperados [ok]
+
+### 07 Auditoria
+psql:/db/tests/07_auditoria.sql:13: ERROR:  auditoria_operacion es de solo insercion: UPDATE no permitido
+PASS | [E] RN-70 UPDATE de la auditoria como superusuario -> RE005
+psql:/db/tests/07_auditoria.sql:17: ERROR:  auditoria_operacion es de solo insercion: DELETE no permitido
+PASS | [E] RN-70 DELETE de la auditoria como superusuario -> RE005
+psql:/db/tests/07_auditoria.sql:21: ERROR:  auditoria_operacion es de solo insercion: TRUNCATE no permitido
+PASS | [E] RN-70 TRUNCATE de la auditoria como superusuario -> RE005
+psql:/db/tests/07_auditoria.sql:26: ERROR:  auditoria_operacion es de solo insercion: TRUNCATE no permitido
+PASS | [E] RN-70 TRUNCATE de la auditoria como su propietario (app_owner) -> RE005
+PASS | La auditoria no tiene claves foraneas (no puede bloquear ni ser arrastrada por un borrado)
+PASS | Las 13 tablas auditadas tienen trigger de captura; usuario_credencial y auditoria no
+PASS | INSERT auditado con taller, usuario, rol real, IP, request_id y resultado
+PASS | T-7 el rol registrado es el del grupo, no app_funciones (propietario de la funcion definidora)
+PASS | RN-71 titular: sin nombre, telefono, email ni HMAC; con id, estado y fechas
+PASS | UPDATE auditado con datos anteriores y nuevos
+PASS | RN-71 vehiculo: sin patente ni VIN; con anio, motor y modelo
+PASS | RN-71 falla_sesion: sin freeze_frame; registro_id NULL y la clave completa en datos_nuevos (T-20)
+PASS | DELETE auditado con datos anteriores y sin datos nuevos
+PASS | RN-71 el valor personal enviado no aparece en ningun registro de auditoria
+PASS | RN-71 usuario: sin email ni nombre; con rol y activo
+PASS | RN-71 en TODA la bitacora (semillas incluidas) no hay ninguna columna enmascarada
+psql:/db/tests/07_auditoria.sql:136: ERROR:  transicion de estado invalida: pendiente -> completado
+PASS | [E] Una operacion rechazada (RE001) se revierte entera -> RE001
+PASS | La operacion rechazada no deja registro: la auditoria comparte la transaccion de la operacion
+PASS | Una IP de origen mal formada no impide la operacion
+PASS | y queda auditada con ip_origen NULL
+PASS | ocurrido_en usa clock_timestamp: avanza dentro de la transaccion y sigue el orden de los ids
+PASS | Un cambio de precio maestro queda auditado con el rol de sesion y sin taller
+PASS | Ese registro sin taller no es visible para el administrador de ningun taller
+PASS | El administrador lee en su bitacora lo que hizo el mecanico de su taller
+==> 07_auditoria.sql: 24 PASS, 0 FAIL, 5 errores esperados [ok]
+
+### 08 Privacidad
+PASS | RN-61 bloqueado: conserva sus datos y vence en (ultima atencion no cancelada + 6 anios)
+PASS | RN-61 bloqueado: su vehiculo conserva patente y VIN; la solicitud queda en proceso
+PASS | RN-63 anonimizado: sin nombre, telefono, email ni HMAC
+PASS | RN-63 anonimizado: su vehiculo pierde patente y VIN, y conserva modelo, anio y motor
+PASS | RN-62 anonimizado: consentimientos revocados y solicitud de supresion resuelta
+PASS | RN-62 anonimizado: su sesion y sus fallas se conservan (trazabilidad tecnica sin persona)
+psql:/db/tests/08_privacidad.sql:63: ERROR:  new row for relation "titular" violates check constraint "ck_titular_anonimizado_sin_datos"
+PASS | [E] La anonimizacion es irreversible: no se puede volver a escribir el nombre -> 23514
+psql:/db/tests/08_privacidad.sql:67: ERROR:  new row for relation "vehiculo" violates check constraint "ck_vehiculo_anonimizado_sin_identificadores"
+PASS | [E] La anonimizacion es irreversible: no se puede volver a escribir la patente -> 23514
+PASS | Repetir la supresion de un titular bloqueado: sigue bloqueado y no duplica la solicitud
+PASS | Repetir la supresion de un titular anonimizado: devuelve anonimizado sin cambios
+psql:/db/tests/08_privacidad.sql:83: ERROR:  el titular 999999999 no existe o no es visible
+PASS | [E] RE009 supresion de un titular inexistente -> RE009
+psql:/db/tests/08_privacidad.sql:89: ERROR:  operacion reservada al administrador con contexto de taller
+PASS | [E] RE006 supresion con rol de administrador pero sin contexto de taller -> RE006
+PASS | RN-62 un titular sin atenciones se anonimiza de inmediato
+PASS | Con retencion_anios = 0 la supresion anonimiza aunque haya atenciones recientes
+PASS | RN-63 se anonimizan TODOS los vehiculos del titular en la misma operacion
+PASS | RN-62 la anonimizacion no borra ni altera sesiones, fallas ni totales cotizados
+PASS | RN-71 la auditoria de la anonimizacion no contiene los datos borrados
+PASS | RN-64 tras la anonimizacion el mecanico no ve al titular ni sus vehiculos, pero si sus sesiones
+PASS | fn_anonimizar_vencidos: sin bloqueos vencidos no procesa a nadie
+PASS | fn_anonimizar_vencidos: procesa el bloqueo vencido (ejecutada como app_owner)
+PASS | fn_anonimizar_vencidos: una segunda ejecucion no encuentra nada (idempotente)
+PASS | RN-62 el titular vencido queda anonimizado, con su vehiculo, y la solicitud resuelta
+PASS | La anonimizacion por proceso queda auditada con el rol app_owner
+PASS | Ningun titular anonimizado conserva datos y ningun vehiculo anonimizado conserva identificadores
+==> 08_privacidad.sql: 24 PASS, 0 FAIL, 4 errores esperados [ok]
+
+### 09 Consultas
+PASS | q_historial: 12 sesiones en paginas de 5, 5, 2 y 0 filas
+PASS | q_historial: las paginas no repiten ni omiten sesiones
+PASS | q_historial: el orden concatenado de las paginas es iniciada_en DESC, id DESC
+PASS | q_historial: fallas, severidad maxima y total vigente coinciden con las tablas
+PASS | q_historial (mecanico): 2 sesiones con el vehiculo oculto llegan con sus columnas en NULL
+PASS | q_historial: el filtro de estado devuelve solo ese estado (3 cotizadas)
+PASS | q_historial: con iniciada_en repetido, el desempate por id no repite ni omite filas
+PASS | q_historial_vehiculo: las 2 sesiones de la Hilux, la mas reciente primero
+PASS | q_historial (auditor): ve todos los vehiculos; el anonimizado, sin patente
+PASS | q_matriz (Kia Morning 2015): 7 repuestos, ningun genuino, sin el repuesto no disponible
+PASS | q_matriz: un componente de varios DTC aparece una vez, con todos sus codigos y la severidad mas alta
+PASS | RN-45 q_matriz: precio_venta = ROUND(precio_referencia * (1 + margen / 100)) y moneda del taller
+PASS | RN-44 q_matriz: todo repuesto devuelto es compatible con el modelo y el anio del vehiculo
+PASS | RN-44 q_matriz: no falta ningun repuesto disponible y compatible de los componentes de la sesion
+PASS | RN-43 q_matriz: orden por severidad, componente, perfil (genuino, oem, generico), precio e id
+PASS | RN-44 q_matriz (Corolla 2006): el anio deja solo el generico
+PASS | q_matriz: sesion cuyo unico DTC no tiene componente (U0100): cero filas, sin error
+PASS | q_matriz (mecanico): sesion con el vehiculo oculto: cero filas (T-38)
+PASS | q_matriz (admin): la misma sesion si tiene matriz, porque el admin ve el vehiculo
+PASS | T-29 q_matriz: dos rangos de compatibilidad solapados no duplican el repuesto
+PASS | q_repuestos_por_dtc: sin vehiculo equivale a la vista v_dtc_repuesto (solo disponibles)
+PASS | q_repuestos_por_dtc: rangos disjuntos; el catalizador Walker sirve a una Hilux 2019 y no a una 2016
+PASS | v_dtc_repuesto: es exactamente dtc_componente x repuesto por componente
+PASS | RN-45 el mismo catalogo con el margen del taller 2 (45,5 %): mismos repuestos, otros precios
+PASS | q_cotizaciones_sesion: 2 revisiones, la mas reciente primero y unica vigente
+PASS | q_cotizaciones_sesion: en una cotizacion cerrada, total (congelado) = total_calculado (detalle)
+PASS | q_cotizaciones_sesion: un borrador no tiene total pero si total_calculado
+PASS | q_cotizacion_detalle: la suma de subtotales es el total de la cotizacion
+PASS | q_dashboard_resumen: una fila cuyos conteos coinciden con un calculo independiente
+PASS | q_dashboard_resumen: montos y fallas criticas coinciden con un calculo independiente
+PASS | q_dashboard_dtc_frecuentes: suma todas las fallas del periodo y ordena por frecuencia y codigo
+PASS | q_dashboard_resumen sin contexto: una fila con ceros, no un error
+PASS | q_buscar_vehiculo_patente: una fila con modelo, marca, titular y ultima sesion
+PASS | q_buscar_vehiculo_modelo: filtra por modelo y anio
+PASS | q_buscar_vehiculo_patente (mecanico): la patente de un titular bloqueado no se encuentra
+PASS | q_sesion: devuelve version, dispositivo y el borrador abierto; sin cotizacion vigente
+PASS | q_sesion_fallas: las mas graves primero
+PASS | q_dtc_buscar: busca por prefijo y cuenta los componentes de cada codigo
+PASS | q_configuracion: una fila con el taller del contexto
+PASS | q_auditoria: paginacion por clave sin solapes y en orden descendente
+PASS | q_auditoria: el filtro por tabla devuelve solo esa tabla; las operaciones de roles de taller traen el usuario
+==> 09_consultas.sql: 41 PASS, 0 FAIL, 0 errores esperados [ok]
+
+### Concurrencia
+PASS | CON-01 linea que llega durante el cierre: espera y es rechazada; el total no la incluye (T-8) (B espero a A; SQLSTATE RE003)
+PASS | CON-02 cierre durante una insercion de linea: espera y el total incluye la linea (B espero a A; SQLSTATE 00000)
+PASS | CON-03 misma clave de idempotencia en paralelo: una sola cotizacion (RN-57) (B espero a A; SQLSTATE 00000)
+PASS | CON-04 dos borradores en paralelo para la misma sesion: solo queda uno (RN-52) (B espero a A; SQLSTATE 23505)
+PASS | CON-05 completar y cancelar a la vez: gana el primero, el segundo ve un estado terminal (B espero a A; SQLSTATE RE001)
+PASS | CON-06 completar a la vez con version leida antes: conflicto de version, sin doble cambio (B espero a A; SQLSTATE RE007)
+PASS | CON-07 dos cierres de la misma cotizacion: el segundo la devuelve ya cerrada, sin tocarla (B espero a A; SQLSTATE 00000)
+PASS | CON-08 dos cambios de cantidad de la misma linea: se serializan, queda una linea (B espero a A; SQLSTATE 00000)
+PASS | CON-09 cancelar la sesion y cerrar su borrador a la vez: el cierre es rechazado (B espero a A; SQLSTATE RE004)
+PASS | CON-10 dos logins fallidos simultaneos: el contador no pierde ninguno (B espero a A; SQLSTATE 00000)
+PASS | CON-11 ningun escenario produjo un interbloqueo (orden de bloqueo sesion -> cotizacion)
+PASS | CON-12 ninguna sesion A (la que llega primero) fallo
+==> concurrencia.sh: 12 PASS, 0 FAIL [ok]
+
+test: todo PASS (468 pruebas en 10 archivos)
+
+# codigo de salida: 0

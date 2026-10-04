@@ -3,7 +3,7 @@
 Base de datos PostgreSQL 16 del sistema **Repuestos Exactos** (diagnóstico OBD-II y matriz comparativa de
 repuestos para talleres mecánicos). Proyecto universitario de Ingeniería en Computación e Informática.
 
-> Estado: **Fase 3** (esquema, seguridad, semillas, consultas y transacciones; faltan pruebas formales, rendimiento y operación). Este README se completa en la Fase 7.
+> Estado: **Fase 4** (esquema, seguridad, semillas, consultas, transacciones y suite de 468 pruebas; faltan rendimiento y operación). Este README se completa en la Fase 7.
 
 ## Requisitos
 
@@ -50,11 +50,22 @@ bash db/scripts/psql.sh -f /db/queries/demo_transacciones.sql   # transacciones 
 bash db/scripts/evidencia_fase3.sh                              # regenera docs/evidencia/fase3_*.txt
 ```
 
+## Pruebas
+
+```bash
+bash db/tests/run_all.sh           # suite completa; codigo 0 = todo PASS
+bash db/tests/control_negativo.sh  # demuestra que la prueba de concurrencia detecta el defecto de T-8
+```
+
+La suite corre sobre las semillas y no deja cambios, salvo los registros de auditoría de la prueba de
+concurrencia.
+
 ## Documentación
 
 - `docs/decisiones.md` — resumen ejecutivo, decisiones abiertas, supuestos y temas para conversar.
 - `docs/modelo/` — dominio y reglas de negocio, modelo conceptual (Mermaid), modelo lógico, normalización y diccionario de datos (generado).
 - `docs/seguridad.md`, `docs/privacidad.md` — roles, RBAC y RLS, autenticación, auditoría, supresión y anonimización.
 - `docs/consultas.md`, `docs/transacciones.md` — contrato de las consultas del frontend (`db/queries/`) y transacciones atómicas.
+- `docs/pruebas.md` — qué prueba la suite (`db/tests/`), cómo está construida y qué no cubre.
 - `docs/operacion.md` — Fase 6.
 - `docs/evidencia/` — salidas reales de las ejecuciones.

@@ -142,10 +142,30 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
 - La prueba de humo de la Fase 2 solo corre sobre una base **sin** semillas.
 - Temas T-35 a T-42 en `docs/decisiones.md` §8.3.
 
+## Notas de implementación (Fase 4)
+
+- Suite: `db/tests/NN_*.sql` (cada archivo: `\ir incluir/inicio.sql` … `ROLLBACK`) + `db/tests/concurrencia.sh`.
+  Una línea `PASS | …` o `FAIL | …` por prueba. Requiere semillas.
+- Afirmaciones en `db/tests/incluir/`: `afirmar.sql` (consulta que deja `:ok` con `\gset`), `error.sql`
+  (`\set esperado <SQLSTATE>` antes de la sentencia que debe fallar; marca `[E]`), `exito.sql`, `filas.sql`.
+  Cambio de rol: `\ir incluir/rol_mecanico_1.sql` y similares; `rol_plataforma.sql` para ver sin RLS.
+- `run_all.sh` falla si en un archivo el número de `ERROR:` difiere del de pruebas `[E]`: todo error
+  esperado debe ir seguido de `\ir incluir/error.sql`.
+- `\gset` deja SIN definir la variable de una columna NULL: para afirmar sobre NULL, hacerlo dentro del SQL.
+- Para afirmar sobre el resultado de un `PREPARE`: `CREATE TEMP TABLE x AS EXECUTE q_…` (requiere el
+  `GRANT TEMPORARY` temporal que hace `09_consultas.sql`); el orden devuelto se recupera con `ctid`.
+- Un trigger `BEFORE` corre antes que el `WITH CHECK` de RLS (ver T-44).
+- `concurrencia.sh` hace `COMMIT`, limpia sus datos (kilometraje 900001–900009, patente `ZZZZ99`) y deja
+  auditoría. No afirmar conteos absolutos de `auditoria_operacion`.
+- En scripts con `set -euo pipefail`, `grep` sin coincidencias aborta: usar `|| true`.
+- Temas T-43 a T-48 en `docs/decisiones.md` §9.2. T-43 (pg_hba `trust` local) se retoma en la Fase 6.
+
 ## Estado
 
-- Fases 0, 1, 2 y 3 completas. Esquema en `db/migrations/` (V000–V008), semillas en `db/seeds/`, consultas
-  y transacciones en `db/queries/`; `reset → migrate → seed → test` verificado desde cero con código 0.
+- Fases 0 a 4 completas. Esquema en `db/migrations/` (V000–V008), semillas en `db/seeds/`, consultas y
+  transacciones en `db/queries/`, suite en `db/tests/` (468 pruebas); `reset → migrate → seed → test`
+  verificado desde cero con código 0.
 - Documentos: `docs/decisiones.md`, `docs/modelo/` (01–05), `docs/seguridad.md`, `docs/privacidad.md`,
-  `docs/consultas.md`, `docs/transacciones.md`.
-- Siguiente: Fase 4 (suite formal PASS/FAIL en `db/tests/*.sql` sobre las semillas y `db/tests/concurrencia.sh`).
+  `docs/consultas.md`, `docs/transacciones.md`, `docs/pruebas.md`.
+- Siguiente: Fase 5 (`db/perf/run.sh`: volumen de datos, `EXPLAIN (ANALYZE, BUFFERS)` de las consultas de
+  `db/queries/`, utilidad real de cada índice de `V006`, `docs/evidencia/rendimiento.md`).
