@@ -105,3 +105,29 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
 - Dentro de `SECURITY DEFINER`, `current_user` es `app_funciones`: el rol real se lee con `current_setting('role')`.
 - Aislamiento: `UNIQUE (id, taller_id)` en tablas padre y FK compuestas `(padre_id, taller_id)` en las hijas.
 
+
+## Notas de implementación (Fase 2)
+
+- `migrate.sh` corre cada archivo con `--single-transaction`; acepta un prefijo (`migrate.sh V005`).
+- En `V005` los `COMMENT ON FUNCTION` van antes de `ALTER FUNCTION ... OWNER TO app_funciones`
+  (COMMENT exige ser el dueño). Los `GRANT EXECUTE` de esas funciones se hacen en `V007` con
+  `SET ROLE app_funciones`.
+- Índices únicos parciales (reglas de integridad) en `V003`; índices de rendimiento en `V006`.
+- El trigger del detalle bloquea la cabecera con `FOR SHARE` (no `FOR KEY SHARE`): cubre también el
+  cierre por `UPDATE` directo.
+- Toda cotización nace borrador (trigger); `total` y `cerrada_en` los fija el trigger al cerrar. Las
+  semillas deben recorrer el flujo real, no insertar estados finales.
+- Errores de negocio con `SQLSTATE` propio `RE001`–`RE012` (tabla en `docs/seguridad.md` §11).
+- Políticas `pol_<tabla>_miembros_<op>` cuando aplican a los tres grupos.
+- Tras cambiar un `COMMENT ON`: `bash db/scripts/diccionario.sh`. Tras cambiar el esquema:
+  `bash db/scripts/evidencia_esquema.sh`. Prueba de humo: `bash db/scripts/psql.sh -f /db/tests/humo/fase2_humo.sql`.
+- `psql.sh` pasa `-q` y `ON_ERROR_STOP=1`; un script con errores esperados debe poner
+  `\set ON_ERROR_STOP off` y `\set ON_ERROR_ROLLBACK on`.
+- En Git Bash no pasar rutas de Windows (`$TEMP`) a `awk -v`: las barras invertidas se interpretan como
+  escapes. Usar heredoc o la herramienta de edición.
+
+## Estado
+
+- Fases 0, 1 y 2 completas. Esquema en `db/migrations/` (V000–V008), verificado desde cero.
+- Documentos: `docs/decisiones.md`, `docs/modelo/` (01–05), `docs/seguridad.md`, `docs/privacidad.md`.
+- Siguiente: Fase 3 (semillas, consultas del frontend con su contrato, transacciones).
