@@ -60,17 +60,17 @@ COMMIT;
 BEGIN;
 SET LOCAL ROLE taller_mecanico;
 EXECUTE ctx(:'m1_taller_id', :'m1_usuario_id', '192.168.10.21', 'demo-consultas-4') \gset ctx_
-\echo '-- pagina 1: q_historial(NULL, NULL, NULL, 5)'
-EXECUTE q_historial(NULL, NULL, NULL, 5);
+\echo '-- pagina 1: q_historial(5)'
+EXECUTE q_historial(5);
 -- La API toma el cursor de la ultima fila de la pagina que acaba de devolver.
 SELECT s.iniciada_en AS cursor_fecha, s.id_publico AS cursor_id
 FROM   sesion_diagnostico s
 ORDER  BY s.iniciada_en DESC, s.id DESC
 OFFSET 4 LIMIT 1 \gset
 \echo '-- pagina 2: q_historial(NULL, <cursor>, 5)'
-EXECUTE q_historial(NULL, :'cursor_fecha', :'cursor_id', 5);
-\echo '-- filtrado por estado: q_historial(pendiente, NULL, NULL, 5)'
-EXECUTE q_historial('pendiente', NULL, NULL, 5);
+EXECUTE q_historial_siguiente(:'cursor_fecha', :'cursor_id', 5);
+\echo '-- filtrado por estado: q_historial_estado(pendiente, 5)'
+EXECUTE q_historial_estado('pendiente', 5);
 COMMIT;
 
 \echo
@@ -161,12 +161,20 @@ BEGIN;
 SET LOCAL ROLE taller_auditor;
 EXECUTE ctx(:'au_taller_id', :'au_usuario_id', '192.168.10.40', 'demo-consultas-8') \gset ctx_
 \echo '-- q_historial: el auditor ve todos los vehiculos, tambien el del titular bloqueado y el anonimizado (sin patente)'
-EXECUTE q_historial('completado', NULL, NULL, 10);
-EXECUTE q_historial('cancelado', NULL, NULL, 10);
+EXECUTE q_historial_estado('completado', 10);
+EXECUTE q_historial_estado('cancelado', 10);
+\echo '-- q_historial_estado_siguiente(completado, <cursor de la 2.a fila>, 10): la pagina siguiente del mismo estado'
+SELECT s.iniciada_en AS cursor_fecha, s.id_publico AS cursor_id
+FROM   sesion_diagnostico s WHERE s.estado = 'completado'
+ORDER  BY s.iniciada_en DESC, s.id DESC OFFSET 1 LIMIT 1 \gset
+EXECUTE q_historial_estado_siguiente('completado', :'cursor_fecha', :'cursor_id', 10);
+\echo '-- q_consentimientos_titular de un titular bloqueado (el auditor lo ve; sin datos de identidad)'
+SELECT t.id_publico AS titular_bloqueado FROM titular t WHERE t.estado_tratamiento = 'bloqueado' \gset
+EXECUTE q_consentimientos_titular(:'titular_bloqueado');
 \echo '-- q_solicitudes_derecho (sin identidad del titular)'
 EXECUTE q_solicitudes_derecho;
-\echo '-- q_auditoria(cotizacion, NULL, NULL, 4)'
-EXECUTE q_auditoria('cotizacion', NULL, NULL, 4);
+\echo '-- q_auditoria(cotizacion, 4)'
+EXECUTE q_auditoria('cotizacion', 4);
 COMMIT;
 
 \echo
@@ -181,8 +189,8 @@ EXECUTE ctx(:'ad_taller_id', :'ad_usuario_id', '192.168.10.2', 'demo-consultas-9
 EXECUTE q_usuarios;
 \echo '-- q_dispositivos'
 EXECUTE q_dispositivos;
-\echo '-- q_auditoria(titular, NULL, NULL, 3): sin nombre, telefono, email ni HMAC'
-EXECUTE q_auditoria('titular', NULL, NULL, 3);
+\echo '-- q_auditoria(titular, 3): sin nombre, telefono, email ni HMAC'
+EXECUTE q_auditoria('titular', 3);
 COMMIT;
 
 \echo
@@ -196,7 +204,7 @@ EXECUTE ctx(:'m2_taller_id', :'m2_usuario_id', '10.20.0.5', 'demo-consultas-10')
 \echo '-- q_configuracion: su taller, margen 45,5 %'
 EXECUTE q_configuracion;
 \echo '-- q_historial: solo sus 4 sesiones'
-EXECUTE q_historial(NULL, NULL, NULL, 20);
+EXECUTE q_historial(20);
 \echo '-- q_buscar_vehiculo_patente(BCDF12): SU Hilux, no el Accent del taller 1'
 EXECUTE q_buscar_vehiculo_patente('BCDF12');
 \echo '-- sentencias con ids publicos del taller 1: cero filas'
@@ -212,7 +220,7 @@ COMMIT;
 BEGIN;
 SET LOCAL ROLE taller_mecanico;
 EXECUTE q_configuracion;
-EXECUTE q_historial(NULL, NULL, NULL, 5);
+EXECUTE q_historial(5);
 \x on
 EXECUTE q_dashboard_resumen(now() - interval '30 days');
 \x off

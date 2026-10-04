@@ -35,7 +35,10 @@ Las rutas HTTP son orientativas: el alcance del proyecto es la base de datos (su
 | `q_buscar_vehiculo_vin` | `GET /search?vin=` | admin, mecánico | VIN | 0–1 |
 | `q_buscar_vehiculo_patente` | `GET /search?plate=` | admin, mecánico | patente | 0–1 |
 | `q_buscar_vehiculo_modelo` | `GET /search?model=&year=` | admin, mecánico | modelo (uuid), año (opc.), límite | N |
-| `q_historial` | `GET /history` | los tres | estado (opc.), cursor (fecha, uuid), límite | N |
+| `q_historial` | `GET /history` | los tres | límite | N |
+| `q_historial_siguiente` | `GET /history?cursor=` | los tres | cursor (fecha, uuid), límite | N |
+| `q_historial_estado` | `GET /history?status=` | los tres | estado, límite | N |
+| `q_historial_estado_siguiente` | `GET /history?status=&cursor=` | los tres | estado, cursor (fecha, uuid), límite | N |
 | `q_historial_vehiculo` | `GET /vehicles/{id}/sessions` | los tres | vehículo (uuid), límite | N |
 | `q_sesion` | `GET /sessions/{id}` | los tres | sesión (uuid) | 0–1 |
 | `q_sesion_fallas` | `GET /sessions/{id}/faults` | los tres | sesión (uuid) | N |
@@ -46,11 +49,13 @@ Las rutas HTTP son orientativas: el alcance del proyecto es la base de datos (su
 | `q_dashboard_dtc_frecuentes` | `GET /dashboard/top-dtc` | los tres | inicio del período, límite | N |
 | `q_usuarios` | `GET /users` | admin, auditor | — | N |
 | `q_dispositivos` | `GET /devices` | los tres | — | N |
+| `q_consentimientos_titular` | `GET /holders/{id}/consents` | los tres | titular (uuid) | N |
 | `q_solicitudes_derecho` | `GET /privacy/requests` | admin, auditor | — | N |
-| `q_auditoria` | `GET /audit` | admin, auditor | tabla (opc.), cursor (fecha, id), límite | N |
+| `q_auditoria` | `GET /audit` | admin, auditor | tabla (opc.), límite | N |
+| `q_auditoria_siguiente` | `GET /audit?cursor=` | admin, auditor | tabla (opc.), cursor (fecha, id), límite | N |
 
-Las columnas de salida de cada una están en su archivo, junto a la sentencia. Las 15 sentencias de escritura
-(`tx_*`) se describen en `docs/transacciones.md`.
+Son 28 sentencias de lectura; las columnas de salida de cada una están en su archivo, junto a la sentencia.
+Las 15 de escritura (`tx_*`) se describen en `docs/transacciones.md`.
 
 **Por qué el rol de la tabla no es una convención sino un hecho.** El rol que no figura no puede ejecutar la
 sentencia aunque quiera: las búsquedas de vehículo devuelven `titular.nombre`, columna sobre la que el
@@ -66,26 +71,30 @@ el motivo (clave incorrecta, usuario inactivo, cuenta bloqueada o email inexiste
 email se normaliza en la función (`lower(btrim(...))`). `usuario_id` y `taller_id` internos quedan en la
 sesión del servidor del backend; al cliente solo viajan los `*_id_publico`.
 
-### 3.2 Historial con paginación por clave (`q_historial`)
+### 3.2 Historial con paginación por clave (`q_historial` y variantes)
 
 ```sql
-WHERE  ($1 IS NULL OR s.estado = $1)
-AND    ($2 IS NULL OR (s.iniciada_en, s.id) < ($2, (SELECT k.id FROM sesion_diagnostico k WHERE k.id_publico = $3)))
+-- q_historial_estado_siguiente
+WHERE  s.estado = $1
+AND    (s.iniciada_en, s.id) < ($2, (SELECT k.id FROM sesion_diagnostico k WHERE k.id_publico = $3))
 ORDER  BY s.iniciada_en DESC, s.id DESC
 LIMIT  $4
 ```
 
-- **Sin `OFFSET`.** El cursor es la última fila de la página anterior; el costo de la página 50 es el de la
-  página 1, y no se repiten ni se saltan filas si entra una sesión nueva entre dos páginas.
+- **Sin `OFFSET`.** El cursor es la última fila de la página anterior; el costo de una página profunda es el
+  de la página 1, y no se repiten ni se saltan filas si entra una sesión nueva entre dos páginas.
 - **Desempate único.** `iniciada_en` puede repetirse; `(iniciada_en, id)` no. El cliente recibe y devuelve
   `id_publico`; la subconsulta lo traduce al `id` interno.
 - **Hay más páginas.** La API pide `límite + 1` y descarta la fila sobrante.
 - **`LEFT JOIN` a `vehiculo`.** Para el mecánico, las sesiones de un titular bloqueado o anonimizado siguen
   en el historial con las columnas del vehículo en `NULL` [consultas §4, página 2]. El auditor sí ve el
   vehículo; el anonimizado aparece sin patente [consultas §8].
-- Índices previstos: `ix_sesion_diagnostico_historial` y `ix_sesion_diagnostico_estado`. Los parámetros
-  opcionales (`$1 IS NULL OR ...`) solo se simplifican en planes específicos; si la Fase 5 muestra que el
-  plan genérico no usa el índice, se separa en dos sentencias.
+- **Cuatro sentencias, no una.** La primera versión era una sola sentencia con estado y cursor opcionales
+  (`$1 IS NULL OR …`). Medida con volumen, en el plan genérico esas condiciones quedan como filtro y la
+  página profunda lee todas las filas anteriores. Sin parámetros opcionales, la comparación de fila es
+  siempre condición del índice (`docs/evidencia/rendimiento.md` §3). Las cuatro devuelven las mismas columnas.
+- Índices: `ix_sesion_diagnostico_historial`; con estado `pendiente` o `cotizado`, los índices parciales
+  `ix_sesion_diagnostico_pendiente` e `ix_sesion_diagnostico_cotizado`.
 
 ### 3.3 Matriz comparativa (`q_matriz`)
 
@@ -119,9 +128,35 @@ de 30 % a 35 %, la cotización cerrada conserva sus precios mientras la matriz y
 
 ### 3.5 Dashboard (`q_dashboard_resumen`)
 
-Siempre una fila. Pendientes y cotizadas son la carga actual (sin período); completadas, canceladas e
-iniciadas se cuentan desde `$1`. Sin contexto de taller devuelve ceros, no un error [consultas §11].
-`monto_*` suma el total de la cotización vigente.
+Siempre una fila; sin contexto de taller devuelve ceros, no un error [consultas §11].
+
+| Columna | Qué cuenta |
+|---|---|
+| `sesiones_pendientes`, `sesiones_cotizadas` | carga actual, sin período |
+| `monto_cotizado_abierto` | suma del total vigente de las sesiones en `cotizado` |
+| `fallas_criticas_abiertas` | fallas críticas en sesiones `pendiente` o `cotizado` |
+| `sesiones_iniciadas_periodo` | sesiones con `iniciada_en >= $1` |
+| `sesiones_completadas_periodo`, `sesiones_canceladas_periodo` | **de esas**, cuántas están hoy completadas o canceladas (cohorte) |
+| `monto_completado_periodo` | total vigente de las completadas de esa cohorte |
+
+El período es por cohorte de inicio, no por fecha de término: así las tres cifras salen de un solo
+recorrido por rango de `ix_sesion_diagnostico_historial`. Contar por `completada_en` exigiría un índice más
+sobre una tabla que ya tiene siete (tema T-49).
+
+### 3.6 Reglas para escribir consultas bajo RLS
+
+Salieron de medir con volumen (`docs/evidencia/rendimiento.md`); valen para cualquier sentencia nueva.
+
+1. **Un enum no sirve como clave de búsqueda de un índice.** Bajo RLS solo las comparaciones *leakproof*
+   pueden ser condición de índice, y la igualdad de enums no lo es. Para filtrar por `estado`, `severidad`
+   o `estado_tratamiento` se usa un **índice parcial** y el valor se escribe como literal en la consulta
+   (un parámetro no permite demostrar el predicado).
+2. **Sin parámetros opcionales sobre columnas indexadas.** `$1 IS NULL OR col = $1` se degrada a filtro en
+   el plan genérico. Si el parámetro decide qué índice usar, van dos sentencias.
+3. **El planificador no conoce `app.taller_id`.** Estima cada taller como el promedio. En un taller grande
+   subestima y puede elegir un *hash join* que lee tablas enteras: para "un valor por fila" (el total
+   vigente de cada sesión) es más estable una subconsulta escalar que un `JOIN`.
+4. **Toda lista lleva `LIMIT`** y, si puede crecer, paginación por clave.
 
 ## 4. Errores que la API debe traducir
 

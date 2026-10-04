@@ -1,0 +1,39 @@
+# Rendimiento: resumen de fase5_medidas.txt (generado por db/perf/run.sh)
+# Fecha: 2026-10-04T07:06Z
+
+medida ejecucion_ms      bloques  sentencia
+M01           0.646          379  q_historial - primera pagina (21 filas, sin filtro)
+M02           0.492          427  q_historial - pagina profunda por clave (cursor tras 75.000 sesiones)
+M03          74.265         4253  comparacion: la misma pagina profunda con OFFSET 75000 (lo que la paginacion por clave evita)
+M04           0.485          359  q_historial - filtrado por estado pendiente, primera pagina
+M05           0.444          396  q_historial - filtrado por estado completado, pagina profunda
+M06           0.336          396  q_historial_siguiente - la misma pagina profunda con PLAN GENERICO forzado
+M06a         42.117        75874  ANTES: formulacion con cursor opcional (Fase 3), misma pagina, plan generico
+M07           0.083           19  q_buscar_vehiculo_patente
+M08           0.069           18  q_buscar_vehiculo_vin
+M09           0.113           32  q_buscar_vehiculo_modelo (modelo + anio, 20 filas)
+M10           0.116           27  q_sesion
+M11           0.038           11  q_sesion_fallas
+M12           5.141         8576  q_matriz
+M13           1.484         3033  q_repuestos_por_dtc (con modelo y anio)
+M14           0.079           16  q_cotizaciones_sesion
+M15           0.049           14  q_cotizacion_detalle
+M16           0.124           60  q_historial_vehiculo
+M17          14.575        14402  q_dashboard_resumen (ultimos 30 dias)
+M17a        184.059        13692  ANTES: dashboard en un solo recorrido de las sesiones del taller (Fase 3)
+M18          36.731        53108  q_dashboard_dtc_frecuentes (ultimos 90 dias, 10 filas)
+M19           0.091           44  q_dtc_buscar (prefijo P10, 20 filas)
+M20          22.102          906  politica RLS con subconsulta: vehiculos visibles para el MECANICO (titular activo)
+M21           1.331           45  tx_crear_sesion (sesion + 2 fallas, con triggers y auditoria)
+M22           0.699           72  tx_crear_cotizacion (borrador nuevo)
+M23           0.474           30  tx_guardar_linea (snapshot de precio por trigger)
+M24           0.658           81  tx_cerrar_cotizacion (bloqueos, suma del detalle, vigente)
+M25           0.547           62  tx_cambiar_estado (pendiente -> cotizado)
+M26           2.979          136  misma consulta que M20 para el ADMINISTRADOR (politica sin subconsulta)
+M27           0.080           16  q_auditoria - primera pagina (51 filas)
+M28           0.089            7  q_auditoria - pagina profunda por clave (cursor tras 500.000 registros)
+M29           0.135           23  q_auditoria - filtrada por tabla
+M30           0.038            4  q_usuarios
+M33           0.037           10  q_consentimientos_titular
+M31           1.773          148  tx_solicitar_supresion (ultima atencion del titular, bloqueo o anonimizacion)
+M32          42.083            -  q_login (bcrypt de costo 10 dentro de la base)

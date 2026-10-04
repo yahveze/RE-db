@@ -3,7 +3,7 @@
 Base de datos PostgreSQL 16 del sistema **Repuestos Exactos** (diagnóstico OBD-II y matriz comparativa de
 repuestos para talleres mecánicos). Proyecto universitario de Ingeniería en Computación e Informática.
 
-> Estado: **Fase 4** (esquema, seguridad, semillas, consultas, transacciones y suite de 468 pruebas; faltan rendimiento y operación). Este README se completa en la Fase 7.
+> Estado: **Fase 5** (esquema, seguridad, semillas, consultas, transacciones, suite de 484 pruebas y medición de rendimiento; falta operación). Este README se completa en la Fase 7.
 
 ## Requisitos
 
@@ -60,6 +60,15 @@ bash db/tests/control_negativo.sh  # demuestra que la prueba de concurrencia det
 La suite corre sobre las semillas y no deja cambios, salvo los registros de auditoría de la prueba de
 concurrencia.
 
+## Rendimiento
+
+```bash
+bash db/perf/run.sh    # unos 6 minutos y 1,2 GB libres; no toca la base principal
+```
+
+Crea `<base>_perf` como copia de la base principal, le carga volumen sintético, mide las sentencias de
+`db/queries/` con `EXPLAIN (ANALYZE, BUFFERS)` y la elimina. `PERF_CONSERVAR=1` la deja para inspeccionarla.
+
 ## Documentación
 
 - `docs/decisiones.md` — resumen ejecutivo, decisiones abiertas, supuestos y temas para conversar.
@@ -67,5 +76,6 @@ concurrencia.
 - `docs/seguridad.md`, `docs/privacidad.md` — roles, RBAC y RLS, autenticación, auditoría, supresión y anonimización.
 - `docs/consultas.md`, `docs/transacciones.md` — contrato de las consultas del frontend (`db/queries/`) y transacciones atómicas.
 - `docs/pruebas.md` — qué prueba la suite (`db/tests/`), cómo está construida y qué no cubre.
+- `docs/evidencia/rendimiento.md` — medición con volumen: planes, hallazgos y decisiones sobre índices.
 - `docs/operacion.md` — Fase 6.
 - `docs/evidencia/` — salidas reales de las ejecuciones.

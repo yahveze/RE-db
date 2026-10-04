@@ -1,0 +1,416 @@
+# Rendimiento: indices con y sin, uso y tamanios (generado por db/perf/run.sh)
+# Fecha: 2026-10-04T07:05Z
+
+## Tablas: tamanio total, de indices y filas
+           tabla           |  total  | indices |  filas  | n_indices 
+---------------------------+---------+---------+---------+-----------
+ auditoria_operacion       | 573 MB  | 182 MB  | 2000647 |         2
+ cotizacion                | 198 MB  | 111 MB  |  338455 |         7
+ cotizacion_detalle        | 140 MB  | 38 MB   |  846125 |         1
+ sesion_diagnostico        | 96 MB   | 55 MB   |  302016 |         7
+ falla_sesion              | 79 MB   | 24 MB   |  604021 |         3
+ compatibilidad_repuesto   | 23 MB   | 12 MB   |  225297 |         2
+ vehiculo                  | 21 MB   | 13 MB   |   60411 |         7
+ titular                   | 8200 kB | 3840 kB |   37757 |         6
+ consentimiento_titular    | 6360 kB | 3200 kB |   37760 |         3
+ repuesto                  | 2504 kB | 1152 kB |    9042 |         3
+ dtc_componente            | 360 kB  | 192 kB  |    2985 |         2
+ modelo_vehiculo           | 208 kB  | 120 kB  |     521 |         3
+ dtc_catalogo              | 200 kB  | 80 kB   |    1000 |         2
+ usuario                   | 152 kB  | 80 kB   |     208 |         4
+ dispositivo_diagnostico   | 112 kB  | 64 kB   |      64 |         4
+ componente_repuesto       | 104 kB  | 48 kB   |     100 |         3
+ marca_vehiculo            | 96 kB   | 48 kB   |      40 |         3
+ taller                    | 80 kB   | 32 kB   |      22 |         2
+ solicitud_derecho_titular | 72 kB   | 32 kB   |       3 |         2
+ usuario_credencial        | 64 kB   | 16 kB   |      11 |         1
+ taller_configuracion      | 56 kB   | 16 kB   |      22 |         1
+(21 rows)
+
+ base_de_rendimiento 
+---------------------
+ 1158 MB
+(1 row)
+
+
+
+## E0 Igualdad de enum bajo RLS: por que V009 reemplazo el indice (taller_id, estado, ...) por indices parciales
+    operador    | leakproof 
+----------------+-----------
+ enum_eq        | f
+ int8eq         | t
+ texteq         | t
+ timestamptz_ge | t
+ uuid_eq        | t
+(5 rows)
+
+-- A) indice (taller_id, estado, ...) SIN RLS (plataforma): estado es condicion del indice
+                                                 QUERY PLAN                                                  
+-------------------------------------------------------------------------------------------------------------
+ Aggregate (actual time=0.153..0.153 rows=1 loops=1)
+   Buffers: shared hit=5 read=8
+   ->  Index Only Scan using ix_tmp_estado on sesion_diagnostico (actual time=0.037..0.122 rows=822 loops=1)
+         Index Cond: ((taller_id = 3) AND (estado = 'cotizado'::tipo_estado_atencion))
+         Heap Fetches: 1
+         Buffers: shared hit=5 read=8
+ Planning:
+   Buffers: shared hit=102 read=9
+ Planning Time: 0.363 ms
+ Execution Time: 0.167 ms
+(10 rows)
+
+-- B) el mismo indice CON RLS (taller_mecanico): estado queda como filtro
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
+ Aggregate (actual time=12.285..12.286 rows=1 loops=1)
+   Buffers: shared hit=52 read=898
+   InitPlan 1 (returns $0)
+     ->  Result (actual time=0.001..0.002 rows=1 loops=1)
+   ->  Index Only Scan using ix_tmp_estado on sesion_diagnostico (actual time=0.106..12.253 rows=822 loops=1)
+         Index Cond: (taller_id = $0)
+         Filter: (estado = 'cotizado'::tipo_estado_atencion)
+         Rows Removed by Filter: 149178
+         Heap Fetches: 84
+         Buffers: shared hit=52 read=898
+ Planning:
+   Buffers: shared hit=9
+ Planning Time: 0.069 ms
+ Execution Time: 12.304 ms
+(14 rows)
+
+-- C) indice PARCIAL (WHERE estado = cotizado) CON RLS: el estado no se evalua por fila
+                                                          QUERY PLAN                                                          
+------------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual time=0.170..0.171 rows=1 loops=1)
+   Buffers: shared hit=2 read=6
+   InitPlan 1 (returns $0)
+     ->  Result (actual time=0.003..0.003 rows=1 loops=1)
+   ->  Index Only Scan using ix_sesion_diagnostico_cotizado on sesion_diagnostico (actual time=0.032..0.135 rows=822 loops=1)
+         Index Cond: (taller_id = $0)
+         Heap Fetches: 1
+         Buffers: shared hit=2 read=6
+ Planning:
+   Buffers: shared hit=5 read=1
+ Planning Time: 0.144 ms
+ Execution Time: 0.188 ms
+(12 rows)
+
+
+## E1 ix_falla_sesion_dtc - comprobacion de la FK al borrar un DTC del catalogo (604.000 fallas)
+-- con el indice
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Delete on dtc_catalogo (actual time=0.034..0.034 rows=0 loops=1)
+   ->  Index Scan using uq_dtc_catalogo_codigo on dtc_catalogo (actual time=0.004..0.005 rows=1 loops=1)
+         Index Cond: (codigo = 'B3FFF'::text)
+ Planning Time: 0.048 ms
+ Trigger for constraint fk_dtc_componente_dtc_catalogo: time=0.159 calls=1
+ Trigger for constraint fk_falla_sesion_dtc_catalogo: time=0.192 calls=1
+ Execution Time: 0.426 ms
+(7 rows)
+
+-- sin el indice
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Delete on dtc_catalogo (actual time=0.012..0.012 rows=0 loops=1)
+   ->  Index Scan using uq_dtc_catalogo_codigo on dtc_catalogo (actual time=0.007..0.008 rows=1 loops=1)
+         Index Cond: (codigo = 'B3FFF'::text)
+ Planning Time: 0.024 ms
+ Trigger for constraint fk_dtc_componente_dtc_catalogo: time=0.041 calls=1
+ Trigger for constraint fk_falla_sesion_dtc_catalogo: time=29.023 calls=1
+ Execution Time: 29.088 ms
+(7 rows)
+
+
+## E2 ix_compatibilidad_repuesto_modelo - FK al borrar un modelo (225.000 compatibilidades)
+-- con el indice
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Delete on modelo_vehiculo (actual time=0.049..0.049 rows=0 loops=1)
+   ->  Seq Scan on modelo_vehiculo (actual time=0.036..0.036 rows=1 loops=1)
+         Filter: (nombre = 'Modelo sin uso'::text)
+         Rows Removed by Filter: 521
+ Planning Time: 0.037 ms
+ Trigger for constraint fk_compatibilidad_repuesto_modelo_vehiculo: time=0.143 calls=1
+ Trigger for constraint fk_vehiculo_modelo_vehiculo: time=5.251 calls=1
+ Execution Time: 5.457 ms
+(8 rows)
+
+-- sin el indice
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Delete on modelo_vehiculo (actual time=0.034..0.034 rows=0 loops=1)
+   ->  Seq Scan on modelo_vehiculo (actual time=0.029..0.029 rows=1 loops=1)
+         Filter: (nombre = 'Modelo sin uso'::text)
+         Rows Removed by Filter: 521
+ Planning Time: 0.025 ms
+ Trigger for constraint fk_compatibilidad_repuesto_modelo_vehiculo: time=8.685 calls=1
+ Trigger for constraint fk_vehiculo_modelo_vehiculo: time=2.946 calls=1
+ Execution Time: 11.674 ms
+(8 rows)
+
+
+## E3 ix_vehiculo_taller_titular - sentencias de la supresion (ultima atencion y anonimizacion de vehiculos)
+-- con el indice
+                                                   QUERY PLAN                                                    
+-----------------------------------------------------------------------------------------------------------------
+ Aggregate (actual time=0.017..0.017 rows=1 loops=1)
+   Buffers: shared hit=2
+   ->  Nested Loop (actual time=0.015..0.015 rows=0 loops=1)
+         Buffers: shared hit=2
+         ->  Index Scan using ix_vehiculo_taller_titular on vehiculo v (actual time=0.015..0.015 rows=0 loops=1)
+               Index Cond: ((taller_id = 3) AND (titular_id = 127))
+               Buffers: shared hit=2
+         ->  Index Scan using ix_sesion_diagnostico_vehiculo on sesion_diagnostico s (never executed)
+               Index Cond: ((taller_id = 3) AND (vehiculo_id = v.id))
+               Filter: (estado <> 'cancelado'::tipo_estado_atencion)
+ Planning:
+   Buffers: shared hit=57
+ Planning Time: 0.277 ms
+ Execution Time: 0.032 ms
+(14 rows)
+
+-- sin el indice
+                                              QUERY PLAN                                              
+------------------------------------------------------------------------------------------------------
+ Aggregate (actual time=5.588..5.589 rows=1 loops=1)
+   Buffers: shared hit=975
+   ->  Nested Loop (actual time=5.586..5.587 rows=0 loops=1)
+         Buffers: shared hit=975
+         ->  Seq Scan on vehiculo v (actual time=5.585..5.585 rows=0 loops=1)
+               Filter: ((taller_id = 3) AND (titular_id = 127))
+               Rows Removed by Filter: 60411
+               Buffers: shared hit=975
+         ->  Index Scan using ix_sesion_diagnostico_vehiculo on sesion_diagnostico s (never executed)
+               Index Cond: ((taller_id = 3) AND (vehiculo_id = v.id))
+               Filter: (estado <> 'cancelado'::tipo_estado_atencion)
+ Planning:
+   Buffers: shared hit=20
+ Planning Time: 0.242 ms
+ Execution Time: 5.609 ms
+(15 rows)
+
+
+## E4 ix_titular_bloqueado_hasta - consulta del proceso de anonimizacion de vencidos (2.000 bloqueados de 37.757)
+-- con el indice
+                                                        QUERY PLAN                                                         
+---------------------------------------------------------------------------------------------------------------------------
+ Sort (actual time=0.237..0.275 rows=984 loops=1)
+   Sort Key: id
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=34
+   ->  Bitmap Heap Scan on titular t (actual time=0.073..0.192 rows=984 loops=1)
+         Recheck Cond: ((bloqueado_hasta <= CURRENT_DATE) AND (estado_tratamiento = 'bloqueado'::tipo_estado_tratamiento))
+         Heap Blocks: exact=31
+         Buffers: shared hit=34
+         ->  Bitmap Index Scan on ix_titular_bloqueado_hasta (actual time=0.063..0.064 rows=984 loops=1)
+               Index Cond: (bloqueado_hasta <= CURRENT_DATE)
+               Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=54
+ Planning Time: 0.175 ms
+ Execution Time: 0.320 ms
+(15 rows)
+
+-- sin el indice
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Sort (actual time=2.957..2.987 rows=984 loops=1)
+   Sort Key: id
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=331 read=238
+   ->  Seq Scan on titular t (actual time=0.006..2.920 rows=984 loops=1)
+         Filter: ((estado_tratamiento = 'bloqueado'::tipo_estado_tratamiento) AND (bloqueado_hasta <= CURRENT_DATE))
+         Rows Removed by Filter: 36773
+         Buffers: shared hit=331 read=238
+ Planning:
+   Buffers: shared hit=5
+ Planning Time: 0.061 ms
+ Execution Time: 3.022 ms
+(12 rows)
+
+
+## E5 ix_consentimiento_titular_taller_titular - revocacion de consentimientos al anonimizar
+-- con el indice (el planificador elige uq_consentimiento_titular_activo)
+                                                       QUERY PLAN                                                        
+-------------------------------------------------------------------------------------------------------------------------
+ Index Scan using uq_consentimiento_titular_activo on consentimiento_titular c (actual time=0.009..0.009 rows=1 loops=1)
+   Index Cond: (titular_id = 127)
+   Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=56 read=3
+ Planning Time: 0.161 ms
+ Execution Time: 0.016 ms
+(7 rows)
+
+-- todos los consentimientos de un titular, como los pediria la API (con taller)
+                                                           QUERY PLAN                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using ix_consentimiento_titular_taller_titular on consentimiento_titular c (actual time=0.006..0.009 rows=1 loops=1)
+   Index Cond: ((taller_id = 3) AND (titular_id = 127))
+   Buffers: shared hit=5
+ Planning Time: 0.026 ms
+ Execution Time: 0.014 ms
+(5 rows)
+
+-- la misma, sin el indice
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Seq Scan on consentimiento_titular c (actual time=0.014..2.759 rows=1 loops=1)
+   Filter: ((taller_id = 3) AND (titular_id = 127))
+   Rows Removed by Filter: 37759
+   Buffers: shared hit=2 read=388
+ Planning:
+   Buffers: shared hit=5
+ Planning Time: 0.034 ms
+ Execution Time: 2.765 ms
+(8 rows)
+
+
+## E6 ix_usuario_taller (eliminado en V009) - q_usuarios con 3.000 talleres y 30.000 usuarios mas
+-- sin el indice (estado actual)
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
+ Sort (actual time=0.458..0.459 rows=10 loops=1)
+   Sort Key: u.activo DESC, u.nombre, u.id
+   Sort Method: quicksort  Memory: 26kB
+   Buffers: shared hit=118
+   InitPlan 1 (returns $0)
+     ->  Result (actual time=0.002..0.002 rows=1 loops=1)
+   ->  Index Scan using uq_usuario_id_taller on usuario u (actual time=0.011..0.446 rows=10 loops=1)
+         Index Cond: (taller_id = $0)
+         Buffers: shared hit=118
+ Planning:
+   Buffers: shared hit=99
+ Planning Time: 0.308 ms
+ Execution Time: 0.474 ms
+(13 rows)
+
+
+## E7 ix_solicitud_derecho_titular_taller_titular (eliminado en V009) - q_solicitudes_derecho con 37.757 solicitudes mas
+-- sin el indice (estado actual)
+                                                      QUERY PLAN                                                       
+-----------------------------------------------------------------------------------------------------------------------
+ Sort (actual time=37.774..38.330 rows=18750 loops=1)
+   Sort Key: s.recibida_en DESC, s.id DESC
+   Sort Method: quicksort  Memory: 2526kB
+   Buffers: shared hit=784
+   InitPlan 1 (returns $0)
+     ->  Result (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result (actual time=0.000..0.001 rows=1 loops=1)
+   InitPlan 3 (returns $2)
+     ->  Result (never executed)
+   ->  Nested Loop Left Join (actual time=4.246..13.222 rows=18750 loops=1)
+         Buffers: shared hit=784
+         ->  Hash Join (actual time=4.242..9.622 rows=18750 loops=1)
+               Hash Cond: (s.titular_id = t.id)
+               Buffers: shared hit=784
+               ->  Seq Scan on solicitud_derecho_titular s (actual time=0.013..2.409 rows=18750 loops=1)
+                     Filter: (taller_id = $0)
+                     Rows Removed by Filter: 19010
+                     Buffers: shared hit=467
+               ->  Hash (actual time=4.224..4.226 rows=18750 loops=1)
+                     Buckets: 32768 (originally 2048)  Batches: 1 (originally 1)  Memory Usage: 1428kB
+                     Buffers: shared hit=317
+                     ->  Index Scan using ix_titular_taller on titular t (actual time=0.010..2.304 rows=18750 loops=1)
+                           Index Cond: (taller_id = $1)
+                           Buffers: shared hit=317
+         ->  Memoize (actual time=0.000..0.000 rows=0 loops=18750)
+               Cache Key: s.usuario_responsable_id
+               Cache Mode: logical
+               Hits: 18749  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+               ->  Index Scan using pk_usuario on usuario u (actual time=0.001..0.001 rows=0 loops=1)
+                     Index Cond: (id = s.usuario_responsable_id)
+                     Filter: (taller_id = $2)
+ Planning:
+   Buffers: shared hit=122
+ Planning Time: 0.581 ms
+ Execution Time: 39.488 ms
+(36 rows)
+
+
+-- E6 con el indice
+                                            QUERY PLAN                                            
+--------------------------------------------------------------------------------------------------
+ Sort (actual time=0.032..0.033 rows=10 loops=1)
+   Sort Key: u.activo DESC, u.nombre, u.id
+   Sort Method: quicksort  Memory: 26kB
+   Buffers: shared hit=1 read=2
+   InitPlan 1 (returns $0)
+     ->  Result (actual time=0.003..0.003 rows=1 loops=1)
+   ->  Index Scan using ix_usuario_taller on usuario u (actual time=0.017..0.019 rows=10 loops=1)
+         Index Cond: (taller_id = $0)
+         Buffers: shared hit=1 read=2
+ Planning:
+   Buffers: shared hit=5 read=1
+ Planning Time: 0.173 ms
+ Execution Time: 0.053 ms
+(13 rows)
+
+-- E7 con el indice
+                                                               QUERY PLAN                                                               
+----------------------------------------------------------------------------------------------------------------------------------------
+ Sort (actual time=35.675..36.226 rows=18750 loops=1)
+   Sort Key: s.recibida_en DESC, s.id DESC
+   Sort Method: quicksort  Memory: 2526kB
+   Buffers: shared hit=550 read=73
+   InitPlan 1 (returns $0)
+     ->  Result (actual time=0.003..0.003 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 3 (returns $2)
+     ->  Result (never executed)
+   ->  Nested Loop Left Join (actual time=8.616..18.815 rows=18750 loops=1)
+         Buffers: shared hit=550 read=73
+         ->  Hash Join (actual time=8.608..14.415 rows=18750 loops=1)
+               Hash Cond: (s.titular_id = t.id)
+               Buffers: shared hit=550 read=73
+               ->  Bitmap Heap Scan on solicitud_derecho_titular s (actual time=0.940..2.529 rows=18750 loops=1)
+                     Recheck Cond: (taller_id = $0)
+                     Heap Blocks: exact=233
+                     Buffers: shared hit=233 read=73
+                     ->  Bitmap Index Scan on ix_solicitud_derecho_titular_taller_titular (actual time=0.914..0.914 rows=18750 loops=1)
+                           Index Cond: (taller_id = $0)
+                           Buffers: shared read=73
+               ->  Hash (actual time=7.659..7.660 rows=18750 loops=1)
+                     Buckets: 32768 (originally 2048)  Batches: 1 (originally 1)  Memory Usage: 1428kB
+                     Buffers: shared hit=317
+                     ->  Index Scan using ix_titular_taller on titular t (actual time=0.017..4.417 rows=18750 loops=1)
+                           Index Cond: (taller_id = $1)
+                           Buffers: shared hit=317
+         ->  Memoize (actual time=0.000..0.000 rows=0 loops=18750)
+               Cache Key: s.usuario_responsable_id
+               Cache Mode: logical
+               Hits: 18749  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+               ->  Index Scan using pk_usuario on usuario u (actual time=0.003..0.003 rows=0 loops=1)
+                     Index Cond: (id = s.usuario_responsable_id)
+                     Filter: (taller_id = $2)
+ Planning:
+   Buffers: shared hit=27 read=1
+ Planning Time: 0.473 ms
+ Execution Time: 37.402 ms
+(39 rows)
+
+
+## Indices de rendimiento (ix_): tamanio y recorridos durante la medicion
+## (idx_scan incluye los sondeos del planificador: no prueba por si solo que un plan lo use)
+          tabla          |                  indice                  | tamanio | recorridos 
+-------------------------+------------------------------------------+---------+------------
+ auditoria_operacion     | ix_auditoria_operacion_taller_fecha      | 139 MB  |         10
+ compatibilidad_repuesto | ix_compatibilidad_repuesto_modelo        | 1776 kB |          9
+ consentimiento_titular  | ix_consentimiento_titular_taller_titular | 1176 kB |          3
+ dtc_componente          | ix_dtc_componente_componente             | 40 kB   |          8
+ falla_sesion            | ix_falla_sesion_critica                  | 944 kB  |          6
+ falla_sesion            | ix_falla_sesion_dtc                      | 4656 kB |         19
+ sesion_diagnostico      | ix_sesion_diagnostico_cotizado           | 88 kB   |          6
+ sesion_diagnostico      | ix_sesion_diagnostico_historial          | 16 MB   |         13
+ sesion_diagnostico      | ix_sesion_diagnostico_pendiente          | 128 kB  |          8
+ sesion_diagnostico      | ix_sesion_diagnostico_vehiculo           | 12 MB   |         25
+ titular                 | ix_titular_bloqueado_hasta               | 40 kB   |          1
+ titular                 | ix_titular_taller                        | 312 kB  |          5
+ vehiculo                | ix_vehiculo_taller_modelo_anio           | 2624 kB |          7
+ vehiculo                | ix_vehiculo_taller_titular               | 1800 kB |          5
+(14 rows)
+
+

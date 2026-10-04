@@ -40,7 +40,8 @@ Notas: se usa el `psql` **del contenedor** (el del host es v18). `db/` está mon
 
 `V000` roles y extensiones (superusuario) → `V001` tipos → `V002` catálogos → `V003` tablas multi-taller,
 operativas, cotización y auditoría → `V004` comentarios → `V005` funciones y triggers → `V006` índices →
-`V007` grants → `V008` RLS (`ENABLE` y `FORCE` solo aquí) → semillas (superusuario) → pruebas.
+`V007` grants → `V008` RLS (`ENABLE` y `FORCE` solo aquí) → `V009` ajustes de índices (Fase 5) →
+semillas (superusuario) → pruebas.
 
 `V001`+ corren como superusuario con `SET ROLE app_owner` previo (dueño de los objetos = `app_owner`).
 Las funciones `SECURITY DEFINER` pasan a `app_funciones`; para eso `app_owner` es miembro de
@@ -160,12 +161,31 @@ cotizaciones (sin documentos tributarios); `ON DELETE RESTRICT` + estado de baja
 - En scripts con `set -euo pipefail`, `grep` sin coincidencias aborta: usar `|| true`.
 - Temas T-43 a T-48 en `docs/decisiones.md` §9.2. T-43 (pg_hba `trust` local) se retoma en la Fase 6.
 
+## Notas de implementación (Fase 5)
+
+- `bash db/perf/run.sh` crea `<base>_perf` con `CREATE DATABASE ... TEMPLATE`, carga `db/perf/volumen.sql`,
+  mide y la elimina (`PERF_CONSERVAR=1` la conserva). Nunca cargar volumen en la base principal. Tarda unos
+  6 minutos; no es parte de `make all`.
+- **Bajo RLS un enum no puede ser clave de búsqueda de un índice** (`enum_eq` no es leakproof): usar índices
+  parciales y escribir el valor como literal. Lo vigila la prueba `ESQ-28`.
+- **Sin parámetros opcionales sobre columnas indexadas** (`$1 IS NULL OR ...`): en el plan genérico quedan
+  como filtro. Si el parámetro decide el índice, dos sentencias (`q_historial*`, `q_auditoria*`).
+- El planificador no conoce `app.taller_id`: estima el taller promedio. Para "un valor por fila", subconsulta
+  escalar antes que `JOIN`.
+- `idx_scan` cuenta también los sondeos del planificador: para decidir sobre un índice, comparar el plan con
+  y sin él dentro de una transacción (`experimentos_indices.sql`).
+- `VACUUM` en el contenedor: `PARALLEL 0` (el `/dev/shm` por defecto es de 64 MB; T-51).
+- Los índices nuevos o eliminados van en una migración nueva (`V009`), no editando `V006`.
+- Tras cambiar una sentencia de `db/queries/`: regenerar `evidencia_fase3.sh` y `evidencia_fase4.sh`.
+- Temas T-49 a T-54 en `docs/decisiones.md` §10.3.
+
 ## Estado
 
-- Fases 0 a 4 completas. Esquema en `db/migrations/` (V000–V008), semillas en `db/seeds/`, consultas y
-  transacciones en `db/queries/`, suite en `db/tests/` (468 pruebas); `reset → migrate → seed → test`
-  verificado desde cero con código 0.
+- Fases 0 a 5 completas. Esquema en `db/migrations/` (V000–V009), semillas en `db/seeds/`, consultas y
+  transacciones en `db/queries/` (43 sentencias), suite en `db/tests/` (484 pruebas), medición en `db/perf/`;
+  `reset → migrate → seed → test` verificado desde cero con código 0.
 - Documentos: `docs/decisiones.md`, `docs/modelo/` (01–05), `docs/seguridad.md`, `docs/privacidad.md`,
-  `docs/consultas.md`, `docs/transacciones.md`, `docs/pruebas.md`.
-- Siguiente: Fase 5 (`db/perf/run.sh`: volumen de datos, `EXPLAIN (ANALYZE, BUFFERS)` de las consultas de
-  `db/queries/`, utilidad real de cada índice de `V006`, `docs/evidencia/rendimiento.md`).
+  `docs/consultas.md`, `docs/transacciones.md`, `docs/pruebas.md`, `docs/evidencia/rendimiento.md`.
+- Siguiente: Fase 6 (`docs/operacion.md`: respaldo y restauración probados, mantenimiento, `pg_hba`,
+  parámetros de log, retención de la auditoría, programación de `fn_anonimizar_vencidos`). Pendientes
+  anotados para esa fase: T-13, T-18, T-21, T-43, T-51.

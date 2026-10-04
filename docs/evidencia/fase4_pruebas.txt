@@ -1,5 +1,5 @@
 # Suite de pruebas (db/tests/run_all.sh) (generado por db/scripts/evidencia_fase4.sh)
-# Fecha: 2026-10-04T06:33Z
+# Fecha: 2026-10-04T06:59Z
 
 ### 01 Esquema
 PASS | ESQ-01 hay 21 tablas y 1 vista en public
@@ -29,7 +29,9 @@ PASS | ESQ-24 las entidades expuestas tienen id_publico UUID NOT NULL con defaul
 PASS | ESQ-25 objetos del esquema: 21 funciones fn_, 32 triggers, 49 politicas
 PASS | ESQ-26 servidor: PostgreSQL 16, UTC, READ COMMITTED, scram-sha-256, log_statement none
 PASS | ESQ-27 la clave de app_backend_user esta guardada como verificador SCRAM
-==> 01_esquema.sql: 27 PASS, 0 FAIL, 0 errores esperados [ok]
+PASS | ESQ-28 ningun indice de busqueda (no unico) de una tabla con RLS tiene un enum como columna clave (V009)
+PASS | ESQ-29 los estados abiertos de la sesion tienen indice parcial propio (pendiente y cotizado)
+==> 01_esquema.sql: 29 PASS, 0 FAIL, 0 errores esperados [ok]
 
 ### 02 Restricciones
 psql:/db/tests/02_restricciones.sql:26: ERROR:  null value in column "taller_id" of relation "sesion_diagnostico" violates not-null constraint
@@ -165,7 +167,7 @@ PASS | RN-50 la cotizacion nace como borrador: revision 1, no vigente, sin total
 PASS | RN-57 reintentar con la misma clave devuelve la misma cotizacion y no crea otra
 psql:/db/tests/03_estados_y_cotizaciones.sql:69: ERROR:  duplicate key value violates unique constraint "uq_cotizacion_sesion_abierta"
 PASS | [E] RN-52 un segundo borrador con otra clave se rechaza -> 23505
-psql:/db/tests/03_estados_y_cotizaciones.sql:74: ERROR:  la cotizacion 38 no tiene detalle y no se puede cerrar
+psql:/db/tests/03_estados_y_cotizaciones.sql:74: ERROR:  la cotizacion 42 no tiene detalle y no se puede cerrar
 PASS | [E] RE008 no se puede cerrar una cotizacion sin detalle -> RE008
 psql:/db/tests/03_estados_y_cotizaciones.sql:80: ERROR:  permission denied for table cotizacion_detalle
 PASS | [E] RN-56 el cliente no puede enviar el precio de una linea -> 42501
@@ -173,43 +175,43 @@ psql:/db/tests/03_estados_y_cotizaciones.sql:85: ERROR:  el repuesto 30 no esta 
 PASS | [E] RE010 un repuesto no disponible no se puede cotizar -> RE010
 PASS | RN-56 el trigger llena el snapshot desde el catalogo y el margen del taller
 PASS | RN-58 repetir un repuesto reemplaza la cantidad en lugar de duplicar la linea
-psql:/db/tests/03_estados_y_cotizaciones.sql:108: ERROR:  conflicto de version en la cotizacion 38: esperada 99, actual 1
+psql:/db/tests/03_estados_y_cotizaciones.sql:108: ERROR:  conflicto de version en la cotizacion 42: esperada 99, actual 1
 PASS | [E] RE007 cerrar con una version distinta de la actual -> RE007
 PASS | RN-54 al cerrar, el trigger fija cerrada_en = hora del servidor y total = suma del detalle
 PASS | Cerrar una cotizacion ya cerrada la devuelve sin cambios (idempotente)
-psql:/db/tests/03_estados_y_cotizaciones.sql:128: ERROR:  la cotizacion 38 esta cerrada: su detalle es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:128: ERROR:  la cotizacion 42 esta cerrada: su detalle es inmutable
 PASS | [E] RN-55 cotizacion cerrada: no admite lineas nuevas -> RE003
-psql:/db/tests/03_estados_y_cotizaciones.sql:133: ERROR:  la cotizacion 38 esta cerrada: su detalle es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:133: ERROR:  la cotizacion 42 esta cerrada: su detalle es inmutable
 PASS | [E] RN-55 cotizacion cerrada: no admite cambiar cantidades -> RE003
-psql:/db/tests/03_estados_y_cotizaciones.sql:138: ERROR:  la cotizacion 38 esta cerrada: su detalle es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:138: ERROR:  la cotizacion 42 esta cerrada: su detalle es inmutable
 PASS | [E] RN-55 cotizacion cerrada: no admite borrar lineas -> RE003
-psql:/db/tests/03_estados_y_cotizaciones.sql:143: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:143: ERROR:  la cotizacion 42 esta cerrada y es inmutable
 PASS | [E] RN-55 cotizacion cerrada: no se puede reabrir -> RE003
-psql:/db/tests/03_estados_y_cotizaciones.sql:148: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:148: ERROR:  la cotizacion 42 esta cerrada y es inmutable
 PASS | [E] RN-55 cotizacion cerrada: no se puede cambiar la fecha de cierre -> RE003
 PASS | RN-33 pendiente -> cotizado fija cotizada_en e incrementa la version
 psql:/db/tests/03_estados_y_cotizaciones.sql:161: ERROR:  transicion de estado invalida: cotizado -> pendiente
 PASS | [E] RN-30 cotizado -> pendiente es una transicion invalida -> RE001
 PASS | RN-50 la segunda revision recibe el numero 2
 PASS | RN-51 al cerrar la revision 2 pasa a ser la unica vigente; la 1 conserva su total
-psql:/db/tests/03_estados_y_cotizaciones.sql:182: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:182: ERROR:  la cotizacion 42 esta cerrada y es inmutable
 PASS | [E] RN-55 la revision reemplazada no puede volver a ser vigente -> RE003
 psql:/db/tests/03_estados_y_cotizaciones.sql:192: ERROR:  los datos de identidad de una cotizacion no se pueden modificar
 PASS | [E] RE012 ni la plataforma puede cambiar la identidad de una cotizacion -> RE012
-psql:/db/tests/03_estados_y_cotizaciones.sql:197: ERROR:  la cotizacion 38 esta cerrada y es inmutable
+psql:/db/tests/03_estados_y_cotizaciones.sql:197: ERROR:  la cotizacion 42 esta cerrada y es inmutable
 PASS | [E] RN-55 ni la plataforma puede cambiar el total de una cotizacion cerrada -> RE003
 PASS | RN-59 cambiar el precio maestro, el nombre o el margen no altera lo ya cotizado
-psql:/db/tests/03_estados_y_cotizaciones.sql:217: ERROR:  conflicto de version en la sesion 47: esperada 2, actual 3
+psql:/db/tests/03_estados_y_cotizaciones.sql:217: ERROR:  conflicto de version en la sesion 50: esperada 2, actual 3
 PASS | [E] RE007 completar con la version que el cliente vio antes de cotizar -> RE007
 PASS | RN-33 cotizado -> completado fija completada_en y conserva cotizada_en
 psql:/db/tests/03_estados_y_cotizaciones.sql:230: ERROR:  transicion de estado invalida: completado -> cancelado
 PASS | [E] RN-31 completado -> cancelado se rechaza (estado terminal) -> RE001
 psql:/db/tests/03_estados_y_cotizaciones.sql:235: ERROR:  transicion de estado invalida: completado -> cotizado
 PASS | [E] RN-31 completado -> cotizado se rechaza (estado terminal) -> RE001
-psql:/db/tests/03_estados_y_cotizaciones.sql:240: ERROR:  la sesion 47 esta en estado completado y no admite cotizaciones nuevas
+psql:/db/tests/03_estados_y_cotizaciones.sql:240: ERROR:  la sesion 50 esta en estado completado y no admite cotizaciones nuevas
 PASS | [E] RN-34 una sesion completada no admite cotizaciones nuevas -> RE004
 PASS | RN-30 pendiente -> cancelado fija cancelada_en y deja cotizada_en vacio
-psql:/db/tests/03_estados_y_cotizaciones.sql:256: ERROR:  la sesion 48 esta en estado cancelado y su cotizacion no se puede cerrar
+psql:/db/tests/03_estados_y_cotizaciones.sql:256: ERROR:  la sesion 51 esta en estado cancelado y su cotizacion no se puede cerrar
 PASS | [E] RE004 el borrador de una sesion cancelada no se puede cerrar -> RE004
 psql:/db/tests/03_estados_y_cotizaciones.sql:261: ERROR:  transicion de estado invalida: cancelado -> pendiente
 PASS | [E] RN-31 cancelado -> pendiente se rechaza (estado terminal) -> RE001
@@ -245,6 +247,10 @@ PASS | mecanico: q_buscar_vehiculo_patente
 PASS | mecanico: q_buscar_vehiculo_vin
 PASS | mecanico: q_buscar_vehiculo_modelo
 PASS | mecanico: q_historial
+PASS | mecanico: q_historial_estado
+PASS | mecanico: q_historial_siguiente
+PASS | mecanico: q_historial_estado_siguiente
+PASS | mecanico: q_consentimientos_titular
 PASS | mecanico: q_historial_vehiculo
 PASS | mecanico: q_sesion
 PASS | mecanico: q_sesion_fallas
@@ -254,63 +260,65 @@ PASS | mecanico: q_cotizacion_detalle
 PASS | mecanico: q_dashboard_resumen
 PASS | mecanico: q_dashboard_dtc_frecuentes
 PASS | mecanico: q_dispositivos
-psql:/db/tests/04_rbac.sql:119: ERROR:  permission denied for table usuario
-PASS | [E] mecanico: q_usuarios denegada (no lee usuario.email) -> 42501
-psql:/db/tests/04_rbac.sql:123: ERROR:  permission denied for table auditoria_operacion
-PASS | [E] mecanico: q_auditoria denegada -> 42501
-psql:/db/tests/04_rbac.sql:127: ERROR:  permission denied for table solicitud_derecho_titular
-PASS | [E] mecanico: q_solicitudes_derecho denegada -> 42501
 psql:/db/tests/04_rbac.sql:131: ERROR:  permission denied for table usuario
+PASS | [E] mecanico: q_usuarios denegada (no lee usuario.email) -> 42501
+psql:/db/tests/04_rbac.sql:135: ERROR:  permission denied for table auditoria_operacion
+PASS | [E] mecanico: q_auditoria denegada -> 42501
+psql:/db/tests/04_rbac.sql:139: ERROR:  permission denied for table auditoria_operacion
+PASS | [E] mecanico: q_auditoria_siguiente denegada -> 42501
+psql:/db/tests/04_rbac.sql:143: ERROR:  permission denied for table solicitud_derecho_titular
+PASS | [E] mecanico: q_solicitudes_derecho denegada -> 42501
+psql:/db/tests/04_rbac.sql:147: ERROR:  permission denied for table usuario
 PASS | [E] mecanico: tx_crear_usuario denegada -> 42501
-psql:/db/tests/04_rbac.sql:135: ERROR:  permission denied for function fn_establecer_contrasena
+psql:/db/tests/04_rbac.sql:151: ERROR:  permission denied for function fn_establecer_contrasena
 PASS | [E] mecanico: tx_establecer_contrasena denegada -> 42501
-psql:/db/tests/04_rbac.sql:139: ERROR:  permission denied for table usuario
+psql:/db/tests/04_rbac.sql:155: ERROR:  permission denied for table usuario
 PASS | [E] mecanico: tx_cambiar_activo_usuario denegada -> 42501
-psql:/db/tests/04_rbac.sql:143: ERROR:  permission denied for table taller_configuracion
+psql:/db/tests/04_rbac.sql:159: ERROR:  permission denied for table taller_configuracion
 PASS | [E] mecanico: tx_actualizar_configuracion denegada -> 42501
-psql:/db/tests/04_rbac.sql:147: ERROR:  permission denied for table dispositivo_diagnostico
+psql:/db/tests/04_rbac.sql:163: ERROR:  permission denied for table dispositivo_diagnostico
 PASS | [E] mecanico: tx_registrar_dispositivo denegada -> 42501
-psql:/db/tests/04_rbac.sql:151: ERROR:  permission denied for function fn_solicitar_supresion_titular
+psql:/db/tests/04_rbac.sql:167: ERROR:  permission denied for function fn_solicitar_supresion_titular
 PASS | [E] mecanico: tx_solicitar_supresion denegada -> 42501
-psql:/db/tests/04_rbac.sql:156: ERROR:  permission denied for table repuesto
+psql:/db/tests/04_rbac.sql:172: ERROR:  permission denied for table repuesto
 PASS | [E] mecanico: no modifica precios maestros -> 42501
-psql:/db/tests/04_rbac.sql:160: ERROR:  permission denied for table marca_vehiculo
+psql:/db/tests/04_rbac.sql:176: ERROR:  permission denied for table marca_vehiculo
 PASS | [E] mecanico: no inserta en catalogos -> 42501
-psql:/db/tests/04_rbac.sql:164: ERROR:  permission denied for table usuario_credencial
+psql:/db/tests/04_rbac.sql:180: ERROR:  permission denied for table usuario_credencial
 PASS | [E] mecanico: no lee credenciales -> 42501
-psql:/db/tests/04_rbac.sql:168: ERROR:  permission denied for table usuario
+psql:/db/tests/04_rbac.sql:184: ERROR:  permission denied for table usuario
 PASS | [E] mecanico: no lee el email de los usuarios -> 42501
-psql:/db/tests/04_rbac.sql:173: ERROR:  permission denied for table sesion_diagnostico
+psql:/db/tests/04_rbac.sql:189: ERROR:  permission denied for table sesion_diagnostico
 PASS | [E] mecanico: no crea una sesion con estado elegido -> 42501
-psql:/db/tests/04_rbac.sql:177: ERROR:  permission denied for table sesion_diagnostico
+psql:/db/tests/04_rbac.sql:193: ERROR:  permission denied for table sesion_diagnostico
 PASS | [E] mecanico: no fija a mano los timestamps de estado (RN-33) -> 42501
-psql:/db/tests/04_rbac.sql:181: ERROR:  permission denied for table sesion_diagnostico
+psql:/db/tests/04_rbac.sql:197: ERROR:  permission denied for table sesion_diagnostico
 PASS | [E] mecanico: no reasigna una sesion a otro usuario -> 42501
-psql:/db/tests/04_rbac.sql:185: ERROR:  permission denied for table sesion_diagnostico
+psql:/db/tests/04_rbac.sql:201: ERROR:  permission denied for table sesion_diagnostico
 PASS | [E] mecanico: no cambia la version a mano -> 42501
-psql:/db/tests/04_rbac.sql:189: ERROR:  permission denied for table cotizacion
+psql:/db/tests/04_rbac.sql:205: ERROR:  permission denied for table cotizacion
 PASS | [E] mecanico: no escribe el total de una cotizacion -> 42501
-psql:/db/tests/04_rbac.sql:193: ERROR:  permission denied for table cotizacion_detalle
+psql:/db/tests/04_rbac.sql:209: ERROR:  permission denied for table cotizacion_detalle
 PASS | [E] mecanico: no cambia el precio de una linea -> 42501
-psql:/db/tests/04_rbac.sql:197: ERROR:  permission denied for table cotizacion
+psql:/db/tests/04_rbac.sql:213: ERROR:  permission denied for table cotizacion
 PASS | [E] mecanico: no borra cotizaciones -> 42501
-psql:/db/tests/04_rbac.sql:201: ERROR:  permission denied for table falla_sesion
+psql:/db/tests/04_rbac.sql:217: ERROR:  permission denied for table falla_sesion
 PASS | [E] mecanico: no borra fallas -> 42501
-psql:/db/tests/04_rbac.sql:205: ERROR:  permission denied for table sesion_diagnostico
+psql:/db/tests/04_rbac.sql:221: ERROR:  permission denied for table sesion_diagnostico
 PASS | [E] mecanico: no borra sesiones (RN-72) -> 42501
-psql:/db/tests/04_rbac.sql:209: ERROR:  permission denied for table titular
+psql:/db/tests/04_rbac.sql:225: ERROR:  permission denied for table titular
 PASS | [E] mecanico: no cambia el estado de tratamiento de un titular -> 42501
-psql:/db/tests/04_rbac.sql:213: ERROR:  permission denied for table titular
+psql:/db/tests/04_rbac.sql:229: ERROR:  permission denied for table titular
 PASS | [E] mecanico: no cambia el identificador HMAC de un titular -> 42501
-psql:/db/tests/04_rbac.sql:217: ERROR:  permission denied for table vehiculo
+psql:/db/tests/04_rbac.sql:233: ERROR:  permission denied for table vehiculo
 PASS | [E] mecanico: no marca un vehiculo como anonimizado -> 42501
-psql:/db/tests/04_rbac.sql:221: ERROR:  permission denied for table vehiculo
+psql:/db/tests/04_rbac.sql:237: ERROR:  permission denied for table vehiculo
 PASS | [E] mecanico: no muda un vehiculo de taller -> 42501
-psql:/db/tests/04_rbac.sql:225: ERROR:  permission denied for function fn_anonimizar_titular
+psql:/db/tests/04_rbac.sql:241: ERROR:  permission denied for function fn_anonimizar_titular
 PASS | [E] mecanico: no anonimiza directamente -> 42501
-psql:/db/tests/04_rbac.sql:229: ERROR:  permission denied for function fn_registrar_auditoria
+psql:/db/tests/04_rbac.sql:245: ERROR:  permission denied for function fn_registrar_auditoria
 PASS | [E] mecanico: no escribe en la auditoria -> 42501
-psql:/db/tests/04_rbac.sql:233: ERROR:  permission denied for table cotizacion_detalle
+psql:/db/tests/04_rbac.sql:249: ERROR:  permission denied for table cotizacion_detalle
 PASS | [E] mecanico: no hace TRUNCATE -> 42501
 PASS | mecanico: si corrige el telefono de un titular
 PASS | mecanico: si corrige la severidad de una falla
@@ -327,47 +335,49 @@ PASS | admin: q_usuarios
 PASS | admin: q_dispositivos
 PASS | admin: q_solicitudes_derecho
 PASS | admin: q_auditoria
+PASS | admin: q_auditoria_siguiente
+PASS | admin: q_consentimientos_titular
 PASS | admin: tx_cambiar_activo_usuario
 PASS | admin: tx_registrar_dispositivo
 PASS | admin: tx_actualizar_configuracion
 PASS | admin: tx_crear_titular
-psql:/db/tests/04_rbac.sql:304: ERROR:  permission denied for table sesion_diagnostico
+psql:/db/tests/04_rbac.sql:326: ERROR:  permission denied for table sesion_diagnostico
 PASS | [E] admin: tx_crear_sesion denegada (solo el mecanico atiende) -> 42501
-psql:/db/tests/04_rbac.sql:308: ERROR:  permission denied for function fn_cambiar_estado_sesion
+psql:/db/tests/04_rbac.sql:330: ERROR:  permission denied for function fn_cambiar_estado_sesion
 PASS | [E] admin: tx_cambiar_estado denegada (T-32) -> 42501
-psql:/db/tests/04_rbac.sql:312: ERROR:  permission denied for function fn_crear_cotizacion
+psql:/db/tests/04_rbac.sql:334: ERROR:  permission denied for function fn_crear_cotizacion
 PASS | [E] admin: tx_crear_cotizacion denegada -> 42501
-psql:/db/tests/04_rbac.sql:316: ERROR:  permission denied for table cotizacion_detalle
+psql:/db/tests/04_rbac.sql:338: ERROR:  permission denied for table cotizacion_detalle
 PASS | [E] admin: tx_guardar_linea denegada -> 42501
-psql:/db/tests/04_rbac.sql:320: ERROR:  permission denied for table cotizacion_detalle
+psql:/db/tests/04_rbac.sql:342: ERROR:  permission denied for table cotizacion_detalle
 PASS | [E] admin: tx_quitar_linea denegada -> 42501
-psql:/db/tests/04_rbac.sql:324: ERROR:  permission denied for function fn_cerrar_cotizacion
+psql:/db/tests/04_rbac.sql:346: ERROR:  permission denied for function fn_cerrar_cotizacion
 PASS | [E] admin: tx_cerrar_cotizacion denegada -> 42501
-psql:/db/tests/04_rbac.sql:328: ERROR:  permission denied for table repuesto
+psql:/db/tests/04_rbac.sql:350: ERROR:  permission denied for table repuesto
 PASS | [E] admin: no modifica precios maestros (afectarian a otros talleres) -> 42501
-psql:/db/tests/04_rbac.sql:332: ERROR:  permission denied for table taller
+psql:/db/tests/04_rbac.sql:354: ERROR:  permission denied for table taller
 PASS | [E] admin: no renombra ni desactiva su taller -> 42501
-psql:/db/tests/04_rbac.sql:336: ERROR:  permission denied for table taller_configuracion
+psql:/db/tests/04_rbac.sql:358: ERROR:  permission denied for table taller_configuracion
 PASS | [E] admin: no cambia el taller de su configuracion -> 42501
-psql:/db/tests/04_rbac.sql:340: ERROR:  permission denied for table usuario
+psql:/db/tests/04_rbac.sql:362: ERROR:  permission denied for table usuario
 PASS | [E] admin: no muda un usuario de taller -> 42501
-psql:/db/tests/04_rbac.sql:344: ERROR:  permission denied for table usuario
+psql:/db/tests/04_rbac.sql:366: ERROR:  permission denied for table usuario
 PASS | [E] admin: no borra usuarios (baja logica) -> 42501
-psql:/db/tests/04_rbac.sql:348: ERROR:  permission denied for table usuario_credencial
+psql:/db/tests/04_rbac.sql:370: ERROR:  permission denied for table usuario_credencial
 PASS | [E] admin: no lee credenciales -> 42501
-psql:/db/tests/04_rbac.sql:352: ERROR:  permission denied for table usuario_credencial
+psql:/db/tests/04_rbac.sql:374: ERROR:  permission denied for table usuario_credencial
 PASS | [E] admin: no escribe credenciales directamente -> 42501
-psql:/db/tests/04_rbac.sql:356: ERROR:  permission denied for table titular
+psql:/db/tests/04_rbac.sql:378: ERROR:  permission denied for table titular
 PASS | [E] admin: no cambia el estado de tratamiento a mano (solo via funcion) -> 42501
-psql:/db/tests/04_rbac.sql:360: ERROR:  permission denied for function fn_anonimizar_titular
+psql:/db/tests/04_rbac.sql:382: ERROR:  permission denied for function fn_anonimizar_titular
 PASS | [E] admin: no anonimiza directamente (saltaria la retencion) -> 42501
-psql:/db/tests/04_rbac.sql:364: ERROR:  permission denied for function fn_anonimizar_vencidos
+psql:/db/tests/04_rbac.sql:386: ERROR:  permission denied for function fn_anonimizar_vencidos
 PASS | [E] admin: no ejecuta el proceso de anonimizacion de vencidos -> 42501
-psql:/db/tests/04_rbac.sql:368: ERROR:  permission denied for table auditoria_operacion
+psql:/db/tests/04_rbac.sql:390: ERROR:  permission denied for table auditoria_operacion
 PASS | [E] admin: no inserta en la auditoria -> 42501
-psql:/db/tests/04_rbac.sql:372: ERROR:  permission denied for table auditoria_operacion
+psql:/db/tests/04_rbac.sql:394: ERROR:  permission denied for table auditoria_operacion
 PASS | [E] admin: no modifica la auditoria (RN-70) -> 42501
-psql:/db/tests/04_rbac.sql:376: ERROR:  permission denied for table auditoria_operacion
+psql:/db/tests/04_rbac.sql:398: ERROR:  permission denied for table auditoria_operacion
 PASS | [E] admin: no borra la auditoria (RN-70) -> 42501
 --- taller_auditor
 PASS | auditor: q_configuracion
@@ -383,54 +393,57 @@ PASS | auditor: q_usuarios
 PASS | auditor: q_dispositivos
 PASS | auditor: q_solicitudes_derecho
 PASS | auditor: q_auditoria
+PASS | auditor: q_historial_estado
+PASS | auditor: q_auditoria_siguiente
+PASS | auditor: q_consentimientos_titular (no devuelve identidad del titular)
 PASS | auditor: lee el estado de tratamiento de los titulares
-psql:/db/tests/04_rbac.sql:428: ERROR:  permission denied for table titular
+psql:/db/tests/04_rbac.sql:459: ERROR:  permission denied for table titular
 PASS | [E] auditor: no lee el nombre del titular -> 42501
-psql:/db/tests/04_rbac.sql:432: ERROR:  permission denied for table titular
+psql:/db/tests/04_rbac.sql:463: ERROR:  permission denied for table titular
 PASS | [E] auditor: no lee telefono, email ni HMAC del titular -> 42501
-psql:/db/tests/04_rbac.sql:436: ERROR:  permission denied for table titular
+psql:/db/tests/04_rbac.sql:467: ERROR:  permission denied for table titular
 PASS | [E] auditor: SELECT * FROM titular falla (privilegio por columna) -> 42501
-psql:/db/tests/04_rbac.sql:440: ERROR:  permission denied for table titular
+psql:/db/tests/04_rbac.sql:471: ERROR:  permission denied for table titular
 PASS | [E] auditor: q_buscar_vehiculo_patente denegada (devuelve el nombre del titular) -> 42501
-psql:/db/tests/04_rbac.sql:444: ERROR:  permission denied for table titular
+psql:/db/tests/04_rbac.sql:475: ERROR:  permission denied for table titular
 PASS | [E] auditor: q_buscar_vehiculo_vin denegada -> 42501
-psql:/db/tests/04_rbac.sql:448: ERROR:  permission denied for table titular
+psql:/db/tests/04_rbac.sql:479: ERROR:  permission denied for table titular
 PASS | [E] auditor: q_buscar_vehiculo_modelo denegada -> 42501
-psql:/db/tests/04_rbac.sql:452: ERROR:  permission denied for table titular
+psql:/db/tests/04_rbac.sql:483: ERROR:  permission denied for table titular
 PASS | [E] auditor: tx_crear_titular denegada -> 42501
-psql:/db/tests/04_rbac.sql:456: ERROR:  permission denied for table consentimiento_titular
+psql:/db/tests/04_rbac.sql:487: ERROR:  permission denied for table consentimiento_titular
 PASS | [E] auditor: tx_registrar_consentimiento denegada -> 42501
-psql:/db/tests/04_rbac.sql:460: ERROR:  permission denied for table vehiculo
+psql:/db/tests/04_rbac.sql:491: ERROR:  permission denied for table vehiculo
 PASS | [E] auditor: tx_crear_vehiculo denegada -> 42501
-psql:/db/tests/04_rbac.sql:464: ERROR:  permission denied for table sesion_diagnostico
+psql:/db/tests/04_rbac.sql:495: ERROR:  permission denied for table sesion_diagnostico
 PASS | [E] auditor: tx_crear_sesion denegada -> 42501
-psql:/db/tests/04_rbac.sql:468: ERROR:  permission denied for function fn_cambiar_estado_sesion
+psql:/db/tests/04_rbac.sql:499: ERROR:  permission denied for function fn_cambiar_estado_sesion
 PASS | [E] auditor: tx_cambiar_estado denegada -> 42501
-psql:/db/tests/04_rbac.sql:472: ERROR:  permission denied for function fn_crear_cotizacion
+psql:/db/tests/04_rbac.sql:503: ERROR:  permission denied for function fn_crear_cotizacion
 PASS | [E] auditor: tx_crear_cotizacion denegada -> 42501
-psql:/db/tests/04_rbac.sql:476: ERROR:  permission denied for table cotizacion_detalle
+psql:/db/tests/04_rbac.sql:507: ERROR:  permission denied for table cotizacion_detalle
 PASS | [E] auditor: tx_guardar_linea denegada -> 42501
-psql:/db/tests/04_rbac.sql:480: ERROR:  permission denied for table cotizacion_detalle
+psql:/db/tests/04_rbac.sql:511: ERROR:  permission denied for table cotizacion_detalle
 PASS | [E] auditor: tx_quitar_linea denegada -> 42501
-psql:/db/tests/04_rbac.sql:484: ERROR:  permission denied for function fn_cerrar_cotizacion
+psql:/db/tests/04_rbac.sql:515: ERROR:  permission denied for function fn_cerrar_cotizacion
 PASS | [E] auditor: tx_cerrar_cotizacion denegada -> 42501
-psql:/db/tests/04_rbac.sql:488: ERROR:  permission denied for table usuario
+psql:/db/tests/04_rbac.sql:519: ERROR:  permission denied for table usuario
 PASS | [E] auditor: tx_crear_usuario denegada -> 42501
-psql:/db/tests/04_rbac.sql:492: ERROR:  permission denied for function fn_establecer_contrasena
+psql:/db/tests/04_rbac.sql:523: ERROR:  permission denied for function fn_establecer_contrasena
 PASS | [E] auditor: tx_establecer_contrasena denegada -> 42501
-psql:/db/tests/04_rbac.sql:496: ERROR:  permission denied for table usuario
+psql:/db/tests/04_rbac.sql:527: ERROR:  permission denied for table usuario
 PASS | [E] auditor: tx_cambiar_activo_usuario denegada -> 42501
-psql:/db/tests/04_rbac.sql:500: ERROR:  permission denied for table taller_configuracion
+psql:/db/tests/04_rbac.sql:531: ERROR:  permission denied for table taller_configuracion
 PASS | [E] auditor: tx_actualizar_configuracion denegada -> 42501
-psql:/db/tests/04_rbac.sql:504: ERROR:  permission denied for table dispositivo_diagnostico
+psql:/db/tests/04_rbac.sql:535: ERROR:  permission denied for table dispositivo_diagnostico
 PASS | [E] auditor: tx_registrar_dispositivo denegada -> 42501
-psql:/db/tests/04_rbac.sql:508: ERROR:  permission denied for function fn_solicitar_supresion_titular
+psql:/db/tests/04_rbac.sql:539: ERROR:  permission denied for function fn_solicitar_supresion_titular
 PASS | [E] auditor: tx_solicitar_supresion denegada -> 42501
-psql:/db/tests/04_rbac.sql:512: ERROR:  permission denied for table usuario_credencial
+psql:/db/tests/04_rbac.sql:543: ERROR:  permission denied for table usuario_credencial
 PASS | [E] auditor: no lee credenciales -> 42501
-psql:/db/tests/04_rbac.sql:516: ERROR:  permission denied for table auditoria_operacion
+psql:/db/tests/04_rbac.sql:547: ERROR:  permission denied for table auditoria_operacion
 PASS | [E] auditor: no modifica la auditoria -> 42501
-==> 04_rbac.sql: 127 PASS, 0 FAIL, 77 errores esperados [ok]
+==> 04_rbac.sql: 137 PASS, 0 FAIL, 78 errores esperados [ok]
 
 ### 05 Aislamiento y RLS
 --- lectura: cada rol ve solo las filas de su taller
@@ -651,6 +664,7 @@ PASS | q_historial: el orden concatenado de las paginas es iniciada_en DESC, id 
 PASS | q_historial: fallas, severidad maxima y total vigente coinciden con las tablas
 PASS | q_historial (mecanico): 2 sesiones con el vehiculo oculto llegan con sus columnas en NULL
 PASS | q_historial: el filtro de estado devuelve solo ese estado (3 cotizadas)
+PASS | q_historial_estado y _siguiente: paginan un estado sin repetir ni omitir (4 completadas en 3 + 1)
 PASS | q_historial: con iniciada_en repetido, el desempate por id no repite ni omite filas
 PASS | q_historial_vehiculo: las 2 sesiones de la Hilux, la mas reciente primero
 PASS | q_historial (auditor): ve todos los vehiculos; el anonimizado, sin patente
@@ -680,13 +694,16 @@ PASS | q_dashboard_resumen sin contexto: una fila con ceros, no un error
 PASS | q_buscar_vehiculo_patente: una fila con modelo, marca, titular y ultima sesion
 PASS | q_buscar_vehiculo_modelo: filtra por modelo y anio
 PASS | q_buscar_vehiculo_patente (mecanico): la patente de un titular bloqueado no se encuentra
+PASS | q_consentimientos_titular: activos y revocados, el mas reciente primero
+PASS | q_consentimientos_titular (mecanico): un titular bloqueado no devuelve filas
+PASS | q_consentimientos_titular (auditor): si ve los del titular bloqueado
 PASS | q_sesion: devuelve version, dispositivo y el borrador abierto; sin cotizacion vigente
 PASS | q_sesion_fallas: las mas graves primero
 PASS | q_dtc_buscar: busca por prefijo y cuenta los componentes de cada codigo
 PASS | q_configuracion: una fila con el taller del contexto
 PASS | q_auditoria: paginacion por clave sin solapes y en orden descendente
 PASS | q_auditoria: el filtro por tabla devuelve solo esa tabla; las operaciones de roles de taller traen el usuario
-==> 09_consultas.sql: 41 PASS, 0 FAIL, 0 errores esperados [ok]
+==> 09_consultas.sql: 45 PASS, 0 FAIL, 0 errores esperados [ok]
 
 ### Concurrencia
 PASS | CON-01 linea que llega durante el cierre: espera y es rechazada; el total no la incluye (T-8) (B espero a A; SQLSTATE RE003)
@@ -703,6 +720,6 @@ PASS | CON-11 ningun escenario produjo un interbloqueo (orden de bloqueo sesion 
 PASS | CON-12 ninguna sesion A (la que llega primero) fallo
 ==> concurrencia.sh: 12 PASS, 0 FAIL [ok]
 
-test: todo PASS (468 pruebas en 10 archivos)
+test: todo PASS (484 pruebas en 10 archivos)
 
 # codigo de salida: 0

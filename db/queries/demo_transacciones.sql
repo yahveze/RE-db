@@ -237,7 +237,7 @@ SET LOCAL ROLE taller_mecanico;
 EXECUTE ctx(:'m3_taller_id', :'m3_usuario_id', '192.168.10.23', 'demo-tx-9') \gset ctx_
 \echo '-- 9c. el mecanico ya no encuentra el vehiculo; la sesion sigue en el historial sin patente'
 EXECUTE q_buscar_vehiculo_patente('RSTV45');
-EXECUTE q_historial(NULL, NULL, NULL, 1);
+EXECUTE q_historial(1);
 RESET ROLE;
 
 \echo

@@ -30,13 +30,13 @@ SELECT r.id AS rep_ngk_id FROM repuesto r WHERE r.codigo_fabricante = 'ILKAR7B11
 
 -- ================================================================ historial
 \ir incluir/rol_mecanico_1.sql
-CREATE TEMP TABLE p1 AS EXECUTE q_historial(NULL, NULL, NULL, 5);
+CREATE TEMP TABLE p1 AS EXECUTE q_historial(5);
 SELECT iniciada_en AS c_ts, id_publico AS c_id FROM p1 ORDER BY ctid DESC LIMIT 1 \gset
-CREATE TEMP TABLE p2 AS EXECUTE q_historial(NULL, :'c_ts', :'c_id', 5);
+CREATE TEMP TABLE p2 AS EXECUTE q_historial_siguiente(:'c_ts', :'c_id', 5);
 SELECT iniciada_en AS c_ts, id_publico AS c_id FROM p2 ORDER BY ctid DESC LIMIT 1 \gset
-CREATE TEMP TABLE p3 AS EXECUTE q_historial(NULL, :'c_ts', :'c_id', 5);
+CREATE TEMP TABLE p3 AS EXECUTE q_historial_siguiente(:'c_ts', :'c_id', 5);
 SELECT iniciada_en AS c_ts, id_publico AS c_id FROM p3 ORDER BY ctid DESC LIMIT 1 \gset
-CREATE TEMP TABLE p4 AS EXECUTE q_historial(NULL, :'c_ts', :'c_id', 5);
+CREATE TEMP TABLE p4 AS EXECUTE q_historial_siguiente(:'c_ts', :'c_id', 5);
 CREATE TEMP TABLE paginas AS
 SELECT 1 AS pagina, ctid AS pos, * FROM p1 UNION ALL SELECT 2, ctid, * FROM p2
 UNION ALL SELECT 3, ctid, * FROM p3 UNION ALL SELECT 4, ctid, * FROM p4;
@@ -69,20 +69,31 @@ SELECT count(*) = 2 AND bool_and(vehiculo_patente IS NULL AND modelo_nombre IS N
 FROM   paginas WHERE vehiculo_id_publico IS NULL \gset
 \ir incluir/afirmar.sql
 
-CREATE TEMP TABLE h_estado AS EXECUTE q_historial('cotizado', NULL, NULL, 50);
+CREATE TEMP TABLE h_estado AS EXECUTE q_historial_estado('cotizado', 50);
 \set prueba 'q_historial: el filtro de estado devuelve solo ese estado (3 cotizadas)'
 SELECT count(*) = 3 AND bool_and(estado = 'cotizado') AS ok FROM h_estado \gset
+\ir incluir/afirmar.sql
+
+-- Paginacion con filtro de estado: las 4 completadas en paginas de 3 y 1.
+CREATE TEMP TABLE c1 AS EXECUTE q_historial_estado('completado', 3);
+SELECT iniciada_en AS c_ts, id_publico AS c_id FROM c1 ORDER BY ctid DESC LIMIT 1 \gset
+CREATE TEMP TABLE c2 AS EXECUTE q_historial_estado_siguiente('completado', :'c_ts', :'c_id', 3);
+\set prueba 'q_historial_estado y _siguiente: paginan un estado sin repetir ni omitir (4 completadas en 3 + 1)'
+SELECT (SELECT count(*) FROM c1) = 3 AND (SELECT count(*) FROM c2) = 1
+   AND (SELECT count(DISTINCT id_publico) FROM (SELECT * FROM c1 UNION ALL SELECT * FROM c2) x) = 4
+   AND (SELECT bool_and(estado = 'completado') FROM (SELECT * FROM c1 UNION ALL SELECT * FROM c2) x)
+   AND (SELECT max(iniciada_en) FROM c2) < (SELECT min(iniciada_en) FROM c1) AS ok \gset
 \ir incluir/afirmar.sql
 
 -- Empates: tres sesiones creadas en la misma transaccion comparten iniciada_en.
 EXECUTE tx_crear_sesion(:'veh_morning', NULL, 200001, '[{"codigo": "P0300"}]') \gset e1_
 EXECUTE tx_crear_sesion(:'veh_morning', NULL, 200002, '[{"codigo": "P0300"}]') \gset e2_
 EXECUTE tx_crear_sesion(:'veh_morning', NULL, 200003, '[{"codigo": "P0300"}]') \gset e3_
-CREATE TEMP TABLE e1 AS EXECUTE q_historial(NULL, NULL, NULL, 1);
+CREATE TEMP TABLE e1 AS EXECUTE q_historial(1);
 SELECT iniciada_en AS c_ts, id_publico AS c_id FROM e1 \gset
-CREATE TEMP TABLE e2 AS EXECUTE q_historial(NULL, :'c_ts', :'c_id', 1);
+CREATE TEMP TABLE e2 AS EXECUTE q_historial_siguiente(:'c_ts', :'c_id', 1);
 SELECT iniciada_en AS c_ts, id_publico AS c_id FROM e2 \gset
-CREATE TEMP TABLE e3 AS EXECUTE q_historial(NULL, :'c_ts', :'c_id', 1);
+CREATE TEMP TABLE e3 AS EXECUTE q_historial_siguiente(:'c_ts', :'c_id', 1);
 \set prueba 'q_historial: con iniciada_en repetido, el desempate por id no repite ni omite filas'
 SELECT count(*) = 3 AND count(DISTINCT x.id_publico) = 3 AND count(DISTINCT x.iniciada_en) = 1
    AND array_agg(x.kilometraje ORDER BY x.n) = ARRAY[200003, 200002, 200001] AS ok
@@ -96,7 +107,7 @@ FROM   hv \gset
 \ir incluir/afirmar.sql
 
 \ir incluir/rol_auditor_1.sql
-CREATE TEMP TABLE h_aud AS EXECUTE q_historial(NULL, NULL, NULL, 50);
+CREATE TEMP TABLE h_aud AS EXECUTE q_historial(50);
 \set prueba 'q_historial (auditor): ve todos los vehiculos; el anonimizado, sin patente'
 SELECT count(*) FILTER (WHERE vehiculo_id_publico IS NULL) = 0
    AND count(*) FILTER (WHERE vehiculo_patente IS NULL) = 1 AS ok
@@ -240,9 +251,9 @@ SELECT (SELECT count(*) FROM db) = 1
    AND d.sesiones_pendientes = (SELECT count(*) FROM sesion_diagnostico WHERE taller_id = :taller_1 AND estado = 'pendiente')
    AND d.sesiones_cotizadas  = (SELECT count(*) FROM sesion_diagnostico WHERE taller_id = :taller_1 AND estado = 'cotizado')
    AND d.sesiones_completadas_periodo = (SELECT count(*) FROM sesion_diagnostico WHERE taller_id = :taller_1
-                                         AND estado = 'completado' AND completada_en >= now() - interval '30 days')
+                                         AND estado = 'completado' AND iniciada_en >= now() - interval '30 days')
    AND d.sesiones_canceladas_periodo  = (SELECT count(*) FROM sesion_diagnostico WHERE taller_id = :taller_1
-                                         AND estado = 'cancelado' AND cancelada_en >= now() - interval '30 days')
+                                         AND estado = 'cancelado' AND iniciada_en >= now() - interval '30 days')
    AND d.sesiones_iniciadas_periodo   = (SELECT count(*) FROM sesion_diagnostico WHERE taller_id = :taller_1
                                          AND iniciada_en >= now() - interval '30 days')
    AND d.moneda = 'CLP' AS ok
@@ -254,7 +265,7 @@ SELECT d.monto_cotizado_abierto = (SELECT COALESCE(sum(c.total), 0) FROM cotizac
                                    WHERE c.taller_id = :taller_1 AND c.vigente AND s.estado = 'cotizado')
    AND d.monto_completado_periodo = (SELECT COALESCE(sum(c.total), 0) FROM cotizacion c JOIN sesion_diagnostico s ON s.id = c.sesion_id
                                      WHERE c.taller_id = :taller_1 AND c.vigente AND s.estado = 'completado'
-                                     AND s.completada_en >= now() - interval '30 days')
+                                     AND s.iniciada_en >= now() - interval '30 days')
    AND d.fallas_criticas_abiertas = (SELECT count(*) FROM falla_sesion f JOIN sesion_diagnostico s ON s.id = f.sesion_id
                                      WHERE f.taller_id = :taller_1 AND f.severidad = 'critica' AND s.estado IN ('pendiente', 'cotizado'))
    AND d.monto_cotizado_abierto > 0 AND d.fallas_criticas_abiertas > 0 AS ok
@@ -295,6 +306,27 @@ SELECT (SELECT count(*) FROM b2) = 1 AND (SELECT count(*) FROM b3) = 0 AS ok \gs
 EXECUTE q_buscar_vehiculo_patente('BCDF12');
 \ir incluir/filas.sql
 
+SELECT t.id_publico AS tit_juana FROM titular t WHERE t.nombre = 'Juana Pérez Soto' \gset
+CREATE TEMP TABLE co AS EXECUTE q_consentimientos_titular(:'tit_juana');
+\set prueba 'q_consentimientos_titular: activos y revocados, el mas reciente primero'
+SELECT count(*) = 3 AND count(*) FILTER (WHERE revocado_en IS NULL) = 2
+   AND (SELECT finalidad = 'marketing' AND revocado_en IS NOT NULL FROM co ORDER BY ctid LIMIT 1) AS ok
+FROM   co \gset
+\ir incluir/afirmar.sql
+\ir incluir/rol_plataforma.sql
+SELECT t.id_publico AS tit_bloq FROM titular t WHERE t.taller_id = :taller_1 AND t.estado_tratamiento = 'bloqueado' \gset
+\ir incluir/rol_mecanico_1.sql
+\set esperado 0
+\set prueba 'q_consentimientos_titular (mecanico): un titular bloqueado no devuelve filas'
+EXECUTE q_consentimientos_titular(:'tit_bloq');
+\ir incluir/filas.sql
+\ir incluir/rol_auditor_1.sql
+\set esperado 2
+\set prueba 'q_consentimientos_titular (auditor): si ve los del titular bloqueado'
+EXECUTE q_consentimientos_titular(:'tit_bloq');
+\ir incluir/filas.sql
+\ir incluir/rol_mecanico_1.sql
+
 CREATE TEMP TABLE sd AS EXECUTE q_sesion(:'ses_morning');
 \set prueba 'q_sesion: devuelve version, dispositivo y el borrador abierto; sin cotizacion vigente'
 SELECT count(*) = 1 AND bool_and(estado = 'pendiente' AND version = 1 AND dispositivo_mac = '00:1d:a5:68:98:8a'
@@ -319,9 +351,9 @@ SELECT count(*) = 1 AND bool_and(nombre = 'Taller Mecánico Los Aromos' AND marg
 
 -- ================================================================ auditoria
 \ir incluir/rol_admin_1.sql
-CREATE TEMP TABLE a1 AS EXECUTE q_auditoria(NULL, NULL, NULL, 10);
+CREATE TEMP TABLE a1 AS EXECUTE q_auditoria(NULL, 10);
 SELECT ocurrido_en AS c_ts, id AS c_num FROM a1 ORDER BY ctid DESC LIMIT 1 \gset
-CREATE TEMP TABLE a2 AS EXECUTE q_auditoria(NULL, :'c_ts', :c_num, 10);
+CREATE TEMP TABLE a2 AS EXECUTE q_auditoria_siguiente(NULL, :'c_ts', :c_num, 10);
 \set prueba 'q_auditoria: paginacion por clave sin solapes y en orden descendente'
 SELECT (SELECT count(*) FROM a1) = 10 AND (SELECT count(*) FROM a2) = 10
    AND (SELECT count(*) FROM a1 JOIN a2 USING (id)) = 0
@@ -329,7 +361,7 @@ SELECT (SELECT count(*) FROM a1) = 10 AND (SELECT count(*) FROM a2) = 10
    AND (SELECT array_agg(id ORDER BY ctid) FROM a1) = (SELECT array_agg(id ORDER BY ocurrido_en DESC, id DESC) FROM a1) AS ok \gset
 \ir incluir/afirmar.sql
 
-CREATE TEMP TABLE a3 AS EXECUTE q_auditoria('cotizacion', NULL, NULL, 100);
+CREATE TEMP TABLE a3 AS EXECUTE q_auditoria('cotizacion', 100);
 -- Las operaciones hechas por la plataforma (sin contexto) tambien figuran en la
 -- bitacora del taller, sin usuario: el nombre solo se exige a los roles de taller.
 \set prueba 'q_auditoria: el filtro por tabla devuelve solo esa tabla; las operaciones de roles de taller traen el usuario'

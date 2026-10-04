@@ -1,0 +1,1740 @@
+# Rendimiento: planes de ejecucion con volumen (generado por db/perf/run.sh)
+# Fecha: 2026-10-04T07:05Z
+
+--- Volumen cargado (filas por tabla) ---
+ talleres | usuarios | titulares | vehiculos | sesiones | fallas | cotizaciones | lineas | auditoria 
+----------+----------+-----------+-----------+----------+--------+--------------+--------+-----------
+       22 |      208 |     37757 |     60411 |   302016 | 604021 |       338455 | 846125 |   2000555
+(1 row)
+
+ dtc  | componentes | dtc_componente | repuestos | compatibilidades | modelos 
+------+-------------+----------------+-----------+------------------+---------
+ 1000 |         100 |           2985 |      9042 |           225297 |     521
+(1 row)
+
+
+# Entorno
+             version             | shared_buffers | work_mem | random_page_cost | paralelos_por_gather | jit 
+---------------------------------+----------------+----------+------------------+----------------------+-----
+ 16.15 (Debian 16.15-1.pgdg13+2) | 128MB          | 4MB      | 4                | 2                    | on
+(1 row)
+
+
+# Taller medido (el grande) frente al total
+ sesiones_taller | sesiones_total | pendientes_taller | vehiculos_taller | auditoria_taller | auditoria_total 
+-----------------+----------------+-------------------+------------------+------------------+-----------------
+          150000 |         302016 |              1095 |            30000 |          1000000 |         2000555
+(1 row)
+
+
+# Medidas (segunda ejecucion de cada sentencia, cache caliente)
+
+## M01 q_historial - primera pagina (21 filas, sin filtro)
+                                                                                                QUERY PLAN                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=11.89..859.03 rows=21 width=127) (actual time=0.089..0.503 rows=21 loops=1)
+   Buffers: shared hit=358 read=21
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   InitPlan 3 (returns $2)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 8 (returns $7)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  Nested Loop  (cost=11.81..25103.57 rows=622 width=127) (actual time=0.088..0.500 rows=21 loops=1)
+         Buffers: shared hit=358 read=21
+         ->  Nested Loop Left Join  (cost=1.56..18721.85 rows=622 width=115) (actual time=0.074..0.404 rows=21 loops=1)
+               Buffers: shared hit=274 read=21
+               ->  Nested Loop Left Join  (cost=1.14..16663.74 rows=622 width=103) (actual time=0.061..0.333 rows=21 loops=1)
+                     Join Filter: (ma.id = mo.marca_vehiculo_id)
+                     Rows Removed by Join Filter: 443
+                     Buffers: shared hit=201 read=21
+                     ->  Nested Loop Left Join  (cost=1.14..16298.17 rows=622 width=103) (actual time=0.046..0.278 rows=21 loops=1)
+                           Buffers: shared hit=200 read=21
+                           ->  Nested Loop Left Join  (cost=0.87..16099.81 rows=622 width=94) (actual time=0.040..0.246 rows=21 loops=1)
+                                 Buffers: shared hit=137 read=21
+                                 ->  Nested Loop  (cost=0.58..10526.60 rows=622 width=69) (actual time=0.030..0.067 rows=21 loops=1)
+                                       Buffers: shared hit=41
+                                       ->  Index Scan using ix_sesion_diagnostico_historial on sesion_diagnostico s  (cost=0.42..10140.73 rows=14382 width=64) (actual time=0.018..0.035 rows=21 loops=1)
+                                             Index Cond: (taller_id = $0)
+                                             Buffers: shared hit=25
+                                       ->  Memoize  (cost=0.15..0.18 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=21)
+                                             Cache Key: s.usuario_id
+                                             Cache Mode: logical
+                                             Hits: 13  Misses: 8  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                             Buffers: shared hit=16
+                                             ->  Index Scan using uq_usuario_id_taller on usuario u  (cost=0.14..0.17 rows=1 width=21) (actual time=0.002..0.002 rows=1 loops=8)
+                                                   Index Cond: ((id = s.usuario_id) AND (taller_id = $1))
+                                                   Buffers: shared hit=16
+                                 ->  Index Scan using pk_vehiculo on vehiculo v  (cost=0.29..8.96 rows=1 width=41) (actual time=0.008..0.008 rows=1 loops=21)
+                                       Index Cond: (id = s.vehiculo_id)
+                                       Filter: ((anonimizado_en IS NULL) AND (taller_id = $2) AND ((titular_id IS NULL) OR (SubPlan 5)))
+                                       Buffers: shared hit=96 read=21
+                                       SubPlan 5
+                                         ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.31..8.33 rows=1 width=0) (actual time=0.004..0.004 rows=1 loops=18)
+                                               Index Cond: ((id = v.titular_id) AND (taller_id = $4))
+                                               Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                                               Buffers: shared hit=45 read=9
+                                               InitPlan 4 (returns $4)
+                                                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                           ->  Index Scan using pk_modelo_vehiculo on modelo_vehiculo mo  (cost=0.28..0.32 rows=1 width=25) (actual time=0.001..0.001 rows=1 loops=21)
+                                 Index Cond: (id = v.modelo_vehiculo_id)
+                                 Buffers: shared hit=63
+                     ->  Materialize  (cost=0.00..1.60 rows=40 width=16) (actual time=0.000..0.001 rows=22 loops=21)
+                           Buffers: shared hit=1
+                           ->  Seq Scan on marca_vehiculo ma  (cost=0.00..1.40 rows=40 width=16) (actual time=0.004..0.007 rows=40 loops=1)
+                                 Buffers: shared hit=1
+               ->  Index Scan using uq_cotizacion_sesion_vigente on cotizacion c  (cost=0.42..3.30 rows=1 width=20) (actual time=0.003..0.003 rows=0 loops=21)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $7)
+                     Buffers: shared hit=73
+         ->  Aggregate  (cost=10.24..10.25 rows=1 width=12) (actual time=0.004..0.004 rows=1 loops=21)
+               Buffers: shared hit=84
+               InitPlan 9 (returns $9)
+                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+               ->  Index Scan using pk_falla_sesion on falla_sesion x  (cost=0.42..10.22 rows=1 width=4) (actual time=0.003..0.004 rows=2 loops=21)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $9)
+                     Buffers: shared hit=84
+ Planning:
+   Buffers: shared hit=82
+ Planning Time: 2.111 ms
+ Execution Time: 0.646 ms
+(69 rows)
+
+
+## M02 q_historial - pagina profunda por clave (cursor tras 75.000 sesiones)
+                                                                                               QUERY PLAN                                                                                               
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=20.50..1078.93 rows=21 width=127) (actual time=0.122..0.410 rows=21 loops=1)
+   Buffers: shared hit=427
+   InitPlan 2 (returns $1)
+     ->  Index Scan using uq_sesion_diagnostico_id_publico on sesion_diagnostico k  (cost=0.44..8.46 rows=1 width=8) (actual time=0.014..0.015 rows=1 loops=1)
+           Index Cond: (id_publico = '04a956c7-e427-4840-9f36-5a5b5c87119d'::uuid)
+           Filter: (taller_id = $0)
+           Buffers: shared hit=4
+           InitPlan 1 (returns $0)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   InitPlan 3 (returns $2)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 4 (returns $3)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   InitPlan 5 (returns $4)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   InitPlan 10 (returns $9)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  Nested Loop Left Join  (cost=11.96..15686.91 rows=311 width=127) (actual time=0.121..0.407 rows=21 loops=1)
+         Buffers: shared hit=427
+         ->  Nested Loop Left Join  (cost=11.53..14339.69 rows=311 width=115) (actual time=0.107..0.340 rows=21 loops=1)
+               Buffers: shared hit=343
+               ->  Nested Loop  (cost=11.38..14324.70 rows=311 width=115) (actual time=0.104..0.317 rows=21 loops=1)
+                     Buffers: shared hit=311
+                     ->  Nested Loop Left Join  (cost=1.14..11133.84 rows=311 width=103) (actual time=0.096..0.240 rows=21 loops=1)
+                           Buffers: shared hit=227
+                           ->  Nested Loop Left Join  (cost=0.87..11034.68 rows=311 width=94) (actual time=0.090..0.212 rows=21 loops=1)
+                                 Buffers: shared hit=164
+                                 ->  Nested Loop  (cost=0.58..8149.43 rows=311 width=69) (actual time=0.072..0.104 rows=21 loops=1)
+                                       Buffers: shared hit=44
+                                       ->  Index Scan using ix_sesion_diagnostico_historial on sesion_diagnostico s  (cost=0.42..7942.53 rows=7196 width=64) (actual time=0.058..0.074 rows=21 loops=1)
+                                             Index Cond: ((taller_id = $2) AND (ROW(iniciada_en, id) < ROW('2025-04-04 13:59:53.357123+00'::timestamp with time zone, $1)))
+                                             Buffers: shared hit=28
+                                       ->  Memoize  (cost=0.15..0.18 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=21)
+                                             Cache Key: s.usuario_id
+                                             Cache Mode: logical
+                                             Hits: 13  Misses: 8  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                             Buffers: shared hit=16
+                                             ->  Index Scan using uq_usuario_id_taller on usuario u  (cost=0.14..0.17 rows=1 width=21) (actual time=0.002..0.002 rows=1 loops=8)
+                                                   Index Cond: ((id = s.usuario_id) AND (taller_id = $3))
+                                                   Buffers: shared hit=16
+                                 ->  Index Scan using pk_vehiculo on vehiculo v  (cost=0.29..9.28 rows=1 width=41) (actual time=0.005..0.005 rows=1 loops=21)
+                                       Index Cond: (id = s.vehiculo_id)
+                                       Filter: ((anonimizado_en IS NULL) AND (taller_id = $4) AND ((titular_id IS NULL) OR (SubPlan 7)))
+                                       Buffers: shared hit=120
+                                       SubPlan 7
+                                         ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.31..8.33 rows=1 width=0) (actual time=0.002..0.002 rows=1 loops=19)
+                                               Index Cond: ((id = v.titular_id) AND (taller_id = $6))
+                                               Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                                               Buffers: shared hit=57
+                                               InitPlan 6 (returns $6)
+                                                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                           ->  Index Scan using pk_modelo_vehiculo on modelo_vehiculo mo  (cost=0.28..0.32 rows=1 width=25) (actual time=0.001..0.001 rows=1 loops=21)
+                                 Index Cond: (id = v.modelo_vehiculo_id)
+                                 Buffers: shared hit=63
+                     ->  Aggregate  (cost=10.24..10.25 rows=1 width=12) (actual time=0.003..0.003 rows=1 loops=21)
+                           Buffers: shared hit=84
+                           InitPlan 11 (returns $11)
+                             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                           ->  Index Scan using pk_falla_sesion on falla_sesion x  (cost=0.42..10.22 rows=1 width=4) (actual time=0.003..0.003 rows=2 loops=21)
+                                 Index Cond: (sesion_id = s.id)
+                                 Filter: (taller_id = $11)
+                                 Buffers: shared hit=84
+               ->  Memoize  (cost=0.15..0.19 rows=1 width=16) (actual time=0.001..0.001 rows=1 loops=21)
+                     Cache Key: mo.marca_vehiculo_id
+                     Cache Mode: logical
+                     Hits: 5  Misses: 16  Evictions: 0  Overflows: 0  Memory Usage: 2kB
+                     Buffers: shared hit=32
+                     ->  Index Scan using pk_marca_vehiculo on marca_vehiculo ma  (cost=0.14..0.18 rows=1 width=16) (actual time=0.001..0.001 rows=1 loops=16)
+                           Index Cond: (id = mo.marca_vehiculo_id)
+                           Buffers: shared hit=32
+         ->  Index Scan using uq_cotizacion_sesion_vigente on cotizacion c  (cost=0.42..4.32 rows=1 width=20) (actual time=0.003..0.003 rows=1 loops=21)
+               Index Cond: (sesion_id = s.id)
+               Filter: (taller_id = $9)
+               Buffers: shared hit=84
+ Planning:
+   Buffers: shared hit=81
+ Planning Time: 1.708 ms
+ Execution Time: 0.492 ms
+(78 rows)
+
+
+## M03 comparacion: la misma pagina profunda con OFFSET 75000 (lo que la paginacion por clave evita)
+                                                                          QUERY PLAN                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=6950.85..6950.85 rows=1 width=36) (actual time=73.238..73.243 rows=21 loops=1)
+   Buffers: shared hit=3392, temp read=861 written=922
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   ->  Sort  (cost=6914.88..6950.83 rows=14382 width=36) (actual time=66.630..71.319 rows=75021 loops=1)
+         Sort Key: s.iniciada_en DESC, s.id DESC
+         Sort Method: external merge  Disk: 7352kB
+         Buffers: shared hit=3392, temp read=861 written=922
+         ->  Bitmap Heap Scan on sesion_diagnostico s  (cost=395.88..5921.66 rows=14382 width=36) (actual time=4.993..24.971 rows=150000 loops=1)
+               Recheck Cond: (taller_id = $0)
+               Heap Blocks: exact=2658
+               Buffers: shared hit=3392
+               ->  Bitmap Index Scan on ix_sesion_diagnostico_vehiculo  (cost=0.00..392.29 rows=14382 width=0) (actual time=4.701..4.702 rows=150002 loops=1)
+                     Index Cond: (taller_id = $0)
+                     Buffers: shared hit=734
+ Planning Time: 0.067 ms
+ Execution Time: 74.265 ms
+(17 rows)
+
+
+## M04 q_historial - filtrado por estado pendiente, primera pagina
+                                                                                               QUERY PLAN                                                                                               
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=11.74..1241.37 rows=21 width=127) (actual time=0.059..0.418 rows=21 loops=1)
+   Buffers: shared hit=340 read=19
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.003..0.003 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 3 (returns $2)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 8 (returns $7)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (never executed)
+   ->  Nested Loop  (cost=11.66..9146.00 rows=156 width=127) (actual time=0.058..0.415 rows=21 loops=1)
+         Buffers: shared hit=340 read=19
+         ->  Nested Loop Left Join  (cost=1.42..7545.44 rows=156 width=115) (actual time=0.049..0.329 rows=21 loops=1)
+               Buffers: shared hit=256 read=19
+               ->  Nested Loop Left Join  (cost=1.00..6669.47 rows=156 width=103) (actual time=0.043..0.279 rows=21 loops=1)
+                     Join Filter: (ma.id = mo.marca_vehiculo_id)
+                     Rows Removed by Join Filter: 434
+                     Buffers: shared hit=193 read=19
+                     ->  Nested Loop Left Join  (cost=1.00..6576.65 rows=156 width=103) (actual time=0.030..0.229 rows=21 loops=1)
+                           Buffers: shared hit=192 read=19
+                           ->  Nested Loop Left Join  (cost=0.73..6526.89 rows=156 width=94) (actual time=0.028..0.202 rows=21 loops=1)
+                                 Buffers: shared hit=129 read=19
+                                 ->  Nested Loop  (cost=0.44..4980.42 rows=156 width=69) (actual time=0.021..0.052 rows=21 loops=1)
+                                       Buffers: shared hit=40
+                                       ->  Index Scan using ix_sesion_diagnostico_pendiente on sesion_diagnostico s  (cost=0.28..4862.80 rows=3595 width=64) (actual time=0.014..0.028 rows=21 loops=1)
+                                             Index Cond: (taller_id = $0)
+                                             Buffers: shared hit=24
+                                       ->  Memoize  (cost=0.15..0.18 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=21)
+                                             Cache Key: s.usuario_id
+                                             Cache Mode: logical
+                                             Hits: 13  Misses: 8  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                             Buffers: shared hit=16
+                                             ->  Index Scan using uq_usuario_id_taller on usuario u  (cost=0.14..0.17 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=8)
+                                                   Index Cond: ((id = s.usuario_id) AND (taller_id = $1))
+                                                   Buffers: shared hit=16
+                                 ->  Index Scan using pk_vehiculo on vehiculo v  (cost=0.29..9.91 rows=1 width=41) (actual time=0.007..0.007 rows=1 loops=21)
+                                       Index Cond: (id = s.vehiculo_id)
+                                       Filter: ((anonimizado_en IS NULL) AND (taller_id = $2) AND ((titular_id IS NULL) OR (SubPlan 5)))
+                                       Buffers: shared hit=89 read=19
+                                       SubPlan 5
+                                         ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.31..8.33 rows=1 width=0) (actual time=0.004..0.004 rows=1 loops=15)
+                                               Index Cond: ((id = v.titular_id) AND (taller_id = $4))
+                                               Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                                               Buffers: shared hit=38 read=7
+                                               InitPlan 4 (returns $4)
+                                                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                           ->  Index Scan using pk_modelo_vehiculo on modelo_vehiculo mo  (cost=0.28..0.32 rows=1 width=25) (actual time=0.001..0.001 rows=1 loops=21)
+                                 Index Cond: (id = v.modelo_vehiculo_id)
+                                 Buffers: shared hit=63
+                     ->  Materialize  (cost=0.00..1.60 rows=40 width=16) (actual time=0.000..0.001 rows=22 loops=21)
+                           Buffers: shared hit=1
+                           ->  Seq Scan on marca_vehiculo ma  (cost=0.00..1.40 rows=40 width=16) (actual time=0.005..0.008 rows=39 loops=1)
+                                 Buffers: shared hit=1
+               ->  Index Scan using uq_cotizacion_sesion_vigente on cotizacion c  (cost=0.42..5.61 rows=1 width=20) (actual time=0.002..0.002 rows=0 loops=21)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $7)
+                     Buffers: shared hit=63
+         ->  Aggregate  (cost=10.24..10.25 rows=1 width=12) (actual time=0.004..0.004 rows=1 loops=21)
+               Buffers: shared hit=84
+               InitPlan 9 (returns $9)
+                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+               ->  Index Scan using pk_falla_sesion on falla_sesion x  (cost=0.42..10.22 rows=1 width=4) (actual time=0.003..0.003 rows=2 loops=21)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $9)
+                     Buffers: shared hit=84
+ Planning:
+   Buffers: shared hit=81
+ Planning Time: 1.789 ms
+ Execution Time: 0.485 ms
+(69 rows)
+
+
+## M05 q_historial - filtrado por estado completado, pagina profunda
+                                                                                               QUERY PLAN                                                                                               
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=20.35..2788.47 rows=21 width=127) (actual time=0.060..0.389 rows=21 loops=1)
+   Buffers: shared hit=396
+   InitPlan 2 (returns $1)
+     ->  Index Scan using uq_sesion_diagnostico_id_publico on sesion_diagnostico k  (cost=0.44..8.46 rows=1 width=8) (actual time=0.009..0.010 rows=1 loops=1)
+           Index Cond: (id_publico = '04a956c7-e427-4840-9f36-5a5b5c87119d'::uuid)
+           Filter: (taller_id = $0)
+           Buffers: shared hit=4
+           InitPlan 1 (returns $0)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   InitPlan 3 (returns $2)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 4 (returns $3)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 5 (returns $4)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 10 (returns $9)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  Nested Loop  (cost=11.81..10293.40 rows=78 width=127) (actual time=0.060..0.385 rows=21 loops=1)
+         Buffers: shared hit=396
+         ->  Nested Loop Left Join  (cost=1.56..9493.12 rows=78 width=115) (actual time=0.052..0.312 rows=21 loops=1)
+               Buffers: shared hit=312
+               ->  Nested Loop Left Join  (cost=1.14..8971.88 rows=78 width=103) (actual time=0.047..0.249 rows=21 loops=1)
+                     Join Filter: (ma.id = mo.marca_vehiculo_id)
+                     Rows Removed by Join Filter: 477
+                     Buffers: shared hit=228
+                     ->  Nested Loop Left Join  (cost=1.14..8924.72 rows=78 width=103) (actual time=0.037..0.200 rows=21 loops=1)
+                           Buffers: shared hit=227
+                           ->  Nested Loop Left Join  (cost=0.87..8899.84 rows=78 width=94) (actual time=0.035..0.176 rows=21 loops=1)
+                                 Buffers: shared hit=164
+                                 ->  Nested Loop  (cost=0.58..8034.41 rows=78 width=69) (actual time=0.026..0.073 rows=21 loops=1)
+                                       Buffers: shared hit=44
+                                       ->  Index Scan using ix_sesion_diagnostico_historial on sesion_diagnostico s  (cost=0.42..7960.52 rows=1799 width=64) (actual time=0.021..0.052 rows=21 loops=1)
+                                             Index Cond: ((taller_id = $2) AND (ROW(iniciada_en, id) < ROW('2025-04-04 13:59:53.357123+00'::timestamp with time zone, $1)))
+                                             Filter: (estado = 'completado'::tipo_estado_atencion)
+                                             Buffers: shared hit=28
+                                       ->  Memoize  (cost=0.15..0.19 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=21)
+                                             Cache Key: s.usuario_id
+                                             Cache Mode: logical
+                                             Hits: 13  Misses: 8  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                             Buffers: shared hit=16
+                                             ->  Index Scan using uq_usuario_id_taller on usuario u  (cost=0.14..0.18 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=8)
+                                                   Index Cond: ((id = s.usuario_id) AND (taller_id = $3))
+                                                   Buffers: shared hit=16
+                                 ->  Index Scan using pk_vehiculo on vehiculo v  (cost=0.29..11.09 rows=1 width=41) (actual time=0.005..0.005 rows=1 loops=21)
+                                       Index Cond: (id = s.vehiculo_id)
+                                       Filter: ((anonimizado_en IS NULL) AND (taller_id = $4) AND ((titular_id IS NULL) OR (SubPlan 7)))
+                                       Buffers: shared hit=120
+                                       SubPlan 7
+                                         ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.31..8.33 rows=1 width=0) (actual time=0.002..0.002 rows=1 loops=19)
+                                               Index Cond: ((id = v.titular_id) AND (taller_id = $6))
+                                               Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                                               Buffers: shared hit=57
+                                               InitPlan 6 (returns $6)
+                                                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                           ->  Index Scan using pk_modelo_vehiculo on modelo_vehiculo mo  (cost=0.28..0.32 rows=1 width=25) (actual time=0.001..0.001 rows=1 loops=21)
+                                 Index Cond: (id = v.modelo_vehiculo_id)
+                                 Buffers: shared hit=63
+                     ->  Materialize  (cost=0.00..1.60 rows=40 width=16) (actual time=0.000..0.001 rows=24 loops=21)
+                           Buffers: shared hit=1
+                           ->  Seq Scan on marca_vehiculo ma  (cost=0.00..1.40 rows=40 width=16) (actual time=0.003..0.005 rows=38 loops=1)
+                                 Buffers: shared hit=1
+               ->  Index Scan using uq_cotizacion_sesion_vigente on cotizacion c  (cost=0.42..6.67 rows=1 width=20) (actual time=0.003..0.003 rows=1 loops=21)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $9)
+                     Buffers: shared hit=84
+         ->  Aggregate  (cost=10.24..10.25 rows=1 width=12) (actual time=0.003..0.003 rows=1 loops=21)
+               Buffers: shared hit=84
+               InitPlan 11 (returns $11)
+                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+               ->  Index Scan using pk_falla_sesion on falla_sesion x  (cost=0.42..10.22 rows=1 width=4) (actual time=0.002..0.003 rows=2 loops=21)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $11)
+                     Buffers: shared hit=84
+ Planning:
+   Buffers: shared hit=81
+ Planning Time: 1.479 ms
+ Execution Time: 0.444 ms
+(77 rows)
+
+
+## M06 q_historial_siguiente - la misma pagina profunda con PLAN GENERICO forzado
+                                                                                               QUERY PLAN                                                                                               
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=20.35..1191.70 rows=21 width=127) (actual time=0.044..0.277 rows=21 loops=1)
+   Buffers: shared hit=396
+   InitPlan 2 (returns $1)
+     ->  Index Scan using uq_sesion_diagnostico_id_publico on sesion_diagnostico k  (cost=0.44..8.46 rows=1 width=8) (actual time=0.007..0.007 rows=1 loops=1)
+           Index Cond: (id_publico = $2)
+           Filter: (taller_id = $0)
+           Buffers: shared hit=4
+           InitPlan 1 (returns $0)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 3 (returns $2)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   InitPlan 4 (returns $3)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 5 (returns $4)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 10 (returns $9)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  Nested Loop  (cost=11.81..11558.04 rows=207 width=127) (actual time=0.043..0.274 rows=21 loops=1)
+         Buffers: shared hit=396
+         ->  Nested Loop Left Join  (cost=1.56..9434.22 rows=207 width=115) (actual time=0.039..0.222 rows=21 loops=1)
+               Buffers: shared hit=312
+               ->  Nested Loop Left Join  (cost=1.14..8392.69 rows=207 width=103) (actual time=0.036..0.181 rows=21 loops=1)
+                     Join Filter: (ma.id = mo.marca_vehiculo_id)
+                     Rows Removed by Join Filter: 477
+                     Buffers: shared hit=228
+                     ->  Nested Loop Left Join  (cost=1.14..8269.84 rows=207 width=103) (actual time=0.026..0.130 rows=21 loops=1)
+                           Buffers: shared hit=227
+                           ->  Nested Loop Left Join  (cost=0.87..8203.81 rows=207 width=94) (actual time=0.024..0.108 rows=21 loops=1)
+                                 Buffers: shared hit=164
+                                 ->  Nested Loop  (cost=0.58..6217.56 rows=207 width=69) (actual time=0.018..0.042 rows=21 loops=1)
+                                       Buffers: shared hit=44
+                                       ->  Index Scan using ix_sesion_diagnostico_historial on sesion_diagnostico s  (cost=0.42..6070.30 rows=4794 width=64) (actual time=0.014..0.022 rows=21 loops=1)
+                                             Index Cond: ((taller_id = $2) AND (ROW(iniciada_en, id) < ROW($1, $1)))
+                                             Buffers: shared hit=28
+                                       ->  Memoize  (cost=0.15..0.18 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=21)
+                                             Cache Key: s.usuario_id
+                                             Cache Mode: logical
+                                             Hits: 13  Misses: 8  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                             Buffers: shared hit=16
+                                             ->  Index Scan using uq_usuario_id_taller on usuario u  (cost=0.14..0.17 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=8)
+                                                   Index Cond: ((id = s.usuario_id) AND (taller_id = $3))
+                                                   Buffers: shared hit=16
+                                 ->  Index Scan using pk_vehiculo on vehiculo v  (cost=0.29..9.60 rows=1 width=41) (actual time=0.003..0.003 rows=1 loops=21)
+                                       Index Cond: (id = s.vehiculo_id)
+                                       Filter: ((anonimizado_en IS NULL) AND (taller_id = $4) AND ((titular_id IS NULL) OR (SubPlan 7)))
+                                       Buffers: shared hit=120
+                                       SubPlan 7
+                                         ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.31..8.33 rows=1 width=0) (actual time=0.001..0.001 rows=1 loops=19)
+                                               Index Cond: ((id = v.titular_id) AND (taller_id = $6))
+                                               Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                                               Buffers: shared hit=57
+                                               InitPlan 6 (returns $6)
+                                                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                           ->  Index Scan using pk_modelo_vehiculo on modelo_vehiculo mo  (cost=0.28..0.32 rows=1 width=25) (actual time=0.001..0.001 rows=1 loops=21)
+                                 Index Cond: (id = v.modelo_vehiculo_id)
+                                 Buffers: shared hit=63
+                     ->  Materialize  (cost=0.00..1.60 rows=40 width=16) (actual time=0.000..0.001 rows=24 loops=21)
+                           Buffers: shared hit=1
+                           ->  Seq Scan on marca_vehiculo ma  (cost=0.00..1.40 rows=40 width=16) (actual time=0.002..0.005 rows=38 loops=1)
+                                 Buffers: shared hit=1
+               ->  Index Scan using uq_cotizacion_sesion_vigente on cotizacion c  (cost=0.42..5.02 rows=1 width=20) (actual time=0.002..0.002 rows=1 loops=21)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $9)
+                     Buffers: shared hit=84
+         ->  Aggregate  (cost=10.24..10.25 rows=1 width=12) (actual time=0.002..0.002 rows=1 loops=21)
+               Buffers: shared hit=84
+               InitPlan 11 (returns $11)
+                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+               ->  Index Scan using pk_falla_sesion on falla_sesion x  (cost=0.42..10.22 rows=1 width=4) (actual time=0.001..0.002 rows=2 loops=21)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $11)
+                     Buffers: shared hit=84
+ Planning Time: 0.023 ms
+ Execution Time: 0.336 ms
+(74 rows)
+
+
+## M06a ANTES: formulacion con cursor opcional (Fase 3), misma pagina, plan generico
+                                                                                          QUERY PLAN                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=19.91..1146.94 rows=5 width=76) (actual time=41.632..42.039 rows=21 loops=1)
+   Buffers: shared hit=75342 read=532
+   InitPlan 2 (returns $1)
+     ->  Index Scan using uq_sesion_diagnostico_id_publico on sesion_diagnostico k  (cost=0.44..8.46 rows=1 width=8) (actual time=0.026..0.027 rows=1 loops=1)
+           Index Cond: (id_publico = $3)
+           Filter: (taller_id = $0)
+           Buffers: shared hit=4
+           InitPlan 1 (returns $0)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.006..0.006 rows=1 loops=1)
+   InitPlan 3 (returns $2)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 4 (returns $3)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   InitPlan 5 (returns $4)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   InitPlan 10 (returns $9)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   ->  Nested Loop  (cost=11.37..11957.81 rows=53 width=76) (actual time=41.631..42.032 rows=21 loops=1)
+         Buffers: shared hit=75342 read=532
+         ->  Nested Loop Left Join  (cost=1.13..11414.17 rows=53 width=68) (actual time=41.614..41.908 rows=21 loops=1)
+               Buffers: shared hit=75258 read=532
+               ->  Nested Loop Left Join  (cost=0.71..11037.43 rows=53 width=60) (actual time=41.602..41.791 rows=21 loops=1)
+                     Buffers: shared hit=75174 read=532
+                     ->  Nested Loop  (cost=0.42..10420.49 rows=53 width=61) (actual time=41.577..41.620 rows=21 loops=1)
+                           Join Filter: (u.id = s.usuario_id)
+                           Rows Removed by Join Filter: 117
+                           Buffers: shared hit=75054 read=532
+                           ->  Index Scan using ix_sesion_diagnostico_historial on sesion_diagnostico s  (cost=0.42..10248.60 rows=1229 width=56) (actual time=41.559..41.577 rows=21 loops=1)
+                                 Index Cond: (taller_id = $2)
+                                 Filter: ((($2 IS NULL) OR (ROW(iniciada_en, id) < ROW($2, $1))) AND (($1 IS NULL) OR (estado = $1)))
+                                 Rows Removed by Filter: 75001
+                                 Buffers: shared hit=75053 read=532
+                           ->  Materialize  (cost=0.00..6.64 rows=9 width=21) (actual time=0.001..0.001 rows=7 loops=21)
+                                 Buffers: shared hit=1
+                                 ->  Seq Scan on usuario u  (cost=0.00..6.60 rows=9 width=21) (actual time=0.010..0.013 rows=10 loops=1)
+                                       Filter: (taller_id = $3)
+                                       Rows Removed by Filter: 8
+                                       Buffers: shared hit=1
+                     ->  Index Scan using pk_vehiculo on vehiculo v  (cost=0.29..11.64 rows=1 width=15) (actual time=0.007..0.007 rows=1 loops=21)
+                           Index Cond: (id = s.vehiculo_id)
+                           Filter: ((anonimizado_en IS NULL) AND (taller_id = $4) AND ((titular_id IS NULL) OR (SubPlan 7)))
+                           Buffers: shared hit=120
+                           SubPlan 7
+                             ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.31..8.33 rows=1 width=0) (actual time=0.003..0.003 rows=1 loops=19)
+                                   Index Cond: ((id = v.titular_id) AND (taller_id = $6))
+                                   Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                                   Buffers: shared hit=57
+                                   InitPlan 6 (returns $6)
+                                     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+               ->  Index Scan using uq_cotizacion_sesion_vigente on cotizacion c  (cost=0.42..7.10 rows=1 width=16) (actual time=0.005..0.005 rows=1 loops=21)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $9)
+                     Buffers: shared hit=84
+         ->  Aggregate  (cost=10.24..10.25 rows=1 width=8) (actual time=0.005..0.005 rows=1 loops=21)
+               Buffers: shared hit=84
+               InitPlan 11 (returns $11)
+                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+               ->  Index Scan using pk_falla_sesion on falla_sesion x  (cost=0.42..10.22 rows=1 width=0) (actual time=0.004..0.004 rows=2 loops=21)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $11)
+                     Buffers: shared hit=84
+ Planning Time: 0.027 ms
+ Execution Time: 42.117 ms
+(63 rows)
+
+
+## M07 q_buscar_vehiculo_patente
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop Left Join  (cost=1.03..42.00 rows=1 width=124) (actual time=0.044..0.046 rows=1 loops=1)
+   Buffers: shared hit=17 read=2
+   InitPlan 4 (returns $3)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 9 (returns $8)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  Nested Loop  (cost=0.70..25.15 rows=1 width=104) (actual time=0.032..0.033 rows=1 loops=1)
+         Buffers: shared hit=9 read=2
+         ->  Nested Loop  (cost=0.56..24.97 rows=1 width=104) (actual time=0.029..0.031 rows=1 loops=1)
+               Buffers: shared hit=7 read=2
+               ->  Index Scan using uq_vehiculo_taller_patente on vehiculo v  (cost=0.29..16.64 rows=1 width=79) (actual time=0.027..0.028 rows=1 loops=1)
+                     Index Cond: ((taller_id = $3) AND (patente = 'ZJBB02'::text))
+                     Filter: ((anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (SubPlan 6)))
+                     Buffers: shared hit=4 read=2
+                     SubPlan 6
+                       ->  Index Scan using uq_titular_id_taller on titular t_1  (cost=0.31..8.33 rows=1 width=0) (actual time=0.004..0.004 rows=1 loops=1)
+                             Index Cond: ((id = v.titular_id) AND (taller_id = $5))
+                             Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                             Buffers: shared hit=3
+                             InitPlan 5 (returns $5)
+                               ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+               ->  Index Scan using pk_modelo_vehiculo on modelo_vehiculo mo  (cost=0.28..8.29 rows=1 width=41) (actual time=0.002..0.002 rows=1 loops=1)
+                     Index Cond: (id = v.modelo_vehiculo_id)
+                     Buffers: shared hit=3
+         ->  Index Scan using pk_marca_vehiculo on marca_vehiculo ma  (cost=0.14..0.18 rows=1 width=16) (actual time=0.002..0.002 rows=1 loops=1)
+               Index Cond: (id = mo.marca_vehiculo_id)
+               Buffers: shared hit=2
+   ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.29..8.31 rows=1 width=36) (actual time=0.002..0.002 rows=1 loops=1)
+         Index Cond: ((id = v.titular_id) AND (taller_id = $8))
+         Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+         Buffers: shared hit=3
+   SubPlan 3
+     ->  Result  (cost=8.46..8.47 rows=1 width=8) (actual time=0.009..0.010 rows=1 loops=1)
+           Buffers: shared hit=5
+           InitPlan 1 (returns $1)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+           InitPlan 2 (returns $2)
+             ->  Limit  (cost=0.42..8.44 rows=1 width=8) (actual time=0.008..0.009 rows=1 loops=1)
+                   Buffers: shared hit=5
+                   ->  Index Only Scan using ix_sesion_diagnostico_vehiculo on sesion_diagnostico s  (cost=0.42..8.44 rows=1 width=8) (actual time=0.008..0.008 rows=1 loops=1)
+                         Index Cond: ((taller_id = $1) AND (vehiculo_id = v.id) AND (iniciada_en IS NOT NULL))
+                         Heap Fetches: 1
+                         Buffers: shared hit=5
+ Planning:
+   Buffers: shared hit=30
+ Planning Time: 0.559 ms
+ Execution Time: 0.083 ms
+(47 rows)
+
+
+## M08 q_buscar_vehiculo_vin
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop Left Join  (cost=1.03..42.00 rows=1 width=124) (actual time=0.037..0.039 rows=1 loops=1)
+   Buffers: shared hit=16 read=2
+   InitPlan 4 (returns $3)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 9 (returns $8)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  Nested Loop  (cost=0.70..25.15 rows=1 width=104) (actual time=0.028..0.029 rows=1 loops=1)
+         Buffers: shared hit=9 read=2
+         ->  Nested Loop  (cost=0.56..24.96 rows=1 width=104) (actual time=0.026..0.027 rows=1 loops=1)
+               Buffers: shared hit=7 read=2
+               ->  Index Scan using uq_vehiculo_taller_vin on vehiculo v  (cost=0.29..16.64 rows=1 width=79) (actual time=0.024..0.025 rows=1 loops=1)
+                     Index Cond: ((taller_id = $3) AND (vin = 'VF001000000012502'::text))
+                     Filter: ((anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (SubPlan 6)))
+                     Buffers: shared hit=4 read=2
+                     SubPlan 6
+                       ->  Index Scan using uq_titular_id_taller on titular t_1  (cost=0.31..8.33 rows=1 width=0) (actual time=0.003..0.003 rows=1 loops=1)
+                             Index Cond: ((id = v.titular_id) AND (taller_id = $5))
+                             Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                             Buffers: shared hit=3
+                             InitPlan 5 (returns $5)
+                               ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+               ->  Index Scan using pk_modelo_vehiculo on modelo_vehiculo mo  (cost=0.28..8.29 rows=1 width=41) (actual time=0.001..0.001 rows=1 loops=1)
+                     Index Cond: (id = v.modelo_vehiculo_id)
+                     Buffers: shared hit=3
+         ->  Index Scan using pk_marca_vehiculo on marca_vehiculo ma  (cost=0.14..0.18 rows=1 width=16) (actual time=0.001..0.001 rows=1 loops=1)
+               Index Cond: (id = mo.marca_vehiculo_id)
+               Buffers: shared hit=2
+   ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.29..8.31 rows=1 width=36) (actual time=0.002..0.002 rows=1 loops=1)
+         Index Cond: ((id = v.titular_id) AND (taller_id = $8))
+         Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+         Buffers: shared hit=3
+   SubPlan 3
+     ->  Result  (cost=8.46..8.47 rows=1 width=8) (actual time=0.005..0.006 rows=1 loops=1)
+           Buffers: shared hit=4
+           InitPlan 1 (returns $1)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+           InitPlan 2 (returns $2)
+             ->  Limit  (cost=0.42..8.44 rows=1 width=8) (actual time=0.005..0.005 rows=1 loops=1)
+                   Buffers: shared hit=4
+                   ->  Index Only Scan using ix_sesion_diagnostico_vehiculo on sesion_diagnostico s  (cost=0.42..8.44 rows=1 width=8) (actual time=0.004..0.004 rows=1 loops=1)
+                         Index Cond: ((taller_id = $1) AND (vehiculo_id = v.id) AND (iniciada_en IS NOT NULL))
+                         Heap Fetches: 0
+                         Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=30
+ Planning Time: 0.396 ms
+ Execution Time: 0.069 ms
+(47 rows)
+
+
+## M09 q_buscar_vehiculo_modelo (modelo + anio, 20 filas)
+                                                                                         QUERY PLAN                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=33.80..42.29 rows=1 width=132) (actual time=0.069..0.079 rows=3 loops=1)
+   Buffers: shared hit=29 read=3
+   InitPlan 4 (returns $3)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+   InitPlan 9 (returns $8)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  Result  (cost=33.76..42.25 rows=1 width=132) (actual time=0.069..0.078 rows=3 loops=1)
+         Buffers: shared hit=29 read=3
+         ->  Sort  (cost=33.76..33.77 rows=1 width=124) (actual time=0.058..0.060 rows=3 loops=1)
+               Sort Key: v.id DESC
+               Sort Method: quicksort  Memory: 25kB
+               Buffers: shared hit=20 read=2
+               ->  Nested Loop Left Join  (cost=9.01..33.75 rows=1 width=124) (actual time=0.026..0.055 rows=3 loops=1)
+                     Buffers: shared hit=20 read=2
+                     ->  Nested Loop  (cost=8.72..26.60 rows=1 width=104) (actual time=0.025..0.039 rows=3 loops=1)
+                           Buffers: shared hit=16
+                           ->  Hash Join  (cost=8.30..9.82 rows=1 width=41) (actual time=0.014..0.018 rows=1 loops=1)
+                                 Hash Cond: (ma.id = mo.marca_vehiculo_id)
+                                 Buffers: shared hit=4
+                                 ->  Seq Scan on marca_vehiculo ma  (cost=0.00..1.40 rows=40 width=16) (actual time=0.003..0.005 rows=40 loops=1)
+                                       Buffers: shared hit=1
+                                 ->  Hash  (cost=8.29..8.29 rows=1 width=41) (actual time=0.006..0.007 rows=1 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       Buffers: shared hit=3
+                                       ->  Index Scan using uq_modelo_vehiculo_id_publico on modelo_vehiculo mo  (cost=0.28..8.29 rows=1 width=41) (actual time=0.004..0.005 rows=1 loops=1)
+                                             Index Cond: (id_publico = '2d55c752-4f5e-4775-8ed0-4dc0d81f735a'::uuid)
+                                             Buffers: shared hit=3
+                           ->  Index Scan using ix_vehiculo_taller_modelo_anio on vehiculo v  (cost=0.41..16.77 rows=1 width=79) (actual time=0.008..0.018 rows=3 loops=1)
+                                 Index Cond: ((taller_id = $3) AND (modelo_vehiculo_id = mo.id) AND (anio = '2009'::smallint))
+                                 Filter: ((anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (SubPlan 6)))
+                                 Buffers: shared hit=12
+                                 SubPlan 6
+                                   ->  Index Scan using uq_titular_id_taller on titular t_1  (cost=0.31..8.33 rows=1 width=0) (actual time=0.003..0.003 rows=1 loops=2)
+                                         Index Cond: ((id = v.titular_id) AND (taller_id = $5))
+                                         Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                                         Buffers: shared hit=6
+                                         InitPlan 5 (returns $5)
+                                           ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+                     ->  Index Scan using pk_titular on titular t  (cost=0.29..7.13 rows=1 width=36) (actual time=0.005..0.005 rows=1 loops=3)
+                           Index Cond: (id = v.titular_id)
+                           Filter: ((taller_id = $8) AND (estado_tratamiento = 'activo'::tipo_estado_tratamiento))
+                           Buffers: shared hit=4 read=2
+         SubPlan 3
+           ->  Result  (cost=8.46..8.47 rows=1 width=8) (actual time=0.005..0.006 rows=1 loops=3)
+                 Buffers: shared hit=9 read=1
+                 InitPlan 1 (returns $1)
+                   ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                 InitPlan 2 (returns $2)
+                   ->  Limit  (cost=0.42..8.44 rows=1 width=8) (actual time=0.005..0.005 rows=1 loops=3)
+                         Buffers: shared hit=9 read=1
+                         ->  Index Only Scan using ix_sesion_diagnostico_vehiculo on sesion_diagnostico s  (cost=0.42..8.44 rows=1 width=8) (actual time=0.005..0.005 rows=1 loops=3)
+                               Index Cond: ((taller_id = $1) AND (vehiculo_id = v.id) AND (iniciada_en IS NOT NULL))
+                               Heap Fetches: 0
+                               Buffers: shared hit=9 read=1
+ Planning:
+   Buffers: shared hit=30
+ Planning Time: 0.457 ms
+ Execution Time: 0.113 ms
+(58 rows)
+
+
+## M10 q_sesion
+                                                                                         QUERY PLAN                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop Left Join  (cost=1.94..51.02 rows=1 width=235) (actual time=0.057..0.062 rows=1 loops=1)
+   Buffers: shared hit=26 read=1
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 3 (returns $2)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 8 (returns $7)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 9 (returns $8)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (never executed)
+   InitPlan 10 (returns $9)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   ->  Nested Loop Left Join  (cost=1.55..42.60 rows=1 width=227) (actual time=0.049..0.053 rows=1 loops=1)
+         Buffers: shared hit=23 read=1
+         ->  Nested Loop Left Join  (cost=1.13..34.15 rows=1 width=203) (actual time=0.040..0.043 rows=1 loops=1)
+               Join Filter: (d.id = s.dispositivo_id)
+               Rows Removed by Join Filter: 1
+               Buffers: shared hit=18 read=1
+               ->  Nested Loop Left Join  (cost=1.13..32.31 rows=1 width=189) (actual time=0.031..0.035 rows=1 loops=1)
+                     Buffers: shared hit=18
+                     ->  Nested Loop  (cost=0.99..32.13 rows=1 width=189) (actual time=0.029..0.032 rows=1 loops=1)
+                           Join Filter: (u.id = s.usuario_id)
+                           Rows Removed by Join Filter: 2
+                           Buffers: shared hit=16
+                           ->  Nested Loop Left Join  (cost=0.99..25.41 rows=1 width=168) (actual time=0.023..0.026 rows=1 loops=1)
+                                 Buffers: shared hit=15
+                                 ->  Index Scan using uq_sesion_diagnostico_id_publico on sesion_diagnostico s  (cost=0.42..8.44 rows=1 width=104) (actual time=0.012..0.013 rows=1 loops=1)
+                                       Index Cond: (id_publico = '01db4bd3-e62a-4654-a4ec-2fd65bcbeb6a'::uuid)
+                                       Filter: (taller_id = $0)
+                                       Buffers: shared hit=6
+                                 ->  Nested Loop Left Join  (cost=0.56..16.96 rows=1 width=80) (actual time=0.011..0.012 rows=1 loops=1)
+                                       Buffers: shared hit=9
+                                       ->  Index Scan using uq_vehiculo_id_taller on vehiculo v  (cost=0.29..16.64 rows=1 width=71) (actual time=0.007..0.008 rows=1 loops=1)
+                                             Index Cond: ((id = s.vehiculo_id) AND (taller_id = $2))
+                                             Filter: ((anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (SubPlan 5)))
+                                             Buffers: shared hit=6
+                                             SubPlan 5
+                                               ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.31..8.33 rows=1 width=0) (actual time=0.003..0.003 rows=1 loops=1)
+                                                     Index Cond: ((id = v.titular_id) AND (taller_id = $4))
+                                                     Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                                                     Buffers: shared hit=3
+                                                     InitPlan 4 (returns $4)
+                                                       ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                                       ->  Index Scan using pk_modelo_vehiculo on modelo_vehiculo mo  (cost=0.28..0.32 rows=1 width=25) (actual time=0.002..0.002 rows=1 loops=1)
+                                             Index Cond: (id = v.modelo_vehiculo_id)
+                                             Buffers: shared hit=3
+                           ->  Seq Scan on usuario u  (cost=0.00..6.60 rows=9 width=37) (actual time=0.005..0.005 rows=3 loops=1)
+                                 Filter: (taller_id = $1)
+                                 Rows Removed by Filter: 8
+                                 Buffers: shared hit=1
+                     ->  Index Scan using pk_marca_vehiculo on marca_vehiculo ma  (cost=0.14..0.18 rows=1 width=16) (actual time=0.002..0.002 rows=1 loops=1)
+                           Index Cond: (id = mo.marca_vehiculo_id)
+                           Buffers: shared hit=2
+               ->  Seq Scan on dispositivo_diagnostico d  (cost=0.00..1.80 rows=3 width=30) (actual time=0.007..0.008 rows=2 loops=1)
+                     Filter: (taller_id = $7)
+                     Rows Removed by Filter: 23
+                     Buffers: shared read=1
+         ->  Index Scan using uq_cotizacion_sesion_vigente on cotizacion cv  (cost=0.42..8.44 rows=1 width=32) (actual time=0.009..0.009 rows=0 loops=1)
+               Index Cond: (sesion_id = s.id)
+               Filter: (taller_id = $8)
+               Buffers: shared hit=5
+   ->  Index Scan using uq_cotizacion_sesion_abierta on cotizacion cb  (cost=0.28..8.29 rows=1 width=24) (actual time=0.007..0.007 rows=1 loops=1)
+         Index Cond: (sesion_id = s.id)
+         Filter: (taller_id = $9)
+         Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=84 read=1
+ Planning Time: 1.318 ms
+ Execution Time: 0.116 ms
+(71 rows)
+
+
+## M11 q_sesion_fallas
+                                                                               QUERY PLAN                                                                                
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=19.01..19.02 rows=1 width=94) (actual time=0.021..0.022 rows=1 loops=1)
+   Sort Key: f.severidad DESC, d.codigo
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=11
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  Nested Loop  (cost=1.12..18.96 rows=1 width=94) (actual time=0.016..0.018 rows=1 loops=1)
+         Buffers: shared hit=11
+         ->  Nested Loop  (cost=0.85..18.67 rows=1 width=72) (actual time=0.013..0.014 rows=1 loops=1)
+               Buffers: shared hit=8
+               ->  Index Scan using uq_sesion_diagnostico_id_publico on sesion_diagnostico s  (cost=0.42..8.44 rows=1 width=8) (actual time=0.007..0.008 rows=1 loops=1)
+                     Index Cond: (id_publico = '01db4bd3-e62a-4654-a4ec-2fd65bcbeb6a'::uuid)
+                     Filter: (taller_id = $0)
+                     Buffers: shared hit=4
+               ->  Index Scan using pk_falla_sesion on falla_sesion f  (cost=0.42..10.22 rows=1 width=80) (actual time=0.005..0.005 rows=1 loops=1)
+                     Index Cond: (sesion_id = s.id)
+                     Filter: (taller_id = $1)
+                     Buffers: shared hit=4
+         ->  Index Scan using pk_dtc_catalogo on dtc_catalogo d  (cost=0.28..0.29 rows=1 width=38) (actual time=0.002..0.002 rows=1 loops=1)
+               Index Cond: (id = f.dtc_id)
+               Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=35
+ Planning Time: 0.310 ms
+ Execution Time: 0.038 ms
+(27 rows)
+
+
+## M12 q_matriz
+                                                                                                                                                                   QUERY PLAN                                                                                                                                                                   
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=764.25..764.32 rows=30 width=163) (actual time=5.008..5.014 rows=14 loops=1)
+   Sort Key: k.severidad_maxima DESC, c.nombre, c.id, (CASE r.perfil WHEN 'genuino'::tipo_perfil_repuesto THEN 1 WHEN 'oem'::tipo_perfil_repuesto THEN 2 WHEN 'generico'::tipo_perfil_repuesto THEN 3 ELSE NULL::integer END), ((round(((r.precio_referencia)::numeric * ('1'::numeric + (tc.margen_pct / '100'::numeric))), 0))::bigint), r.id
+   Sort Method: quicksort  Memory: 27kB
+   Buffers: shared hit=8270 read=306
+   CTE sesion
+     ->  Result  (cost=0.75..25.14 rows=1 width=26) (actual time=0.019..0.022 rows=1 loops=1)
+           One-Time Filter: ($1 = $0)
+           Buffers: shared hit=10
+           InitPlan 1 (returns $0)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+           InitPlan 2 (returns $1)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+           ->  Nested Loop  (cost=0.75..25.14 rows=1 width=26) (actual time=0.015..0.017 rows=1 loops=1)
+                 Buffers: shared hit=10
+                 ->  Index Scan using uq_sesion_diagnostico_id_publico on sesion_diagnostico s  (cost=0.42..8.44 rows=1 width=24) (actual time=0.007..0.007 rows=1 loops=1)
+                       Index Cond: (id_publico = '01db4bd3-e62a-4654-a4ec-2fd65bcbeb6a'::uuid)
+                       Filter: (taller_id = $0)
+                       Buffers: shared hit=4
+                 ->  Index Scan using uq_vehiculo_id_taller on vehiculo v  (cost=0.29..16.64 rows=1 width=26) (actual time=0.008..0.008 rows=1 loops=1)
+                       Index Cond: ((id = s.vehiculo_id) AND (taller_id = $0))
+                       Filter: ((anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (SubPlan 4)))
+                       Buffers: shared hit=6
+                       SubPlan 4
+                         ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.31..8.33 rows=1 width=0) (actual time=0.003..0.003 rows=1 loops=1)
+                               Index Cond: ((id = v.titular_id) AND (taller_id = $3))
+                               Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                               Buffers: shared hit=3
+                               InitPlan 3 (returns $3)
+                                 ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 8 (returns $8)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  Nested Loop Semi Join  (cost=11.80..738.36 rows=30 width=163) (actual time=0.232..4.989 rows=14 loops=1)
+         Join Filter: ((x.anio >= cr.anio_desde) AND (x.anio <= cr.anio_hasta) AND (x.modelo_vehiculo_id = cr.modelo_vehiculo_id))
+         Rows Removed by Join Filter: 7332
+         Buffers: shared hit=8270 read=306
+         ->  Nested Loop  (cost=11.38..53.54 rows=271 width=174) (actual time=0.072..0.372 rows=300 loops=1)
+               Buffers: shared hit=324 read=6
+               ->  Nested Loop  (cost=0.00..1.31 rows=1 width=19) (actual time=0.026..0.028 rows=1 loops=1)
+                     Buffers: shared hit=11
+                     ->  CTE Scan on sesion x  (cost=0.00..0.02 rows=1 width=18) (actual time=0.021..0.021 rows=1 loops=1)
+                           Filter: (taller_id = $8)
+                           Buffers: shared hit=10
+                     ->  Seq Scan on taller_configuracion tc  (cost=0.00..1.27 rows=1 width=17) (actual time=0.004..0.006 rows=1 loops=1)
+                           Filter: (taller_id = $8)
+                           Rows Removed by Filter: 21
+                           Buffers: shared hit=1
+               ->  Nested Loop  (cost=11.38..49.52 rows=271 width=155) (actual time=0.046..0.311 rows=300 loops=1)
+                     Buffers: shared hit=313 read=6
+                     ->  Hash Join  (cost=11.09..14.36 rows=3 width=83) (actual time=0.035..0.053 rows=3 loops=1)
+                           Hash Cond: (c.id = k.componente_id)
+                           Buffers: shared hit=10 read=2
+                           ->  Seq Scan on componente_repuesto c  (cost=0.00..3.00 rows=100 width=39) (actual time=0.002..0.009 rows=100 loops=1)
+                                 Buffers: shared hit=1 read=1
+                           ->  Hash  (cost=11.05..11.05 rows=3 width=44) (actual time=0.028..0.030 rows=3 loops=1)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                 Buffers: shared hit=9 read=1
+                                 ->  Subquery Scan on k  (cost=10.96..11.05 rows=3 width=44) (actual time=0.025..0.028 rows=3 loops=1)
+                                       Buffers: shared hit=9 read=1
+                                       ->  GroupAggregate  (cost=10.96..11.02 rows=3 width=44) (actual time=0.025..0.028 rows=3 loops=1)
+                                             Group Key: dc.componente_id
+                                             Buffers: shared hit=9 read=1
+                                             InitPlan 9 (returns $9)
+                                               ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                                             ->  Sort  (cost=10.94..10.94 rows=3 width=18) (actual time=0.020..0.022 rows=3 loops=1)
+                                                   Sort Key: dc.componente_id, d.codigo
+                                                   Sort Method: quicksort  Memory: 25kB
+                                                   Buffers: shared hit=9 read=1
+                                                   ->  Nested Loop  (cost=0.98..10.91 rows=3 width=18) (actual time=0.016..0.019 rows=3 loops=1)
+                                                         Join Filter: (d.id = dc.dtc_id)
+                                                         Buffers: shared hit=9 read=1
+                                                         ->  Nested Loop  (cost=0.70..10.54 rows=1 width=26) (actual time=0.008..0.010 rows=1 loops=1)
+                                                               Buffers: shared hit=7
+                                                               ->  Nested Loop  (cost=0.42..10.25 rows=1 width=12) (actual time=0.005..0.006 rows=1 loops=1)
+                                                                     Buffers: shared hit=4
+                                                                     ->  CTE Scan on sesion x_1  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+                                                                     ->  Index Scan using pk_falla_sesion on falla_sesion f  (cost=0.42..10.22 rows=1 width=20) (actual time=0.004..0.004 rows=1 loops=1)
+                                                                           Index Cond: (sesion_id = x_1.id)
+                                                                           Filter: (taller_id = $9)
+                                                                           Buffers: shared hit=4
+                                                               ->  Index Scan using pk_dtc_catalogo on dtc_catalogo d  (cost=0.28..0.29 rows=1 width=14) (actual time=0.003..0.003 rows=1 loops=1)
+                                                                     Index Cond: (id = f.dtc_id)
+                                                                     Buffers: shared hit=3
+                                                         ->  Index Only Scan using pk_dtc_componente on dtc_componente dc  (cost=0.28..0.34 rows=3 width=16) (actual time=0.007..0.008 rows=3 loops=1)
+                                                               Index Cond: (dtc_id = f.dtc_id)
+                                                               Heap Fetches: 0
+                                                               Buffers: shared hit=2 read=1
+                     ->  Index Scan using uq_repuesto_componente_marca_codigo on repuesto r  (cost=0.29..10.82 rows=90 width=88) (actual time=0.007..0.076 rows=100 loops=3)
+                           Index Cond: (componente_id = c.id)
+                           Filter: disponible
+                           Buffers: shared hit=303 read=4
+         ->  Index Scan using pk_compatibilidad_repuesto on compatibilidad_repuesto cr  (cost=0.42..2.09 rows=25 width=20) (actual time=0.004..0.013 rows=24 loops=300)
+               Index Cond: (repuesto_id = r.id)
+               Buffers: shared hit=7946 read=300
+ Planning:
+   Buffers: shared hit=66 read=3
+ Planning Time: 1.001 ms
+ Execution Time: 5.141 ms
+(97 rows)
+
+
+## M13 q_repuestos_por_dtc (con modelo y anio)
+                                                                                                                                                      QUERY PLAN                                                                                                                                                       
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort  (cost=52.82..5158.57 rows=149 width=127) (actual time=1.441..1.443 rows=15 loops=1)
+   Sort Key: c.nombre, c.id, (CASE r.perfil WHEN 'genuino'::tipo_perfil_repuesto THEN 1 WHEN 'oem'::tipo_perfil_repuesto THEN 2 WHEN 'generico'::tipo_perfil_repuesto THEN 3 ELSE NULL::integer END), ((round(((r.precio_referencia)::numeric * ('1'::numeric + (tc.margen_pct / '100'::numeric))), 0))::bigint), r.id
+   Presorted Key: c.nombre
+   Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+   Buffers: shared hit=3031 read=2
+   InitPlan 3 (returns $4)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.003..0.003 rows=1 loops=1)
+   ->  Nested Loop  (cost=1.27..5153.56 rows=149 width=127) (actual time=0.130..1.425 rows=15 loops=1)
+         Buffers: shared hit=3031 read=2
+         ->  Nested Loop  (cost=0.98..44.12 rows=298 width=56) (actual time=0.047..0.245 rows=300 loops=1)
+               Buffers: shared hit=316 read=2
+               ->  Nested Loop  (cost=0.70..34.89 rows=3 width=56) (actual time=0.042..0.080 rows=3 loops=1)
+                     Join Filter: (c.id = dc.componente_id)
+                     Rows Removed by Join Filter: 297
+                     Buffers: shared hit=9 read=2
+                     ->  Index Scan using uq_componente_repuesto_nombre on componente_repuesto c  (cost=0.14..16.45 rows=100 width=39) (actual time=0.010..0.018 rows=100 loops=1)
+                           Buffers: shared hit=3 read=1
+                     ->  Materialize  (cost=0.56..13.96 rows=3 width=17) (actual time=0.000..0.000 rows=3 loops=100)
+                           Buffers: shared hit=6 read=1
+                           ->  Nested Loop  (cost=0.56..13.94 rows=3 width=17) (actual time=0.021..0.024 rows=3 loops=1)
+                                 Buffers: shared hit=6 read=1
+                                 ->  Nested Loop  (cost=0.28..9.58 rows=1 width=17) (actual time=0.017..0.019 rows=1 loops=1)
+                                       Buffers: shared hit=3 read=1
+                                       ->  Seq Scan on taller_configuracion tc  (cost=0.00..1.27 rows=1 width=9) (actual time=0.006..0.007 rows=1 loops=1)
+                                             Filter: (taller_id = $4)
+                                             Rows Removed by Filter: 21
+                                             Buffers: shared hit=1
+                                       ->  Index Scan using uq_dtc_catalogo_codigo on dtc_catalogo d  (cost=0.28..8.29 rows=1 width=8) (actual time=0.010..0.010 rows=1 loops=1)
+                                             Index Cond: (codigo = 'P1626'::text)
+                                             Buffers: shared hit=2 read=1
+                                 ->  Index Only Scan using pk_dtc_componente on dtc_componente dc  (cost=0.28..4.33 rows=3 width=16) (actual time=0.004..0.005 rows=3 loops=1)
+                                       Index Cond: (dtc_id = d.id)
+                                       Heap Fetches: 0
+                                       Buffers: shared hit=3
+               ->  Index Scan using uq_repuesto_componente_marca_codigo on repuesto r_1  (cost=0.29..2.18 rows=90 width=16) (actual time=0.004..0.046 rows=100 loops=3)
+                     Index Cond: (componente_id = dc.componente_id)
+                     Buffers: shared hit=307
+         ->  Index Scan using pk_repuesto on repuesto r  (cost=0.29..17.13 rows=1 width=80) (actual time=0.004..0.004 rows=0 loops=300)
+               Index Cond: (id = r_1.id)
+               Filter: (disponible AND (SubPlan 1))
+               Rows Removed by Filter: 1
+               Buffers: shared hit=2715
+               SubPlan 1
+                 ->  Nested Loop  (cost=0.70..16.75 rows=1 width=0) (actual time=0.002..0.002 rows=0 loops=300)
+                       Buffers: shared hit=1815
+                       ->  Index Scan using uq_modelo_vehiculo_id_publico on modelo_vehiculo mo  (cost=0.28..8.29 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=300)
+                             Index Cond: (id_publico = '2d55c752-4f5e-4775-8ed0-4dc0d81f735a'::uuid)
+                             Buffers: shared hit=900
+                       ->  Index Scan using pk_compatibilidad_repuesto on compatibilidad_repuesto k  (cost=0.42..8.44 rows=1 width=8) (actual time=0.002..0.002 rows=0 loops=300)
+                             Index Cond: ((repuesto_id = r.id) AND (modelo_vehiculo_id = mo.id) AND (anio_desde <= '2009'::smallint))
+                             Filter: ('2009'::smallint <= anio_hasta)
+                             Buffers: shared hit=915
+ Planning:
+   Buffers: shared hit=66 read=4
+ Planning Time: 1.382 ms
+ Execution Time: 1.484 ms
+(56 rows)
+
+
+## M14 q_cotizaciones_sesion
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=30.05..30.06 rows=1 width=69) (actual time=0.047..0.048 rows=2 loops=1)
+   Sort Key: c.numero_revision DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=13 read=3
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   ->  Result  (cost=13.93..30.00 rows=1 width=69) (actual time=0.036..0.045 rows=2 loops=1)
+         One-Time Filter: ($1 = $0)
+         Buffers: shared hit=13 read=3
+         ->  Nested Loop  (cost=13.93..30.00 rows=1 width=69) (actual time=0.032..0.041 rows=2 loops=1)
+               Buffers: shared hit=13 read=3
+               ->  Nested Loop  (cost=0.84..16.89 rows=1 width=61) (actual time=0.018..0.019 rows=2 loops=1)
+                     Buffers: shared hit=7 read=1
+                     ->  Index Scan using uq_sesion_diagnostico_id_publico on sesion_diagnostico s  (cost=0.42..8.44 rows=1 width=16) (actual time=0.014..0.014 rows=1 loops=1)
+                           Index Cond: (id_publico = 'ab30cef7-347d-4780-be68-90a8fc605bef'::uuid)
+                           Filter: (taller_id = $0)
+                           Buffers: shared hit=3 read=1
+                     ->  Index Scan using uq_cotizacion_sesion_revision on cotizacion c  (cost=0.42..8.44 rows=1 width=77) (actual time=0.003..0.004 rows=2 loops=1)
+                           Index Cond: (sesion_id = s.id)
+                           Filter: (taller_id = $0)
+                           Buffers: shared hit=4
+               ->  Aggregate  (cost=13.08..13.09 rows=1 width=16) (actual time=0.010..0.010 rows=1 loops=2)
+                     Buffers: shared hit=6 read=2
+                     InitPlan 3 (returns $3)
+                       ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+                     ->  Index Scan using pk_cotizacion_detalle on cotizacion_detalle x  (cost=0.42..13.05 rows=1 width=12) (actual time=0.007..0.007 rows=2 loops=2)
+                           Index Cond: (cotizacion_id = c.id)
+                           Filter: (taller_id = $3)
+                           Buffers: shared hit=6 read=2
+ Planning:
+   Buffers: shared hit=19
+ Planning Time: 0.302 ms
+ Execution Time: 0.079 ms
+(35 rows)
+
+
+## M15 q_cotizacion_detalle
+                                                                                                           QUERY PLAN                                                                                                           
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=22.24..22.25 rows=2 width=83) (actual time=0.028..0.028 rows=2 loops=1)
+   Sort Key: (CASE d.perfil_snapshot WHEN 'genuino'::tipo_perfil_repuesto THEN 1 WHEN 'oem'::tipo_perfil_repuesto THEN 2 WHEN 'generico'::tipo_perfil_repuesto THEN 3 ELSE NULL::integer END), d.nombre_snapshot, d.repuesto_id
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=12 read=2
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   ->  Result  (cost=1.13..22.19 rows=2 width=83) (actual time=0.020..0.024 rows=2 loops=1)
+         One-Time Filter: ($1 = $0)
+         Buffers: shared hit=12 read=2
+         ->  Nested Loop  (cost=1.13..22.17 rows=2 width=71) (actual time=0.016..0.020 rows=2 loops=1)
+               Buffers: shared hit=12 read=2
+               ->  Nested Loop  (cost=0.85..21.50 rows=2 width=55) (actual time=0.014..0.016 rows=2 loops=1)
+                     Buffers: shared hit=6 read=2
+                     ->  Index Scan using uq_cotizacion_id_publico on cotizacion c  (cost=0.42..8.44 rows=1 width=20) (actual time=0.011..0.011 rows=1 loops=1)
+                           Index Cond: (id_publico = '6dc358e2-30b4-486b-a1e9-31cbaeaec988'::uuid)
+                           Filter: (taller_id = $0)
+                           Buffers: shared hit=2 read=2
+                     ->  Index Scan using pk_cotizacion_detalle on cotizacion_detalle d  (cost=0.42..13.05 rows=1 width=67) (actual time=0.002..0.003 rows=2 loops=1)
+                           Index Cond: (cotizacion_id = c.id)
+                           Filter: (taller_id = $0)
+                           Buffers: shared hit=4
+               ->  Index Scan using pk_repuesto on repuesto r  (cost=0.29..0.32 rows=1 width=24) (actual time=0.002..0.002 rows=1 loops=2)
+                     Index Cond: (id = d.repuesto_id)
+                     Buffers: shared hit=6
+ Planning:
+   Buffers: shared hit=22 read=4
+ Planning Time: 0.304 ms
+ Execution Time: 0.049 ms
+(30 rows)
+
+
+## M16 q_historial_vehiculo
+                                                                                           QUERY PLAN                                                                                           
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=29.33..39.60 rows=1 width=73) (actual time=0.069..0.078 rows=5 loops=1)
+   Buffers: shared hit=58 read=2
+   InitPlan 3 (returns $2)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   InitPlan 8 (returns $7)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 9 (returns $8)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 10 (returns $9)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  Result  (cost=29.25..39.52 rows=1 width=73) (actual time=0.068..0.077 rows=5 loops=1)
+         Buffers: shared hit=58 read=2
+         ->  Sort  (cost=29.25..29.26 rows=1 width=65) (actual time=0.059..0.061 rows=5 loops=1)
+               Sort Key: s.iniciada_en DESC, s.id DESC
+               Sort Method: quicksort  Memory: 25kB
+               Buffers: shared hit=38 read=2
+               ->  Result  (cost=1.28..29.24 rows=1 width=65) (actual time=0.040..0.056 rows=5 loops=1)
+                     One-Time Filter: ($7 = $2)
+                     Buffers: shared hit=38 read=2
+                     ->  Nested Loop Left Join  (cost=1.28..29.24 rows=1 width=65) (actual time=0.036..0.052 rows=5 loops=1)
+                           Buffers: shared hit=38 read=2
+                           ->  Nested Loop  (cost=0.86..25.93 rows=1 width=53) (actual time=0.024..0.030 rows=5 loops=1)
+                                 Buffers: shared hit=20
+                                 ->  Nested Loop  (cost=0.71..25.09 rows=5 width=48) (actual time=0.021..0.024 rows=5 loops=1)
+                                       Buffers: shared hit=10
+                                       ->  Index Scan using uq_vehiculo_id_publico on vehiculo v  (cost=0.29..16.64 rows=1 width=16) (actual time=0.015..0.015 rows=1 loops=1)
+                                             Index Cond: (id_publico = '41931e81-94f7-405b-be64-3e1db8228b6c'::uuid)
+                                             Filter: ((anonimizado_en IS NULL) AND (taller_id = $2) AND ((titular_id IS NULL) OR (SubPlan 5)))
+                                             Buffers: shared hit=6
+                                             SubPlan 5
+                                               ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.31..8.33 rows=1 width=0) (actual time=0.005..0.005 rows=1 loops=1)
+                                                     Index Cond: ((id = v.titular_id) AND (taller_id = $4))
+                                                     Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                                                     Buffers: shared hit=3
+                                                     InitPlan 4 (returns $4)
+                                                       ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                                       ->  Index Scan using ix_sesion_diagnostico_vehiculo on sesion_diagnostico s  (cost=0.42..8.44 rows=1 width=64) (actual time=0.006..0.007 rows=5 loops=1)
+                                             Index Cond: ((taller_id = $2) AND (vehiculo_id = v.id))
+                                             Buffers: shared hit=4
+                                 ->  Index Scan using uq_usuario_id_taller on usuario u  (cost=0.14..0.17 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=5)
+                                       Index Cond: ((id = s.usuario_id) AND (taller_id = $8))
+                                       Buffers: shared hit=10
+                           ->  Index Scan using uq_cotizacion_sesion_vigente on cotizacion c  (cost=0.42..3.30 rows=1 width=20) (actual time=0.004..0.004 rows=1 loops=5)
+                                 Index Cond: (sesion_id = s.id)
+                                 Filter: (taller_id = $9)
+                                 Buffers: shared hit=18 read=2
+         SubPlan 2
+           ->  Aggregate  (cost=10.24..10.25 rows=1 width=8) (actual time=0.003..0.003 rows=1 loops=5)
+                 Buffers: shared hit=20
+                 InitPlan 1 (returns $1)
+                   ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                 ->  Index Scan using pk_falla_sesion on falla_sesion x  (cost=0.42..10.22 rows=1 width=0) (actual time=0.002..0.002 rows=2 loops=5)
+                       Index Cond: (sesion_id = s.id)
+                       Filter: (taller_id = $1)
+                       Buffers: shared hit=20
+ Planning:
+   Buffers: shared hit=49
+ Planning Time: 0.605 ms
+ Execution Time: 0.124 ms
+(59 rows)
+
+
+## M17 q_dashboard_resumen (ultimos 30 dias)
+                                                                                             QUERY PLAN                                                                                             
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Subquery Scan on p  (cost=35439.32..35439.34 rows=1 width=80) (actual time=14.495..14.503 rows=1 loops=1)
+   Buffers: shared hit=12987 read=1415
+   InitPlan 2 (returns $1)
+     ->  Aggregate  (cost=128.87..128.88 rows=1 width=8) (actual time=0.132..0.133 rows=1 loops=1)
+           Buffers: shared hit=8 read=4
+           InitPlan 1 (returns $0)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.003..0.004 rows=1 loops=1)
+           ->  Index Only Scan using ix_sesion_diagnostico_pendiente on sesion_diagnostico s_1  (cost=0.28..119.86 rows=3595 width=0) (actual time=0.013..0.092 rows=1095 loops=1)
+                 Index Cond: (taller_id = $0)
+                 Heap Fetches: 1
+                 Buffers: shared hit=8 read=4
+   InitPlan 4 (returns $3)
+     ->  Aggregate  (cost=105.70..105.71 rows=1 width=8) (actual time=0.094..0.095 rows=1 loops=1)
+           Buffers: shared hit=9
+           InitPlan 3 (returns $2)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+           ->  Index Only Scan using ix_sesion_diagnostico_cotizado on sesion_diagnostico s_2  (cost=0.28..96.69 rows=3595 width=0) (actual time=0.009..0.065 rows=822 loops=1)
+                 Index Cond: (taller_id = $2)
+                 Heap Fetches: 2
+                 Buffers: shared hit=9
+   InitPlan 8 (returns $7)
+     ->  Aggregate  (cost=30528.39..30528.40 rows=1 width=8) (actual time=2.471..2.472 rows=1 loops=1)
+           Buffers: shared hit=2885 read=411
+           InitPlan 7 (returns $6)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+           ->  Index Only Scan using ix_sesion_diagnostico_cotizado on sesion_diagnostico s_3  (cost=0.28..96.69 rows=3595 width=8) (actual time=0.006..0.082 rows=822 loops=1)
+                 Index Cond: (taller_id = $6)
+                 Heap Fetches: 1
+                 Buffers: shared hit=8
+           SubPlan 6
+             ->  Index Scan using uq_cotizacion_sesion_vigente on cotizacion c  (cost=0.44..8.46 rows=1 width=8) (actual time=0.003..0.003 rows=1 loops=822)
+                   Index Cond: (sesion_id = s_3.id)
+                   Filter: (taller_id = $5)
+                   Buffers: shared hit=2877 read=411
+                   InitPlan 5 (returns $5)
+                     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   InitPlan 11 (returns $10)
+     ->  Aggregate  (cost=423.56..423.57 rows=1 width=8) (actual time=1.933..1.934 rows=1 loops=1)
+           Buffers: shared hit=72
+           InitPlan 9 (returns $8)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+           InitPlan 10 (returns $9)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+           ->  Result  (cost=165.09..419.23 rows=1716 width=0) (actual time=0.203..1.928 rows=72 loops=1)
+                 One-Time Filter: ($9 = $8)
+                 Buffers: shared hit=72
+                 ->  Hash Join  (cost=165.09..419.23 rows=1716 width=0) (actual time=0.199..1.920 rows=72 loops=1)
+                       Hash Cond: (f.sesion_id = a.id)
+                       Buffers: shared hit=72
+                       ->  Index Only Scan using ix_falla_sesion_critica on falla_sesion f  (cost=0.29..236.41 rows=6864 width=16) (actual time=0.010..0.988 rows=15000 loops=1)
+                             Index Cond: (taller_id = $8)
+                             Heap Fetches: 0
+                             Buffers: shared hit=60
+                       ->  Hash  (cost=119.86..119.86 rows=3595 width=16) (actual time=0.174..0.175 rows=1095 loops=1)
+                             Buckets: 4096  Batches: 1  Memory Usage: 84kB
+                             Buffers: shared hit=12
+                             ->  Index Only Scan using ix_sesion_diagnostico_pendiente on sesion_diagnostico a  (cost=0.28..119.86 rows=3595 width=16) (actual time=0.006..0.090 rows=1095 loops=1)
+                                   Index Cond: (taller_id = $8)
+                                   Heap Fetches: 1
+                                   Buffers: shared hit=12
+   InitPlan 14 (returns $13)
+     ->  Aggregate  (cost=400.39..400.40 rows=1 width=8) (actual time=1.822..1.823 rows=1 loops=1)
+           Buffers: shared hit=68
+           InitPlan 12 (returns $11)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+           InitPlan 13 (returns $12)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+           ->  Result  (cost=141.92..396.06 rows=1716 width=0) (actual time=0.162..1.817 rows=81 loops=1)
+                 One-Time Filter: ($12 = $11)
+                 Buffers: shared hit=68
+                 ->  Hash Join  (cost=141.92..396.06 rows=1716 width=0) (actual time=0.158..1.808 rows=81 loops=1)
+                       Hash Cond: (f_1.sesion_id = a_1.id)
+                       Buffers: shared hit=68
+                       ->  Index Only Scan using ix_falla_sesion_critica on falla_sesion f_1  (cost=0.29..236.41 rows=6864 width=16) (actual time=0.008..0.937 rows=15000 loops=1)
+                             Index Cond: (taller_id = $11)
+                             Heap Fetches: 0
+                             Buffers: shared hit=60
+                       ->  Hash  (cost=96.69..96.69 rows=3595 width=16) (actual time=0.133..0.133 rows=822 loops=1)
+                             Buckets: 4096  Batches: 1  Memory Usage: 71kB
+                             Buffers: shared hit=8
+                             ->  Index Only Scan using ix_sesion_diagnostico_cotizado on sesion_diagnostico a_1  (cost=0.28..96.69 rows=3595 width=16) (actual time=0.007..0.067 rows=822 loops=1)
+                                   Index Cond: (taller_id = $11)
+                                   Heap Fetches: 1
+                                   Buffers: shared hit=8
+   InitPlan 16 (returns $15)
+     ->  Seq Scan on taller_configuracion tc  (cost=0.02..1.29 rows=1 width=4) (actual time=0.008..0.010 rows=1 loops=1)
+           Filter: (taller_id = $14)
+           Rows Removed by Filter: 21
+           Buffers: shared hit=1
+           InitPlan 15 (returns $14)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   ->  Aggregate  (cost=3851.07..3851.08 rows=1 width=32) (actual time=8.028..8.029 rows=1 loops=1)
+         Buffers: shared hit=9944 read=1000
+         InitPlan 19 (returns $18)
+           ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+         ->  Index Scan using ix_sesion_diagnostico_historial on sesion_diagnostico s  (cost=0.42..662.57 rows=376 width=12) (actual time=0.012..2.098 rows=4064 loops=1)
+               Index Cond: ((taller_id = $18) AND (iniciada_en >= '2026-09-04 07:05:56.712029+00'::timestamp with time zone))
+               Buffers: shared hit=4088
+         SubPlan 18
+           ->  Index Scan using uq_cotizacion_sesion_vigente on cotizacion c_1  (cost=0.44..8.46 rows=1 width=8) (actual time=0.003..0.003 rows=1 loops=1714)
+                 Index Cond: (sesion_id = s.id)
+                 Filter: (taller_id = $17)
+                 Buffers: shared hit=5856 read=1000
+                 InitPlan 17 (returns $17)
+                   ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+ Planning:
+   Buffers: shared hit=40
+ Planning Time: 0.752 ms
+ Execution Time: 14.575 ms
+(109 rows)
+
+
+## M17a ANTES: dashboard en un solo recorrido de las sesiones del taller (Fase 3)
+                                                                                      QUERY PLAN                                                                                       
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=25631.07..25631.09 rows=1 width=64) (actual time=183.971..183.978 rows=1 loops=1)
+   Buffers: shared hit=8711 read=3448 written=1, temp read=1533 written=1533
+   InitPlan 3 (returns $2)
+     ->  Aggregate  (cost=6324.23..6324.24 rows=1 width=8) (actual time=21.038..21.041 rows=1 loops=1)
+           Buffers: shared hit=3451
+           InitPlan 1 (returns $0)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+           InitPlan 2 (returns $1)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.005..0.006 rows=1 loops=1)
+           ->  Result  (cost=716.30..6315.61 rows=3432 width=0) (actual time=7.103..21.026 rows=153 loops=1)
+                 One-Time Filter: ($1 = $0)
+                 Buffers: shared hit=3451
+                 ->  Hash Join  (cost=716.30..6315.61 rows=3432 width=0) (actual time=7.094..21.004 rows=153 loops=1)
+                       Hash Cond: (a.id = f.sesion_id)
+                       Buffers: shared hit=3451
+                       ->  Bitmap Heap Scan on sesion_diagnostico a  (cost=394.09..5955.82 rows=7191 width=16) (actual time=3.916..17.487 rows=1917 loops=1)
+                             Recheck Cond: (taller_id = $0)
+                             Filter: (estado = ANY ('{pendiente,cotizado}'::tipo_estado_atencion[]))
+                             Rows Removed by Filter: 148083
+                             Heap Blocks: exact=2657
+                             Buffers: shared hit=3391
+                             ->  Bitmap Index Scan on ix_sesion_diagnostico_vehiculo  (cost=0.00..392.29 rows=14382 width=0) (actual time=3.667..3.667 rows=150001 loops=1)
+                                   Index Cond: (taller_id = $0)
+                                   Buffers: shared hit=734
+                       ->  Hash  (cost=236.41..236.41 rows=6864 width=16) (actual time=3.079..3.080 rows=15000 loops=1)
+                             Buckets: 16384 (originally 8192)  Batches: 1 (originally 1)  Memory Usage: 832kB
+                             Buffers: shared hit=60
+                             ->  Index Only Scan using ix_falla_sesion_critica on falla_sesion f  (cost=0.29..236.41 rows=6864 width=16) (actual time=0.035..1.297 rows=15000 loops=1)
+                                   Index Cond: (taller_id = $0)
+                                   Heap Fetches: 0
+                                   Buffers: shared hit=60
+   InitPlan 4 (returns $3)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.003 rows=1 loops=1)
+   InitPlan 5 (returns $4)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.006..0.006 rows=1 loops=1)
+   ->  Hash Right Join  (cost=6818.09..18695.55 rows=14382 width=36) (actual time=56.600..148.603 rows=150000 loops=1)
+         Hash Cond: (c.sesion_id = s.id)
+         Buffers: shared hit=5260 read=3448 written=1, temp read=1533 written=1533
+         ->  Bitmap Heap Scan on cotizacion c  (cost=716.66..12558.87 rows=13429 width=16) (actual time=9.965..32.398 rows=139794 loops=1)
+               Recheck Cond: (taller_id = $4)
+               Filter: vigente
+               Rows Removed by Filter: 28352
+               Heap Blocks: exact=3776
+               Buffers: shared hit=1869 read=3448 written=1
+               ->  Bitmap Index Scan on uq_cotizacion_taller_clave_idempotencia  (cost=0.00..713.30 rows=16117 width=0) (actual time=9.619..9.619 rows=168148 loops=1)
+                     Index Cond: (taller_id = $4)
+                     Buffers: shared hit=3 read=1538
+         ->  Hash  (cost=5921.66..5921.66 rows=14382 width=36) (actual time=46.622..46.623 rows=150000 loops=1)
+               Buckets: 131072 (originally 16384)  Batches: 2 (originally 1)  Memory Usage: 7169kB
+               Buffers: shared hit=3391, temp written=474
+               ->  Bitmap Heap Scan on sesion_diagnostico s  (cost=395.88..5921.66 rows=14382 width=36) (actual time=3.846..22.901 rows=150000 loops=1)
+                     Recheck Cond: (taller_id = $3)
+                     Heap Blocks: exact=2657
+                     Buffers: shared hit=3391
+                     ->  Bitmap Index Scan on ix_sesion_diagnostico_vehiculo  (cost=0.00..392.29 rows=14382 width=0) (actual time=3.619..3.619 rows=150001 loops=1)
+                           Index Cond: (taller_id = $3)
+                           Buffers: shared hit=734
+ Planning:
+   Buffers: shared hit=39
+ Planning Time: 0.549 ms
+ Execution Time: 184.059 ms
+(61 rows)
+
+
+## M18 q_dashboard_dtc_frecuentes (ultimos 90 dias, 10 filas)
+                                                                                                         QUERY PLAN                                                                                                          
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=9523.00..9523.02 rows=10 width=50) (actual time=33.747..36.674 rows=10 loops=1)
+   Buffers: shared hit=52338 read=770
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.004..0.004 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   ->  Sort  (cost=9522.96..9525.46 rows=1000 width=50) (actual time=33.745..36.671 rows=10 loops=1)
+         Sort Key: (count(*)) DESC, d.codigo
+         Sort Method: top-N heapsort  Memory: 27kB
+         Buffers: shared hit=52338 read=770
+         ->  Finalize GroupAggregate  (cost=9345.12..9501.35 rows=1000 width=50) (actual time=30.447..36.544 rows=1000 loops=1)
+               Group Key: d.id
+               Buffers: shared hit=52338 read=770
+               ->  Gather Merge  (cost=9345.12..9483.85 rows=1000 width=50) (actual time=30.436..36.246 rows=1994 loops=1)
+                     Workers Planned: 1
+                     Params Evaluated: $0, $1
+                     Workers Launched: 1
+                     Buffers: shared hit=52338 read=770
+                     ->  Partial GroupAggregate  (cost=8345.11..8371.34 rows=1000 width=50) (actual time=21.674..23.532 rows=997 loops=2)
+                           Group Key: d.id
+                           Buffers: shared hit=52338 read=770
+                           ->  Sort  (cost=8345.11..8348.36 rows=1298 width=38) (actual time=21.666..22.416 rows=12310 loops=2)
+                                 Sort Key: d.id
+                                 Sort Method: quicksort  Memory: 1916kB
+                                 Buffers: shared hit=52338 read=770
+                                 Worker 0:  Sort Method: quicksort  Memory: 593kB
+                                 ->  Result  (cost=33.35..8277.99 rows=1298 width=38) (actual time=0.234..19.408 rows=12310 loops=2)
+                                       One-Time Filter: ($1 = $0)
+                                       Buffers: shared hit=52330 read=770
+                                       ->  Hash Join  (cost=33.35..8277.99 rows=1298 width=38) (actual time=0.233..18.570 rows=12310 loops=2)
+                                             Hash Cond: (f.dtc_id = d.id)
+                                             Buffers: shared hit=52330 read=770
+                                             ->  Nested Loop  (cost=0.85..8242.07 rows=1298 width=12) (actual time=0.032..16.557 rows=12310 loops=2)
+                                                   Buffers: shared hit=52301 read=770
+                                                   ->  Parallel Index Scan using ix_sesion_diagnostico_vehiculo on sesion_diagnostico s  (cost=0.42..2275.54 rows=680 width=16) (actual time=0.015..3.829 rows=6150 loops=2)
+                                                         Index Cond: ((taller_id = $0) AND (iniciada_en >= '2026-07-06 07:05:56.712029+00'::timestamp with time zone))
+                                                         Buffers: shared hit=3700 read=1
+                                                   ->  Index Scan using pk_falla_sesion on falla_sesion f  (cost=0.42..8.76 rows=1 width=28) (actual time=0.002..0.002 rows=2 loops=12299)
+                                                         Index Cond: (sesion_id = s.id)
+                                                         Filter: (taller_id = $0)
+                                                         Buffers: shared hit=48601 read=769
+                                             ->  Hash  (cost=20.00..20.00 rows=1000 width=34) (actual time=0.186..0.187 rows=1000 loops=2)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 79kB
+                                                   Buffers: shared hit=20
+                                                   ->  Seq Scan on dtc_catalogo d  (cost=0.00..20.00 rows=1000 width=34) (actual time=0.008..0.082 rows=1000 loops=2)
+                                                         Buffers: shared hit=20
+ Planning:
+   Buffers: shared hit=38
+ Planning Time: 0.491 ms
+ Execution Time: 36.731 ms
+(50 rows)
+
+
+## M19 q_dtc_buscar (prefijo P10, 20 filas)
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.28..97.34 rows=20 width=38) (actual time=0.037..0.073 rows=20 loops=1)
+   Buffers: shared hit=42 read=2
+   ->  Index Scan using uq_dtc_catalogo_codigo on dtc_catalogo d  (cost=0.28..490.44 rows=101 width=38) (actual time=0.036..0.071 rows=20 loops=1)
+         Filter: (codigo ~~ 'P10%'::text)
+         Rows Removed by Filter: 11
+         Buffers: shared hit=42 read=2
+         SubPlan 1
+           ->  Aggregate  (cost=4.34..4.35 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=20)
+                 Buffers: shared hit=41
+                 ->  Index Only Scan using pk_dtc_componente on dtc_componente dc  (cost=0.28..4.33 rows=3 width=0) (actual time=0.001..0.001 rows=3 loops=20)
+                       Index Cond: (dtc_id = d.id)
+                       Heap Fetches: 0
+                       Buffers: shared hit=41
+ Planning Time: 0.134 ms
+ Execution Time: 0.091 ms
+(15 rows)
+
+
+## M20 politica RLS con subconsulta: vehiculos visibles para el MECANICO (titular activo)
+                                                                     QUERY PLAN                                                                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=23975.55..23975.56 rows=1 width=8) (actual time=22.058..22.060 rows=1 loops=1)
+   Buffers: shared hit=77 read=829 dirtied=1
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.003..0.003 rows=1 loops=1)
+   ->  Bitmap Heap Scan on vehiculo  (cost=81.39..23971.76 rows=1510 width=0) (actual time=10.040..20.580 rows=30000 loops=1)
+         Recheck Cond: (taller_id = $0)
+         Filter: ((anonimizado_en IS NULL) AND ((titular_id IS NULL) OR (hashed SubPlan 5)))
+         Heap Blocks: exact=485
+         Buffers: shared hit=77 read=829 dirtied=1
+         ->  Bitmap Index Scan on ix_vehiculo_taller_modelo_anio  (cost=0.00..81.01 rows=2746 width=0) (actual time=1.476..1.477 rows=30000 loops=1)
+               Index Cond: (taller_id = $0)
+               Buffers: shared hit=3 read=131
+         SubPlan 5
+           ->  Index Scan using ix_titular_taller on titular t  (cost=0.31..70.63 rows=572 width=8) (actual time=0.029..4.820 rows=18750 loops=1)
+                 Index Cond: (taller_id = $4)
+                 Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                 Buffers: shared hit=28 read=259 dirtied=1
+                 InitPlan 4 (returns $4)
+                   ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+ Planning Time: 0.182 ms
+ Execution Time: 22.102 ms
+(21 rows)
+
+
+## M21 tx_crear_sesion (sesion + 2 fallas, con triggers y auditoria)
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ CTE Scan on nueva n  (cost=49.36..49.38 rows=1 width=48) (actual time=0.407..0.409 rows=1 loops=1)
+   Buffers: shared hit=41 read=4 dirtied=2
+   CTE nueva
+     ->  Insert on sesion_diagnostico  (cost=2.19..18.81 rows=1 width=112) (actual time=0.236..0.239 rows=1 loops=1)
+           Buffers: shared hit=21 read=4 dirtied=2
+           InitPlan 2 (returns $1)
+             ->  Result  (cost=0.02..1.82 rows=1 width=8) (actual time=0.000..0.001 rows=0 loops=1)
+                   One-Time Filter: false
+                   InitPlan 1 (returns $0)
+                     ->  Result  (cost=0.00..0.02 rows=1 width=8) (never executed)
+                   ->  Seq Scan on dispositivo_diagnostico d  (cost=0.02..1.82 rows=1 width=8) (never executed)
+                         Filter: (taller_id = $0)
+           InitPlan 3 (returns $2)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+           InitPlan 4 (returns $3)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+           InitPlan 5 (returns $4)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+           InitPlan 6 (returns $5)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.003..0.003 rows=1 loops=1)
+           ->  Index Scan using uq_vehiculo_id_publico on vehiculo v  (cost=0.29..16.91 rows=1 width=112) (actual time=0.122..0.124 rows=1 loops=1)
+                 Index Cond: (id_publico = '41931e81-94f7-405b-be64-3e1db8228b6c'::uuid)
+                 Filter: ((anonimizado_en IS NULL) AND (taller_id = $5) AND ((titular_id IS NULL) OR (SubPlan 8)))
+                 Buffers: shared hit=6 read=1 dirtied=1
+                 SubPlan 8
+                   ->  Index Scan using uq_titular_id_taller on titular t  (cost=0.31..8.33 rows=1 width=0) (actual time=0.006..0.007 rows=1 loops=1)
+                         Index Cond: ((id = v.titular_id) AND (taller_id = $7))
+                         Filter: (estado_tratamiento = 'activo'::tipo_estado_tratamiento)
+                         Buffers: shared hit=3
+                         InitPlan 7 (returns $7)
+                           ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   CTE falla
+     ->  Insert on falla_sesion  (cost=2.27..28.29 rows=100 width=68) (actual time=0.044..0.166 rows=2 loops=1)
+           Buffers: shared hit=20
+           InitPlan 12 (returns $12)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+           ->  Nested Loop  (cost=2.25..28.27 rows=100 width=68) (actual time=0.021..0.140 rows=2 loops=1)
+                 Buffers: shared hit=10
+                 ->  CTE Scan on nueva n_1  (cost=0.00..0.02 rows=1 width=16) (actual time=0.000..0.002 rows=1 loops=1)
+                 ->  Hash Right Join  (cost=2.25..27.00 rows=100 width=48) (actual time=0.020..0.136 rows=2 loops=1)
+                       Hash Cond: (d_1.codigo = f.codigo)
+                       Buffers: shared hit=10
+                       ->  Seq Scan on dtc_catalogo d_1  (cost=0.00..20.00 rows=1000 width=18) (actual time=0.004..0.051 rows=1000 loops=1)
+                             Buffers: shared hit=10
+                       ->  Hash  (cost=1.00..1.00 rows=100 width=68) (actual time=0.009..0.009 rows=2 loops=1)
+                             Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                             ->  Function Scan on jsonb_to_recordset f  (cost=0.00..1.00 rows=100 width=68) (actual time=0.006..0.007 rows=2 loops=1)
+   InitPlan 14 (returns $15)
+     ->  Aggregate  (cost=2.25..2.26 rows=1 width=8) (actual time=0.168..0.168 rows=1 loops=1)
+           Buffers: shared hit=20
+           ->  CTE Scan on falla  (cost=0.00..2.00 rows=100 width=0) (actual time=0.044..0.166 rows=2 loops=1)
+                 Buffers: shared hit=20
+ Planning Time: 0.537 ms
+ Trigger for constraint fk_sesion_diagnostico_taller on sesion_diagnostico: time=0.054 calls=1
+ Trigger for constraint fk_sesion_diagnostico_vehiculo on sesion_diagnostico: time=0.050 calls=1
+ Trigger for constraint fk_sesion_diagnostico_usuario on sesion_diagnostico: time=0.037 calls=1
+ Trigger for constraint fk_sesion_diagnostico_dispositivo on sesion_diagnostico: time=0.002 calls=1
+ Trigger trg_sesion_diagnostico_auditar on sesion_diagnostico: time=0.252 calls=1
+ Trigger for constraint fk_falla_sesion_taller on falla_sesion: time=0.060 calls=2
+ Trigger for constraint fk_falla_sesion_sesion_diagnostico on falla_sesion: time=0.074 calls=2
+ Trigger for constraint fk_falla_sesion_dtc_catalogo on falla_sesion: time=0.045 calls=2
+ Trigger trg_falla_sesion_auditar on falla_sesion: time=0.273 calls=2
+ Execution Time: 1.331 ms
+(63 rows)
+
+
+## M22 tx_crear_cotizacion (borrador nuevo)
+                                                                            QUERY PLAN                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=1.14..17.20 rows=1 width=73) (actual time=0.681..0.682 rows=1 loops=1)
+   Buffers: shared hit=68 read=4 dirtied=2
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   ->  Nested Loop  (cost=0.67..8.71 rows=1 width=65) (actual time=0.676..0.677 rows=1 loops=1)
+         Buffers: shared hit=64 read=4 dirtied=2
+         ->  Index Scan using uq_sesion_diagnostico_id_publico on sesion_diagnostico s  (cost=0.42..8.44 rows=1 width=8) (actual time=0.015..0.015 rows=1 loops=1)
+               Index Cond: (id_publico = '8de3b1ae-35a0-49cf-ae13-df464b955ca5'::uuid)
+               Filter: (taller_id = $0)
+               Buffers: shared hit=3 read=1
+         ->  Function Scan on fn_crear_cotizacion c  (cost=0.25..0.26 rows=1 width=65) (actual time=0.660..0.660 rows=1 loops=1)
+               Buffers: shared hit=61 read=3 dirtied=2
+   ->  Index Scan using uq_sesion_diagnostico_id_taller on sesion_diagnostico p  (cost=0.42..8.44 rows=1 width=24) (actual time=0.003..0.003 rows=1 loops=1)
+         Index Cond: ((id = c.sesion_id) AND (taller_id = $1))
+         Buffers: shared hit=4
+ Planning Time: 0.131 ms
+ Execution Time: 0.699 ms
+(19 rows)
+
+
+## M23 tx_guardar_linea (snapshot de precio por trigger)
+                                                                         QUERY PLAN                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=17.12..25.17 rows=1 width=104) (actual time=0.214..0.217 rows=1 loops=1)
+   Buffers: shared hit=28 read=2
+   CTE linea
+     ->  Insert on cotizacion_detalle d  (cost=0.79..16.84 rows=1 width=132) (actual time=0.210..0.213 rows=1 loops=1)
+           Conflict Resolution: UPDATE
+           Conflict Arbiter Indexes: pk_cotizacion_detalle
+           Tuples Inserted: 1
+           Conflicting Tuples: 0
+           Buffers: shared hit=25 read=2
+           InitPlan 1 (returns $0)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+           InitPlan 2 (returns $1)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (never executed)
+           InitPlan 3 (returns $2)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (never executed)
+           InitPlan 4 (returns $3)
+             ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+           ->  Nested Loop  (cost=0.71..16.76 rows=1 width=132) (actual time=0.023..0.025 rows=1 loops=1)
+                 Buffers: shared hit=6 read=2
+                 ->  Index Scan using uq_cotizacion_id_publico on cotizacion c  (cost=0.42..8.44 rows=1 width=16) (actual time=0.009..0.010 rows=1 loops=1)
+                       Index Cond: (id_publico = 'b4b6b376-3f2d-4baa-8bfc-299254332ce6'::uuid)
+                       Filter: (taller_id = $3)
+                       Buffers: shared hit=5
+                 ->  Index Scan using uq_repuesto_id_publico on repuesto r_1  (cost=0.29..8.30 rows=1 width=8) (actual time=0.013..0.013 rows=1 loops=1)
+                       Index Cond: (id_publico = '34dce587-c62c-4470-8534-014d0019492c'::uuid)
+                       Buffers: shared hit=1 read=2
+   ->  CTE Scan on linea l  (cost=0.00..0.02 rows=1 width=88) (actual time=0.211..0.213 rows=1 loops=1)
+         Buffers: shared hit=25 read=2
+   ->  Index Scan using pk_repuesto on repuesto r  (cost=0.29..8.30 rows=1 width=24) (actual time=0.002..0.002 rows=1 loops=1)
+         Index Cond: (id = l.repuesto_id)
+         Buffers: shared hit=3
+ Planning Time: 0.151 ms
+ Trigger for constraint fk_cotizacion_detalle_taller: time=0.029 calls=1
+ Trigger for constraint fk_cotizacion_detalle_cotizacion: time=0.032 calls=1
+ Trigger for constraint fk_cotizacion_detalle_repuesto: time=0.024 calls=1
+ Trigger trg_cotizacion_detalle_auditar: time=0.148 calls=1
+ Trigger trg_cotizacion_detalle_validar: time=0.142 calls=1
+ Execution Time: 0.474 ms
+(38 rows)
+
+
+## M24 tx_cerrar_cotizacion (bloqueos, suma del detalle, vigente)
+                                                                 QUERY PLAN                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=0.69..8.73 rows=1 width=57) (actual time=0.643..0.644 rows=1 loops=1)
+   Buffers: shared hit=78 read=3 dirtied=1
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+   ->  Index Scan using uq_cotizacion_id_publico on cotizacion c  (cost=0.42..8.44 rows=1 width=8) (actual time=0.009..0.009 rows=1 loops=1)
+         Index Cond: (id_publico = 'b4b6b376-3f2d-4baa-8bfc-299254332ce6'::uuid)
+         Filter: (taller_id = $0)
+         Buffers: shared hit=4
+   ->  Function Scan on fn_cerrar_cotizacion x  (cost=0.25..0.26 rows=1 width=57) (actual time=0.633..0.633 rows=1 loops=1)
+         Buffers: shared hit=74 read=3 dirtied=1
+ Planning Time: 0.089 ms
+ Execution Time: 0.658 ms
+(12 rows)
+
+
+## M25 tx_cambiar_estado (pendiente -> cotizado)
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=0.69..8.73 rows=1 width=56) (actual time=0.534..0.536 rows=1 loops=1)
+   Buffers: shared hit=60 read=2 dirtied=1
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   ->  Index Scan using uq_sesion_diagnostico_id_publico on sesion_diagnostico s  (cost=0.42..8.44 rows=1 width=8) (actual time=0.009..0.009 rows=1 loops=1)
+         Index Cond: (id_publico = '01db4bd3-e62a-4654-a4ec-2fd65bcbeb6a'::uuid)
+         Filter: (taller_id = $0)
+         Buffers: shared hit=4
+   ->  Function Scan on fn_cambiar_estado_sesion x  (cost=0.25..0.26 rows=1 width=56) (actual time=0.524..0.524 rows=1 loops=1)
+         Buffers: shared hit=56 read=2 dirtied=1
+ Planning Time: 0.070 ms
+ Execution Time: 0.547 ms
+(12 rows)
+
+
+## M26 misma consulta que M20 para el ADMINISTRADOR (politica sin subconsulta)
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=121.11..121.12 rows=1 width=8) (actual time=2.964..2.965 rows=1 loops=1)
+   Buffers: shared hit=136
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   ->  Index Only Scan using ix_vehiculo_taller_modelo_anio on vehiculo  (cost=0.41..114.22 rows=2746 width=0) (actual time=0.014..1.898 rows=30000 loops=1)
+         Index Cond: (taller_id = $0)
+         Heap Fetches: 22
+         Buffers: shared hit=136
+ Planning Time: 0.043 ms
+ Execution Time: 2.979 ms
+(10 rows)
+
+
+## M27 q_auditoria - primera pagina (51 filas)
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.62..107.22 rows=51 width=580) (actual time=0.018..0.057 rows=51 loops=1)
+   Buffers: shared hit=16
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   ->  Nested Loop Left Join  (cost=0.58..190084.46 rows=90940 width=580) (actual time=0.017..0.053 rows=51 loops=1)
+         Buffers: shared hit=16
+         ->  Index Scan using ix_auditoria_operacion_taller_fecha on auditoria_operacion a  (cost=0.43..187809.47 rows=90940 width=559) (actual time=0.010..0.024 rows=51 loops=1)
+               Index Cond: (taller_id = $0)
+               Buffers: shared hit=14
+         ->  Memoize  (cost=0.15..0.18 rows=1 width=37) (actual time=0.000..0.000 rows=0 loops=51)
+               Cache Key: a.usuario_id
+               Cache Mode: logical
+               Hits: 49  Misses: 2  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+               Buffers: shared hit=2
+               ->  Index Scan using uq_usuario_id_taller on usuario u  (cost=0.14..0.17 rows=1 width=37) (actual time=0.002..0.002 rows=0 loops=2)
+                     Index Cond: ((id = a.usuario_id) AND (taller_id = $1))
+                     Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=2
+ Planning Time: 0.170 ms
+ Execution Time: 0.080 ms
+(23 rows)
+
+
+## M28 q_auditoria - pagina profunda por clave (cursor tras 500.000 registros)
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.62..139.45 rows=51 width=580) (actual time=0.033..0.068 rows=51 loops=1)
+   Buffers: shared hit=1 read=6
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   ->  Nested Loop Left Join  (cost=0.58..123586.43 rows=45400 width=580) (actual time=0.033..0.064 rows=51 loops=1)
+         Buffers: shared hit=1 read=6
+         ->  Index Scan using ix_auditoria_operacion_taller_fecha on auditoria_operacion a  (cost=0.43..122449.94 rows=45400 width=559) (actual time=0.029..0.045 rows=51 loops=1)
+               Index Cond: ((taller_id = $0) AND (ROW(ocurrido_en, id) < ROW('2025-04-04 18:59:00.029123+00'::timestamp with time zone, '1000813'::bigint)))
+               Buffers: shared hit=1 read=6
+         ->  Memoize  (cost=0.15..0.18 rows=1 width=37) (actual time=0.000..0.000 rows=0 loops=51)
+               Cache Key: a.usuario_id
+               Cache Mode: logical
+               Hits: 50  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+               ->  Index Scan using uq_usuario_id_taller on usuario u  (cost=0.14..0.17 rows=1 width=37) (actual time=0.001..0.001 rows=0 loops=1)
+                     Index Cond: ((id = a.usuario_id) AND (taller_id = $1))
+ Planning:
+   Buffers: shared hit=2
+ Planning Time: 0.157 ms
+ Execution Time: 0.089 ms
+(21 rows)
+
+
+## M29 q_auditoria - filtrada por tabla
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.47..626.35 rows=51 width=580) (actual time=0.016..0.115 rows=51 loops=1)
+   Buffers: shared hit=17 read=6
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   ->  Nested Loop Left Join  (cost=0.43..190135.00 rows=15493 width=580) (actual time=0.016..0.112 rows=51 loops=1)
+         Join Filter: (u.id = a.usuario_id)
+         Rows Removed by Join Filter: 494
+         Buffers: shared hit=17 read=6
+         ->  Index Scan using ix_auditoria_operacion_taller_fecha on auditoria_operacion a  (cost=0.43..188036.82 rows=15493 width=559) (actual time=0.008..0.048 rows=51 loops=1)
+               Index Cond: (taller_id = $0)
+               Filter: (tabla = 'cotizacion'::text)
+               Rows Removed by Filter: 101
+               Buffers: shared hit=13 read=6
+         ->  Materialize  (cost=0.00..6.64 rows=9 width=37) (actual time=0.000..0.001 rows=10 loops=51)
+               Buffers: shared hit=4
+               ->  Seq Scan on usuario u  (cost=0.00..6.60 rows=9 width=37) (actual time=0.004..0.015 rows=10 loops=1)
+                     Filter: (taller_id = $1)
+                     Rows Removed by Filter: 198
+                     Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=2
+ Planning Time: 0.135 ms
+ Execution Time: 0.135 ms
+(25 rows)
+
+
+## M30 q_usuarios
+                                                QUERY PLAN                                                 
+-----------------------------------------------------------------------------------------------------------
+ Sort  (cost=6.76..6.79 rows=9 width=77) (actual time=0.025..0.026 rows=10 loops=1)
+   Sort Key: u.activo DESC, u.nombre, u.id
+   Sort Method: quicksort  Memory: 26kB
+   Buffers: shared hit=4
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   ->  Seq Scan on usuario u  (cost=0.00..6.60 rows=9 width=77) (actual time=0.006..0.014 rows=10 loops=1)
+         Filter: (taller_id = $0)
+         Rows Removed by Filter: 198
+         Buffers: shared hit=4
+ Planning Time: 0.004 ms
+ Execution Time: 0.038 ms
+(12 rows)
+
+
+## M33 q_consentimientos_titular
+                                                                                      QUERY PLAN                                                                                      
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=16.68..16.69 rows=1 width=43) (actual time=0.020..0.021 rows=1 loops=1)
+   Sort Key: c.otorgado_en DESC, c.id DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=10
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+   ->  Result  (cost=0.58..16.63 rows=1 width=43) (actual time=0.015..0.018 rows=1 loops=1)
+         One-Time Filter: ($1 = $0)
+         Buffers: shared hit=10
+         ->  Nested Loop  (cost=0.58..16.63 rows=1 width=43) (actual time=0.012..0.015 rows=1 loops=1)
+               Buffers: shared hit=10
+               ->  Index Scan using uq_titular_id_publico on titular t  (cost=0.29..8.31 rows=1 width=16) (actual time=0.007..0.007 rows=1 loops=1)
+                     Index Cond: (id_publico = '4cd93e1a-b0f5-4a74-abad-9f4ff943e4de'::uuid)
+                     Filter: (taller_id = $0)
+                     Buffers: shared hit=5
+               ->  Index Scan using ix_consentimiento_titular_taller_titular on consentimiento_titular c  (cost=0.29..8.31 rows=1 width=59) (actual time=0.005..0.007 rows=1 loops=1)
+                     Index Cond: ((taller_id = $0) AND (titular_id = t.id))
+                     Buffers: shared hit=5
+ Planning:
+   Buffers: shared hit=8
+ Planning Time: 0.196 ms
+ Execution Time: 0.037 ms
+(24 rows)
+
+
+## M31 tx_solicitar_supresion (ultima atencion del titular, bloqueo o anonimizacion)
+                                                            QUERY PLAN                                                            
+----------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using uq_titular_id_publico on titular t  (cost=0.31..8.58 rows=1 width=20) (actual time=1.763..1.764 rows=1 loops=1)
+   Index Cond: (id_publico = '4cd93e1a-b0f5-4a74-abad-9f4ff943e4de'::uuid)
+   Filter: (taller_id = $0)
+   Buffers: shared hit=140 read=8 dirtied=6 written=1
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+ Planning Time: 0.051 ms
+ Execution Time: 1.773 ms
+(8 rows)
+
+
+## M32 q_login (bcrypt de costo 10 dentro de la base)
+                                                         QUERY PLAN                                                          
+-----------------------------------------------------------------------------------------------------------------------------
+ Function Scan on fn_autenticar_usuario a  (cost=0.25..10.25 rows=1000 width=85) (actual time=42.074..42.075 rows=1 loops=1)
+ Planning Time: 0.024 ms
+ Execution Time: 42.083 ms
+(3 rows)
+

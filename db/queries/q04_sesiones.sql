@@ -8,17 +8,30 @@
 -- =============================================================================
 
 -- GET /history?status=&cursor=&limit=
---   $1 estado (opcional)
---   $2, $3 cursor: iniciada_en e id_publico de la ULTIMA fila de la pagina
---          anterior (ambos NULL en la primera pagina)
---   $4 limite; la API pide limite + 1 para saber si hay mas paginas
+-- Cuatro sentencias con las MISMAS columnas de salida; la API elige una segun
+-- vengan o no el estado y el cursor:
+--   q_historial                    (limite)
+--   q_historial_siguiente          (cursor_fecha, cursor_id, limite)
+--   q_historial_estado             (estado, limite)
+--   q_historial_estado_siguiente   (estado, cursor_fecha, cursor_id, limite)
+-- cursor = iniciada_en e id_publico de la ULTIMA fila de la pagina anterior.
+-- La API pide limite + 1 para saber si hay mas paginas.
+--
 -- Paginacion por clave (keyset) sobre (iniciada_en DESC, id DESC): no usa
 -- OFFSET, asi que el costo de una pagina no crece con su posicion y no se
 -- saltan ni repiten filas si entran sesiones nuevas. El desempate usa el id
 -- interno, pero el cursor que viaja al cliente lleva el id_publico.
+--
+-- Por que cuatro sentencias y no una con parametros opcionales. La version
+-- inicial tenia "($1 IS NULL OR estado = $1) AND ($2 IS NULL OR (iniciada_en,
+-- id) < ...)". Medida con volumen (docs/evidencia/rendimiento.md), tras cinco
+-- ejecuciones PostgreSQL adopta el plan generico, en el que esas condiciones
+-- son un FILTRO y no una condicion de indice: para servir una pagina profunda
+-- leia y descartaba todas las filas anteriores. Sin parametros opcionales la
+-- comparacion de fila entra siempre como condicion del indice.
 -- Indices: ix_sesion_diagnostico_historial (sin estado) e
 -- ix_sesion_diagnostico_estado (con estado).
-PREPARE q_historial (tipo_estado_atencion, timestamptz, uuid, integer) AS
+PREPARE q_historial (integer) AS
 SELECT s.id_publico,
        s.estado,
        s.iniciada_en,
@@ -45,9 +58,100 @@ CROSS  JOIN LATERAL (
          SELECT count(*) AS fallas, max(x.severidad) AS severidad_maxima
          FROM   falla_sesion x
          WHERE  x.sesion_id = s.id) f
-WHERE  ($1::tipo_estado_atencion IS NULL OR s.estado = $1)
-AND    ($2::timestamptz IS NULL
-        OR (s.iniciada_en, s.id) < ($2, (SELECT k.id FROM sesion_diagnostico k WHERE k.id_publico = $3)))
+ORDER  BY s.iniciada_en DESC, s.id DESC
+LIMIT  $1;
+
+PREPARE q_historial_siguiente (timestamptz, uuid, integer) AS
+SELECT s.id_publico,
+       s.estado,
+       s.iniciada_en,
+       s.metodo_ingreso,
+       s.kilometraje,
+       s.version,
+       v.id_publico      AS vehiculo_id_publico,
+       v.patente         AS vehiculo_patente,
+       v.anio            AS vehiculo_anio,
+       mo.nombre         AS modelo_nombre,
+       ma.nombre         AS marca_nombre,
+       u.nombre          AS usuario_nombre,
+       f.fallas,
+       f.severidad_maxima,
+       c.total           AS cotizacion_total,
+       c.moneda          AS cotizacion_moneda
+FROM   sesion_diagnostico s
+JOIN   usuario u               ON u.id = s.usuario_id
+LEFT   JOIN vehiculo v         ON v.id = s.vehiculo_id
+LEFT   JOIN modelo_vehiculo mo ON mo.id = v.modelo_vehiculo_id
+LEFT   JOIN marca_vehiculo  ma ON ma.id = mo.marca_vehiculo_id
+LEFT   JOIN cotizacion c       ON c.sesion_id = s.id AND c.vigente
+CROSS  JOIN LATERAL (
+         SELECT count(*) AS fallas, max(x.severidad) AS severidad_maxima
+         FROM   falla_sesion x
+         WHERE  x.sesion_id = s.id) f
+WHERE  (s.iniciada_en, s.id) < ($1, (SELECT k.id FROM sesion_diagnostico k WHERE k.id_publico = $2))
+ORDER  BY s.iniciada_en DESC, s.id DESC
+LIMIT  $3;
+
+PREPARE q_historial_estado (tipo_estado_atencion, integer) AS
+SELECT s.id_publico,
+       s.estado,
+       s.iniciada_en,
+       s.metodo_ingreso,
+       s.kilometraje,
+       s.version,
+       v.id_publico      AS vehiculo_id_publico,
+       v.patente         AS vehiculo_patente,
+       v.anio            AS vehiculo_anio,
+       mo.nombre         AS modelo_nombre,
+       ma.nombre         AS marca_nombre,
+       u.nombre          AS usuario_nombre,
+       f.fallas,
+       f.severidad_maxima,
+       c.total           AS cotizacion_total,
+       c.moneda          AS cotizacion_moneda
+FROM   sesion_diagnostico s
+JOIN   usuario u               ON u.id = s.usuario_id
+LEFT   JOIN vehiculo v         ON v.id = s.vehiculo_id
+LEFT   JOIN modelo_vehiculo mo ON mo.id = v.modelo_vehiculo_id
+LEFT   JOIN marca_vehiculo  ma ON ma.id = mo.marca_vehiculo_id
+LEFT   JOIN cotizacion c       ON c.sesion_id = s.id AND c.vigente
+CROSS  JOIN LATERAL (
+         SELECT count(*) AS fallas, max(x.severidad) AS severidad_maxima
+         FROM   falla_sesion x
+         WHERE  x.sesion_id = s.id) f
+WHERE  s.estado = $1
+ORDER  BY s.iniciada_en DESC, s.id DESC
+LIMIT  $2;
+
+PREPARE q_historial_estado_siguiente (tipo_estado_atencion, timestamptz, uuid, integer) AS
+SELECT s.id_publico,
+       s.estado,
+       s.iniciada_en,
+       s.metodo_ingreso,
+       s.kilometraje,
+       s.version,
+       v.id_publico      AS vehiculo_id_publico,
+       v.patente         AS vehiculo_patente,
+       v.anio            AS vehiculo_anio,
+       mo.nombre         AS modelo_nombre,
+       ma.nombre         AS marca_nombre,
+       u.nombre          AS usuario_nombre,
+       f.fallas,
+       f.severidad_maxima,
+       c.total           AS cotizacion_total,
+       c.moneda          AS cotizacion_moneda
+FROM   sesion_diagnostico s
+JOIN   usuario u               ON u.id = s.usuario_id
+LEFT   JOIN vehiculo v         ON v.id = s.vehiculo_id
+LEFT   JOIN modelo_vehiculo mo ON mo.id = v.modelo_vehiculo_id
+LEFT   JOIN marca_vehiculo  ma ON ma.id = mo.marca_vehiculo_id
+LEFT   JOIN cotizacion c       ON c.sesion_id = s.id AND c.vigente
+CROSS  JOIN LATERAL (
+         SELECT count(*) AS fallas, max(x.severidad) AS severidad_maxima
+         FROM   falla_sesion x
+         WHERE  x.sesion_id = s.id) f
+WHERE  s.estado = $1
+AND    (s.iniciada_en, s.id) < ($2, (SELECT k.id FROM sesion_diagnostico k WHERE k.id_publico = $3))
 ORDER  BY s.iniciada_en DESC, s.id DESC
 LIMIT  $4;
 

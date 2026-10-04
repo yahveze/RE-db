@@ -216,4 +216,28 @@ SELECT current_setting('server_version_num')::int BETWEEN 160000 AND 169999
 SELECT rolpassword LIKE 'SCRAM-SHA-256$%' AS ok FROM pg_authid WHERE rolname = 'app_backend_user' \gset
 \ir incluir/afirmar.sql
 
+-- Resguardo del hallazgo de la Fase 5 (V009): bajo RLS la igualdad de un enum no
+-- puede ser condicion de busqueda de un indice (enum_eq no es leakproof). En
+-- tablas con RLS, un enum solo puede aparecer en el PREDICADO de un indice
+-- parcial, nunca como columna clave. No aplica a los indices UNICOS: alli el enum
+-- define la regla de unicidad (uq_consentimiento_titular_activo), no una busqueda.
+\set prueba 'ESQ-28 ningun indice de busqueda (no unico) de una tabla con RLS tiene un enum como columna clave (V009)'
+SELECT count(*) = 0 AS ok
+FROM   pg_index x
+JOIN   pg_class t ON t.oid = x.indrelid
+JOIN   pg_namespace n ON n.oid = t.relnamespace
+JOIN   pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY (x.indkey::int2[])
+JOIN   pg_type ty ON ty.oid = a.atttypid
+WHERE  n.nspname = 'public' AND t.relrowsecurity AND ty.typtype = 'e' AND NOT x.indisunique
+AND    a.attnum = ANY ((x.indkey::int2[])[0:x.indnkeyatts - 1]) \gset
+\ir incluir/afirmar.sql
+
+\set prueba 'ESQ-29 los estados abiertos de la sesion tienen indice parcial propio (pendiente y cotizado)'
+SELECT count(*) = 2 AS ok
+FROM   pg_indexes
+WHERE  schemaname = 'public' AND tablename = 'sesion_diagnostico'
+AND    indexname IN ('ix_sesion_diagnostico_pendiente', 'ix_sesion_diagnostico_cotizado')
+AND    indexdef ~ 'WHERE \(estado = ''(pendiente|cotizado)''::tipo_estado_atencion\)' \gset
+\ir incluir/afirmar.sql
+
 ROLLBACK;

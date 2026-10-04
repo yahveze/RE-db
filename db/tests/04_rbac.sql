@@ -84,7 +84,19 @@ EXECUTE q_buscar_vehiculo_vin('8AJFR22G5B4512345');
 EXECUTE q_buscar_vehiculo_modelo(:'modelo', NULL, 5);
 \ir incluir/exito.sql
 \set prueba 'mecanico: q_historial'
-EXECUTE q_historial(NULL, NULL, NULL, 5);
+EXECUTE q_historial(5);
+\ir incluir/exito.sql
+\set prueba 'mecanico: q_historial_estado'
+EXECUTE q_historial_estado('pendiente', 5);
+\ir incluir/exito.sql
+\set prueba 'mecanico: q_historial_siguiente'
+EXECUTE q_historial_siguiente(now(), :'ses', 5);
+\ir incluir/exito.sql
+\set prueba 'mecanico: q_historial_estado_siguiente'
+EXECUTE q_historial_estado_siguiente('completado', now(), :'ses', 5);
+\ir incluir/exito.sql
+\set prueba 'mecanico: q_consentimientos_titular'
+EXECUTE q_consentimientos_titular(:'tit');
 \ir incluir/exito.sql
 \set prueba 'mecanico: q_historial_vehiculo'
 EXECUTE q_historial_vehiculo(:'veh', 5);
@@ -120,7 +132,11 @@ EXECUTE q_usuarios;
 \ir incluir/error.sql
 \set prueba 'mecanico: q_auditoria denegada'
 \set esperado 42501
-EXECUTE q_auditoria(NULL, NULL, NULL, 5);
+EXECUTE q_auditoria(NULL, 5);
+\ir incluir/error.sql
+\set prueba 'mecanico: q_auditoria_siguiente denegada'
+\set esperado 42501
+EXECUTE q_auditoria_siguiente(NULL, now(), 1, 5);
 \ir incluir/error.sql
 \set prueba 'mecanico: q_solicitudes_derecho denegada'
 \set esperado 42501
@@ -256,7 +272,7 @@ EXECUTE q_configuracion;
 EXECUTE q_buscar_vehiculo_patente('LPRS56');
 \ir incluir/exito.sql
 \set prueba 'admin: q_historial'
-EXECUTE q_historial(NULL, NULL, NULL, 5);
+EXECUTE q_historial(5);
 \ir incluir/exito.sql
 \set prueba 'admin: q_sesion'
 EXECUTE q_sesion(:'ses');
@@ -280,7 +296,13 @@ EXECUTE q_dispositivos;
 EXECUTE q_solicitudes_derecho;
 \ir incluir/exito.sql
 \set prueba 'admin: q_auditoria'
-EXECUTE q_auditoria(NULL, NULL, NULL, 5);
+EXECUTE q_auditoria(NULL, 5);
+\ir incluir/exito.sql
+\set prueba 'admin: q_auditoria_siguiente'
+EXECUTE q_auditoria_siguiente(NULL, now(), 1, 5);
+\ir incluir/exito.sql
+\set prueba 'admin: q_consentimientos_titular'
+EXECUTE q_consentimientos_titular(:'tit');
 \ir incluir/exito.sql
 \set prueba 'admin: tx_cambiar_activo_usuario'
 EXECUTE tx_cambiar_activo_usuario(:'usr', false);
@@ -384,7 +406,7 @@ DELETE FROM auditoria_operacion;
 EXECUTE q_configuracion;
 \ir incluir/exito.sql
 \set prueba 'auditor: q_historial'
-EXECUTE q_historial(NULL, NULL, NULL, 5);
+EXECUTE q_historial(5);
 \ir incluir/exito.sql
 \set prueba 'auditor: q_historial_vehiculo'
 EXECUTE q_historial_vehiculo(:'veh', 5);
@@ -417,7 +439,16 @@ EXECUTE q_dispositivos;
 EXECUTE q_solicitudes_derecho;
 \ir incluir/exito.sql
 \set prueba 'auditor: q_auditoria'
-EXECUTE q_auditoria(NULL, NULL, NULL, 5);
+EXECUTE q_auditoria(NULL, 5);
+\ir incluir/exito.sql
+\set prueba 'auditor: q_historial_estado'
+EXECUTE q_historial_estado('completado', 5);
+\ir incluir/exito.sql
+\set prueba 'auditor: q_auditoria_siguiente'
+EXECUTE q_auditoria_siguiente(NULL, now(), 1, 5);
+\ir incluir/exito.sql
+\set prueba 'auditor: q_consentimientos_titular (no devuelve identidad del titular)'
+EXECUTE q_consentimientos_titular(:'tit');
 \ir incluir/exito.sql
 \set prueba 'auditor: lee el estado de tratamiento de los titulares'
 SELECT count(*) >= 5 AS ok FROM (SELECT id_publico, estado_tratamiento, bloqueado_hasta FROM titular) t \gset

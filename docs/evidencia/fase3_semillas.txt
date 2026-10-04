@@ -1,5 +1,5 @@
 # Semillas: verificacion y resumen (generado por db/scripts/evidencia_fase3.sh)
-# Fecha: 2026-10-04T06:07Z
+# Fecha: 2026-10-04T06:59Z
 
 --- Catalogos globales ---
  marcas | modelos | dtc | componentes | dtc_componente | repuestos | compatibilidades 

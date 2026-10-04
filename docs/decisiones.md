@@ -1,8 +1,8 @@
 # Decisiones de diseño — Repuestos Exactos (Fase 0)
 
-> Estado: **Fases 0 a 4 completas** (ver secciones 7 a 9). Esquema en `db/migrations/`, semillas en
-> `db/seeds/`, consultas y transacciones en `db/queries/` y suite de 468 pruebas en `db/tests/`, verificado
-> sobre PostgreSQL 16.15; faltan rendimiento y operación (Fases 5 a 7).
+> Estado: **Fases 0 a 5 completas** (ver secciones 7 a 10). Esquema en `db/migrations/` (V000–V009),
+> semillas en `db/seeds/`, consultas y transacciones en `db/queries/`, suite de 484 pruebas en `db/tests/`
+> y medición con volumen en `db/perf/`, verificado sobre PostgreSQL 16.15; falta operación (Fases 6 y 7).
 
 Clasificación usada: **[OBLIGATORIA]** la exige el enunciado o la integridad del modelo ·
 **[RECOMENDADA]** se implementa porque el costo es bajo y el beneficio defendible ·
@@ -557,3 +557,87 @@ secretos de ningún entorno; las claves reales siguen llegando solo por `psql -v
 
 **Riesgos que la ejecución no cubrió:** los de `docs/pruebas.md` §5 (rendimiento, PgBouncer, canal de
 tiempo del login, concurrencia de la anonimización, controles negativos del resto de la suite).
+
+---
+
+## 10. Fase 5: rendimiento
+
+Análisis completo en `docs/evidencia/rendimiento.md`. A diferencia de la Fase 4, esta sí cambió el esquema
+y las consultas: la medición con volumen y con el rol real encontró tres problemas que ni las semillas ni
+la suite podían mostrar.
+
+### 10.1 Qué se construyó
+
+| Entregable | Dónde |
+|---|---|
+| Carga de volumen (302 mil sesiones, 2 millones de registros de auditoría) | `db/perf/volumen.sql` |
+| Medición con `EXPLAIN (ANALYZE, BUFFERS)` de las sentencias preparadas | `db/perf/medir.sql`, `medidas.sql`, `anteriores.sql` |
+| Experimentos de índices, con y sin cada uno | `db/perf/experimentos_indices.sql` |
+| Ejecutor (`make perf`): crea `<base>_perf`, mide y la elimina | `db/perf/run.sh` |
+| Ajuste de índices | `db/migrations/V009__ajustes_rendimiento.sql` |
+| Evidencia | `docs/evidencia/fase5_resumen.txt`, `fase5_medidas.txt`, `fase5_indices.txt`, `rendimiento.md` |
+
+### 10.2 Qué cambió y por qué
+
+| # | Cambio | Motivo medido |
+|---|---|---|
+| 1 | `q_historial` pasa a ser cuatro sentencias y `q_auditoria` dos, sin parámetros opcionales en el cursor | En el plan genérico la condición opcional quedaba como filtro: la página tras 75.000 sesiones leía 75.874 bloques (42 ms) en lugar de 427 (0,5 ms) |
+| 2 | `V009`: se elimina `ix_sesion_diagnostico_estado` y se crea `ix_sesion_diagnostico_cotizado` (parcial) | Bajo RLS la igualdad de un enum no es *leakproof* y no puede ser condición de búsqueda de un índice: 12,3 ms con el índice original frente a 0,19 ms con el parcial |
+| 3 | `q_dashboard_resumen` reescrita sobre los índices parciales y un rango del historial | 184 ms → 14,6 ms. Las cifras del período pasan a ser por cohorte de inicio (T-49) |
+| 4 | `V009`: se eliminan `ix_usuario_taller` e `ix_solicitud_derecho_titular_taller_titular` | El experimento con y sin el índice no mostró una diferencia que los justifique |
+| 5 | Nueva sentencia `q_consentimientos_titular` | `ix_consentimiento_titular_taller_titular` era útil (0,01 frente a 2,8 ms) pero ninguna consulta lo usaba; faltaba la lectura de consentimientos |
+| 6 | Pruebas `ESQ-28` y `ESQ-29`, y pruebas de las sentencias nuevas (484 en total) | Resguardo contra la regresión del punto 2 |
+
+Los índices de `V006` que `V006` mismo dejaba "a confirmar en la Fase 5" quedaron resueltos: de 16, se
+eliminaron 3, se agregó 1 y el resto tiene su medición.
+
+### 10.3 Temas nuevos
+
+Si no dices nada, queda como está. ⚠ marca lo que conviene leer.
+
+**T-49 ⚠ Las cifras del período del dashboard cambiaron de significado.**
+Antes: sesiones *completadas dentro* del período (por `completada_en`). Ahora: de las sesiones *iniciadas*
+en el período, cuántas están completadas (cohorte). Lo cambié porque la forma anterior obliga a recorrer
+todas las sesiones del taller o a agregar un índice por `completada_en` y otro por `cancelada_en` a una
+tabla con siete. Si el negocio necesita "completadas este mes" en sentido estricto, la alternativa es ese
+par de índices parciales; dímelo y lo mido.
+
+**T-50 `q_solicitudes_derecho` no pagina.**
+Devuelve todas las solicitudes del taller. Con el volumen real (pocas por taller) no importa; con 18.750
+tarda unos 38 ms. Propuesta: dejarla así en el prototipo y anotarlo como deuda.
+
+**T-51 ⚠ El contenedor tiene 64 MB de memoria compartida (`/dev/shm`).**
+Es el valor por defecto de Docker. El `VACUUM` paralelo de la base de volumen falló con
+`could not resize shared memory segment` y hubo que usar `PARALLEL 0`. Las consultas paralelas grandes
+pueden fallar igual. Se corrige con `shm_size` en `docker-compose.yml`; no lo toqué porque el enunciado fija
+el `command` del servicio y prefiero que lo decidas tú. Va a `docs/operacion.md` (Fase 6).
+
+**T-52 `make perf` tarda unos 6 minutos y necesita 1,2 GB libres.**
+Casi todo es la carga del volumen (unos 5 minutos). Se puede reducir con `PERF_SESIONES_GRANDE`,
+`PERF_AUDITORIA`, etc. No forma parte de `make all`.
+
+**T-53 El planificador estima cada taller como el promedio.**
+Consecuencia de pasar el taller por `current_setting`: no hay estadísticas por valor. No tiene arreglo
+dentro del diseño; se mitiga con la forma de las consultas (`docs/consultas.md` §3.6). Lo señalo porque es
+la respuesta a "¿qué pasa si un taller es mucho más grande que los demás?".
+
+**T-54 El comentario de cabecera de `V006` quedó parcialmente superado.**
+Describe índices que `V009` eliminó. No lo edité: las migraciones ya aplicadas no se reescriben; `V009`
+explica cada cambio.
+
+### 10.4 Verificación de la Fase 5
+
+| Comprobación | Resultado | Evidencia |
+|---|---|---|
+| `reset` → `migrate` (V000–V009) → `seed` → `test` | código 0; 484 PASS, 0 FAIL | `fase4_pruebas.txt` |
+| Suite repetida sobre la misma base | 484 PASS | ejecución repetida |
+| `make perf` (`bash db/perf/run.sh`) | código 0; 35 medidas y 8 experimentos sin errores | `fase5_*.txt` |
+| Paginación profunda | 0,49 ms y 427 bloques, igual que la primera página (0,65 ms, 379) | `fase5_resumen.txt` M01, M02 |
+| La corrección no depende del plan elegido | plan genérico forzado: 0,34 ms, 396 bloques | M06 |
+| Dashboard | 14,6 ms frente a 184 ms de la versión anterior | M17, M17a |
+| Enum bajo RLS | filtro (12,3 ms) frente a índice parcial (0,19 ms) | `fase5_indices.txt` E0 |
+| Consultas y transacciones de la Fase 3 tras los cambios | sin errores; 18 errores esperados | `fase3_*.txt` regenerados |
+| La base principal tras `make perf` | intacta (la medición usa `<base>_perf`) | suite en verde después de medir |
+
+**Riesgos que la ejecución no cubrió:** los de `docs/evidencia/rendimiento.md` §9 (carga concurrente, caché
+fría, variabilidad entre corridas, crecimiento de la auditoría, ajuste del servidor).
