@@ -321,30 +321,29 @@ EXECUTE tx_crear_titular('Titular de prueba', NULL, NULL, NULL);
 \set esperado 1
 \ir incluir/filas.sql
 
-\set prueba 'admin: tx_crear_sesion denegada (solo el mecanico atiende)'
-\set esperado 42501
-EXECUTE tx_crear_sesion(:'veh', NULL, 10, '[{"codigo": "P0301"}]');
-\ir incluir/error.sql
-\set prueba 'admin: tx_cambiar_estado denegada (T-32)'
-\set esperado 42501
-EXECUTE tx_cambiar_estado(:'ses', 'cancelado', NULL);
-\ir incluir/error.sql
-\set prueba 'admin: tx_crear_cotizacion denegada'
-\set esperado 42501
-EXECUTE tx_crear_cotizacion(:'ses', gen_random_uuid());
-\ir incluir/error.sql
-\set prueba 'admin: tx_guardar_linea denegada'
-\set esperado 42501
-EXECUTE tx_guardar_linea(:'cot', :'rep', 1);
-\ir incluir/error.sql
-\set prueba 'admin: tx_quitar_linea denegada'
-\set esperado 42501
-EXECUTE tx_quitar_linea(:'cot', :'rep');
-\ir incluir/error.sql
-\set prueba 'admin: tx_cerrar_cotizacion denegada'
-\set esperado 42501
-EXECUTE tx_cerrar_cotizacion(:'cot', NULL);
-\ir incluir/error.sql
+-- V011: el administrador hereda la operación mecánica de SU taller.
+\set prueba 'admin: puede crear una sesion de su taller'
+EXECUTE tx_crear_sesion(:'veh', NULL, 10, '[{"codigo": "P0301"}]') \gset admin_s_
+\ir incluir/exito.sql
+\set prueba 'admin: puede crear una cotizacion'
+EXECUTE tx_crear_cotizacion(:'admin_s_id_publico', gen_random_uuid()) \gset admin_c_
+\ir incluir/exito.sql
+\set prueba 'admin: puede guardar una linea de cotizacion'
+EXECUTE tx_guardar_linea(:'admin_c_id_publico', :'rep', 1);
+\ir incluir/exito.sql
+\set prueba 'admin: puede quitar una linea de cotizacion abierta'
+EXECUTE tx_quitar_linea(:'admin_c_id_publico', :'rep');
+\ir incluir/exito.sql
+\set prueba 'admin: puede volver a agregar una linea'
+EXECUTE tx_guardar_linea(:'admin_c_id_publico', :'rep', 1);
+\ir incluir/exito.sql
+\set prueba 'admin: puede cerrar su cotizacion'
+EXECUTE tx_cerrar_cotizacion(:'admin_c_id_publico', NULL);
+\ir incluir/exito.sql
+\set prueba 'admin: puede marcar cotizada la sesion con cotizacion cerrada'
+EXECUTE tx_cambiar_estado(:'admin_s_id_publico', 'cotizado', NULL);
+\ir incluir/exito.sql
+
 \set prueba 'admin: no modifica precios maestros (afectarian a otros talleres)'
 \set esperado 42501
 UPDATE repuesto SET precio_referencia = 1 WHERE id = :rep_id;

@@ -9,6 +9,12 @@ Informática.
 > 518 pruebas y 0 fallos (`docs/evidencia/fase7_cierre.txt`). El alcance es la base de datos: no hay backend
 > ni aplicación. Qué se sostiene y qué falta para producción: `docs/dictamen.md`.
 
+## Integración con la aplicación
+
+V011 agrega identidad Google e invitaciones; V012 agrega la propiedad explícita y los perfiles de negocio **propietario/mecánico**. El rol técnico histórico `admin` no implica propiedad por sí solo. La asignación está en `taller.propietario_usuario_id`; `v_usuario_perfil` determina el perfil habilitado. Los auditores de demostración se conservan para pruebas SQL, pero no pueden ingresar a la aplicación.
+
+Contrato, migración y límites: [propietario y mecánico](../Backend_Repuestos_Exactos/docs/propietario_y_mecanico.md). El estado de entrega final y sus 518 pruebas de abajo corresponden al cierre histórico V010; la evidencia actual de esta ampliación se registra por separado.
+
 ## Requisitos
 
 - Docker en ejecución (Docker Desktop en Windows).

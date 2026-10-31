@@ -32,8 +32,8 @@ SELECT count(*) = 0 AS ok FROM pg_constraint c
 WHERE  c.contype = 'f' AND (c.conrelid = 'auditoria_operacion'::regclass OR c.confrelid = 'auditoria_operacion'::regclass) \gset
 \ir incluir/afirmar.sql
 
-\set prueba 'Las 13 tablas auditadas tienen trigger de captura; usuario_credencial y auditoria no'
-SELECT count(*) = 13
+\set prueba 'Los 15 triggers de captura auditados tienen trigger de captura; usuario_credencial y auditoria no'
+SELECT count(*) = 15
    AND count(*) FILTER (WHERE c.relname IN ('usuario_credencial', 'auditoria_operacion')) = 0 AS ok
 FROM   pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
 WHERE  NOT t.tgisinternal AND t.tgname LIKE 'trg\_%\_auditar' \gset
@@ -64,8 +64,8 @@ SELECT count(*) = 1 AND bool_and(a.taller_id = :taller_1 AND a.usuario_id = :mec
 FROM   auditoria_operacion a WHERE a.tabla = 'titular' AND a.registro_id = :tit_id AND a.operacion = 'INSERT' \gset
 \ir incluir/afirmar.sql
 
-\set prueba 'T-7 el rol registrado es el del grupo, no app_funciones (propietario de la funcion definidora)'
-SELECT count(*) > 0 AND bool_and(a.rol <> 'app_funciones') AS ok FROM auditoria_operacion a \gset
+\set prueba 'T-7 las operaciones de usuarios conservan el grupo real; las migraciones sin usuario son eventos de plataforma'
+SELECT count(*) > 0 AND bool_and(a.rol <> 'app_funciones') AS ok FROM auditoria_operacion a WHERE a.usuario_id IS NOT NULL \gset
 \ir incluir/afirmar.sql
 
 \set prueba 'RN-71 titular: sin nombre, telefono, email ni HMAC; con id, estado y fechas'
@@ -107,7 +107,7 @@ WHERE  (COALESCE(a.datos_anteriores, '{}')::text || COALESCE(a.datos_nuevos, '{}
 \ir incluir/afirmar.sql
 
 \ir incluir/rol_admin_1.sql
-EXECUTE tx_crear_usuario('auditado@losaromos.example', 'Usuario Auditado', 'auditor') \gset u_
+EXECUTE tx_crear_usuario('auditado@losaromos.example', 'Usuario Auditado', 'mecanico') \gset u_
 \ir incluir/rol_plataforma.sql
 \set prueba 'RN-71 usuario: sin email ni nombre; con rol y activo'
 SELECT count(*) = 1 AND bool_and(NOT a.datos_nuevos ?| ARRAY['email', 'nombre'] AND a.datos_nuevos ?& ARRAY['rol', 'activo']

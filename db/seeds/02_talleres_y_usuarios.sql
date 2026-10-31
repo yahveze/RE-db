@@ -37,6 +37,14 @@ INSERT INTO usuario (taller_id, email, nombre, rol)
 VALUES (:taller_2, 'admin@nuble.example', 'Rodrigo Henríquez', 'admin')
 RETURNING id AS admin_2 \gset
 
+-- Propietarios explícitos de las dos cuentas de demostración.
+UPDATE taller SET propietario_usuario_id=:admin_1 WHERE id=:taller_1;
+UPDATE taller SET propietario_usuario_id=:admin_2 WHERE id=:taller_2;
+-- Fixtures históricos de auditoría SQL, sin acceso a la aplicación actual.
+INSERT INTO usuario(taller_id,email,nombre,rol) VALUES
+  (:taller_1,'auditor@losaromos.example','Marcela Vidal','auditor'),
+  (:taller_2,'auditor@nuble.example','Ignacio Parra','auditor');
+
 INSERT INTO usuario_credencial (usuario_id, hash_contrasena)
 SELECT u.id, crypt(:'clave_demo', gen_salt('bf', 10))
 FROM   usuario u
@@ -56,7 +64,6 @@ SELECT set_config('app.taller_id',  :'taller_1', true),
 INSERT INTO usuario (taller_id, email, nombre, rol, activo) VALUES
   (:taller_1, 'mecanico1@losaromos.example',  'Diego Rojas',   'mecanico', true),
   (:taller_1, 'mecanico2@losaromos.example',  'Paula Soto',    'mecanico', true),
-  (:taller_1, 'auditor@losaromos.example',    'Marcela Vidal', 'auditor',  true),
   -- Usuario dado de baja: existe y tiene credencial, pero no puede autenticarse.
   (:taller_1, 'exmecanico@losaromos.example', 'Hugo Pino',     'mecanico', false);
 
@@ -85,8 +92,7 @@ SET    margen_pct = 45.50,
        tema       = 'oscuro';
 
 INSERT INTO usuario (taller_id, email, nombre, rol) VALUES
-  (:taller_2, 'mecanico@nuble.example', 'Valentina Muñoz', 'mecanico'),
-  (:taller_2, 'auditor@nuble.example',  'Ignacio Parra',   'auditor');
+  (:taller_2, 'mecanico@nuble.example', 'Valentina Muñoz', 'mecanico');
 
 SELECT fn_establecer_contrasena(u.id, :'clave_demo')
 FROM   usuario u
