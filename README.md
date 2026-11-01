@@ -173,3 +173,45 @@ Es un prototipo. Los principales (lista completa en `docs/dictamen.md` §4 y §6
 - Cuatro reglas que la base no hace cumplir y quedan a cargo de la API y de la configuración de producción (temas T-63 a T-66, `docs/decisiones.md` §12.6).
 - Los supuestos legales (Ley N° 21.719, plazos de retención) están marcados **validar**: no es asesoría legal.
 - `make` no se probó literalmente en este equipo; la evidencia ejecuta las recetas del `Makefile`.
+
+## V013: alternativas guardadas
+
+`V013__repuestos_guardados.sql` incorpora referencias seleccionadas por propietario/mecánico, con RLS, autor, contexto DTC/componente, idempotencia y auditoría. No modifica el estado de diagnósticos ni crea cotizaciones. No conserva precios, títulos, imágenes ni stock externos.
+
+V014 completa las convenciones del esquema: nombres explícitos de restricciones/políticas, comentarios de columnas y claves foráneas con `ON DELETE RESTRICT`. Conserva los datos y la migración V013 original.
+
+En una base existente hasta V012, aplicar `bash db/scripts/migrate.sh V013` y después `bash db/scripts/migrate.sh V014`. Si V013 ya está aplicada, ejecutar solamente V014. Respaldar antes. No volver a ejecutar todas las migraciones sobre una base existente.
+
+Revisión del incremento: 517 comprobaciones de los doce archivos SQL aprobadas sobre una copia aislada; pruebas de backend adicionales cubren guardado, idempotencia, RLS y contexto cambiado. Las pruebas de esquema y auditoría ahora incluyen los objetos de V013.
+
+[Flujo y evidencia de validación](../Backend_Repuestos_Exactos/docs/integracion_mercadolibre.md).
+
+## V015: captura OBD2 con observaciones por ECU
+
+V015__captura_obd.sql permite registrar lógicamente un adaptador sin una MAC inventada y añade metadatos de captura e idempotencia a sesion_diagnostico. observacion_obd conserva código, ECU y categoría (almacenado/pendiente/permanente), incluidos códigos que no existen en dtc_catalogo. El vínculo compuesto sesión/taller, RLS forzada, permisos y auditoría siguen las convenciones existentes. Las sesiones y fallas previas se conservan.
+
+El propietario registra adaptadores; propietario y mecánico pueden registrar diagnósticos con su identidad y taller. La API crea también falla_sesion para los códigos catalogados. Guardar una captura no crea cotizaciones ni modifica estados de reparación. El reintento usa una clave única por taller y una huella del contenido; la API comprueba además autor y contexto.
+
+Para una base existente en V014: respaldar y ejecutar bash db/scripts/migrate.sh V015 desde RE-db. No volver a ejecutar todas las migraciones ni eliminar el volumen. La base local de este workspace ya tiene V015 aplicada y cuenta con un respaldo previo fuera de Git.
+
+Validación: 517 comprobaciones de los doce archivos db/tests sobre una copia aislada y pruebas Dart de captura/idempotencia/RLS con PostgreSQL real. Los conteos de esquema y auditoría incluyen observacion_obd. Las lecturas físicas del vLinker MC están pendientes; estas pruebas no verifican radio Bluetooth ni comportamiento de un vehículo real.
+
+[Traza](../Backend_Repuestos_Exactos/docs/evidencia/traza_bluetooth_obd2.json) · [Evidencia](../Backend_Repuestos_Exactos/docs/evidencia/bluetooth_validacion.json).
+
+## V016: Peugeot 3008 y uso del VIN existente
+
+V016__catalogo_peugeot_3008.sql añade de forma idempotente Peugeot / 3008 al catálogo global. El año 2017 se declara al registrar el vehículo; la migración no crea un vehículo, VIN, motor, falla ni compatibilidad de repuesto de ejemplo. Aplicar sobre V015 con respaldo: bash db/scripts/migrate.sh V016.
+
+El VIN automático usa vehiculo.vin, su índice único por taller, permisos, RLS y exclusión de identificadores de auditoría ya existentes. No necesita columnas nuevas. La API completa un VIN vacío y guarda la captura en la misma transacción; rechaza identidades distintas y no conserva copias adicionales del VIN. El detalle del diagnóstico muestra la identidad actual del vehículo, no una copia histórica inmutable. La anonimización existente continúa eliminando el VIN.
+
+## V017: sesiones persistentes de la API
+
+V017__sesiones_persistentes.sql incorpora sesion_acceso y renovacion_consumida, con RLS forzada y sin acceso directo para roles operativos. fn_sesion_acceso es SECURITY DEFINER de app_funciones, con search_path fijo y EXECUTE sólo para app_backend_user. Guarda únicamente hashes de tokens opacos; no contiene contraseñas, tokens Google ni copias de perfiles personales. La actividad y el perfil de usuario/taller se revalidan al resolver y renovar.
+
+Cada familia tiene acceso corto de una hora y expiración absoluta de siete días. La rotación invalida el acceso anterior y registra el hash de renovación consumido; una repetición fuera de la tolerancia concurrente revoca la familia. Logout revoca toda la familia. La limpieza de familias vencidas y sus hijos usa lotes bloqueados con SKIP LOCKED para no interferir con emisiones concurrentes. No hay cambios a datos de diagnósticos ni a permisos de trabajo de propietario/mecánico.
+
+Sobre una base en V016, respaldar y aplicar sólo bash db/scripts/migrate.sh V017. No reinicializar el volumen. La aplicación requiere esta migración y su salud comprueba los objetos de sesión. La base local de este workspace ya tiene V017 aplicada y un respaldo previo fuera de Git. Las sesiones antiguas en memoria requieren un nuevo login inicial.
+
+Las pruebas de esquema contemplan las dos tablas privadas y la función de autenticación. db/tests/13_sesiones_persistentes.sql verifica emisión, identidad, rotación, tolerancia concurrente sin emisión, repetición, revocación, expiración, baja de usuario, permisos, RLS y limpieza con ROLLBACK. Más detalles en la [guía de autenticación](../Backend_Repuestos_Exactos/docs/autenticacion.md).
+
+La emisión de sesiones respeta un límite predeterminado de 10.000 familias activas compartidas entre instancias; al alcanzarlo rechaza nuevas emisiones sin expulsar sesiones existentes. `SES-12` verifica este caso.

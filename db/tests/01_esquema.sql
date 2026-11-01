@@ -4,9 +4,9 @@
 \ir incluir/inicio.sql
 \echo '### 01 Esquema'
 
-\set prueba 'ESQ-01 hay 23 tablas y 2 vistas en public'
+\set prueba 'ESQ-01 hay 27 tablas y 2 vistas en public'
 SELECT (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = 'public' AND c.relkind = 'r') = 23
+        WHERE n.nspname = 'public' AND c.relkind = 'r') = 27
    AND (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
         WHERE n.nspname = 'public' AND c.relkind = 'v' AND c.relname LIKE 'v\_%') = 2 AS ok \gset
 \ir incluir/afirmar.sql
@@ -40,7 +40,7 @@ SELECT (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relname
 \ir incluir/afirmar.sql
 
 \set prueba 'ESQ-06 toda tabla con taller_id, mas taller y usuario_credencial, tiene RLS activo y forzado'
-SELECT count(*) = 16 AND bool_and(c.relrowsecurity AND c.relforcerowsecurity) AS ok
+SELECT count(*) = 20 AND bool_and(c.relrowsecurity AND c.relforcerowsecurity) AS ok
 FROM   pg_class c
 JOIN   pg_namespace n ON n.oid = c.relnamespace
 WHERE  n.nspname = 'public' AND c.relkind = 'r'
@@ -58,9 +58,9 @@ AND    c.relname IN ('marca_vehiculo', 'modelo_vehiculo', 'dtc_catalogo', 'compo
 \ir incluir/afirmar.sql
 
 \set prueba 'ESQ-08 credenciales e identidades no tienen políticas; el resto con RLS sí'
-SELECT (SELECT count(*) FROM pg_policies WHERE schemaname = 'public' AND tablename IN ('usuario_credencial','identidad_externa')) = 0
+SELECT (SELECT count(*) FROM pg_policies WHERE schemaname = 'public' AND tablename IN ('usuario_credencial','identidad_externa','sesion_acceso','renovacion_consumida')) = 0
    AND (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = 'public' AND c.relrowsecurity AND c.relname NOT IN ('usuario_credencial','identidad_externa')
+        WHERE n.nspname = 'public' AND c.relrowsecurity AND c.relname NOT IN ('usuario_credencial','identidad_externa','sesion_acceso','renovacion_consumida')
         AND NOT EXISTS (SELECT 1 FROM pg_policies p WHERE p.schemaname = 'public' AND p.tablename = c.relname)) = 0 AS ok \gset
 \ir incluir/afirmar.sql
 
@@ -68,8 +68,8 @@ SELECT (SELECT count(*) FROM pg_policies WHERE schemaname = 'public' AND tablena
 SELECT count(*) = 0 AS ok FROM pg_policies WHERE schemaname = 'public' AND 'public' = ANY (roles) \gset
 \ir incluir/afirmar.sql
 
-\set prueba 'ESQ-10 hay 10 funciones SECURITY DEFINER, todas de app_funciones y con search_path fijo'
-SELECT count(*) = 10
+\set prueba 'ESQ-10 hay 11 funciones SECURITY DEFINER, todas de app_funciones y con search_path fijo'
+SELECT count(*) = 11
    AND bool_and(pg_get_userbyid(p.proowner) = 'app_funciones')
    AND bool_and(EXISTS (SELECT 1 FROM unnest(p.proconfig) x WHERE x LIKE 'search_path=%')) AS ok
 FROM   pg_proc p
@@ -124,7 +124,7 @@ WHERE  routine_schema = 'public' AND routine_name LIKE 'fn\_%' AND grantee = 'PU
 \ir incluir/afirmar.sql
 
 \set prueba 'ESQ-17 app_backend_user sólo ejecuta funciones de autenticación y resolución de perfil'
-SELECT count(*) = 4 AND bool_and(routine_name IN ('fn_autenticar_usuario','fn_google_acceso','fn_autenticar_aplicacion','fn_perfil_usuario')) AS ok
+SELECT count(*) = 5 AND bool_and(routine_name IN ('fn_autenticar_usuario','fn_google_acceso','fn_autenticar_aplicacion','fn_perfil_usuario','fn_sesion_acceso')) AS ok
 FROM   information_schema.routine_privileges
 WHERE  routine_schema = 'public' AND grantee = 'app_backend_user' \gset
 \ir incluir/afirmar.sql
@@ -156,8 +156,8 @@ WHERE  n.nspname = 'public' AND c.contype = 'c'
 AND    pg_get_constraintdef(c.oid) ~* '(now\(\)|current_date|current_timestamp|clock_timestamp|select )' \gset
 \ir incluir/afirmar.sql
 
-\set prueba 'ESQ-21 las 12 FK entre tablas de taller son compuestas e incluyen taller_id (aislamiento estructural)'
-SELECT count(*) = 12 AND bool_and(EXISTS (
+\set prueba 'ESQ-21 las 18 FK entre tablas de taller son compuestas e incluyen taller_id (aislamiento estructural)'
+SELECT count(*) = 18 AND bool_and(EXISTS (
          SELECT 1 FROM pg_attribute a
          WHERE a.attrelid = c.conrelid AND a.attname = 'taller_id' AND a.attnum = ANY (c.conkey))) AS ok
 FROM   pg_constraint c
@@ -189,7 +189,7 @@ SELECT (SELECT bool_and(c.conname ~ ('^' || CASE c.contype WHEN 'p' THEN 'pk' WH
 \ir incluir/afirmar.sql
 
 \set prueba 'ESQ-24 las entidades expuestas tienen id_publico UUID NOT NULL con default y UNIQUE'
-SELECT count(*) = 13
+SELECT count(*) = 14
    AND bool_and(c.data_type = 'uuid' AND c.is_nullable = 'NO' AND c.column_default = 'gen_random_uuid()')
    AND bool_and(EXISTS (SELECT 1 FROM pg_constraint k
                         WHERE k.conname = 'uq_' || c.table_name || '_id_publico' AND k.contype = 'u')) AS ok
@@ -198,12 +198,12 @@ WHERE c.table_schema='public' AND c.column_name='id_publico'
 AND c.table_name IN (SELECT tablename FROM pg_tables WHERE schemaname='public') \gset
 \ir incluir/afirmar.sql
 
-\set prueba 'ESQ-25 objetos del esquema: 29 funciones fn_, 41 triggers, 52 politicas'
+\set prueba 'ESQ-25 objetos del esquema: 31 funciones fn_, 44 triggers, 56 politicas'
 SELECT (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-        WHERE n.nspname = 'public' AND p.proname LIKE 'fn\_%') = 29
+        WHERE n.nspname = 'public' AND p.proname LIKE 'fn\_%') = 31
    AND (SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = 'public' AND NOT t.tgisinternal) = 41
-   AND (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') = 52 AS ok \gset
+        WHERE n.nspname = 'public' AND NOT t.tgisinternal) = 44
+   AND (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') = 56 AS ok \gset
 \ir incluir/afirmar.sql
 
 \set prueba 'ESQ-26 servidor: PostgreSQL 16, UTC, READ COMMITTED, scram-sha-256, log_statement none'
@@ -245,8 +245,8 @@ AND    indexdef ~ 'WHERE \(estado = ''(pendiente|cotizado)''::tipo_estado_atenci
 -- Resguardo del hallazgo de la Fase 7 (V010): si pg_temp no se nombra en el
 -- search_path de una funcion, se busca PRIMERO para tablas, y una tabla temporal
 -- homonima suplanta a la real incluso dentro de una funcion SECURITY DEFINER.
-\set prueba 'ESQ-30 las 29 funciones fn_ fijan search_path = pg_catalog, public, pg_temp (pg_temp explicito y al final) (V010)'
-SELECT count(*) = 29
+\set prueba 'ESQ-30 las 31 funciones fn_ fijan search_path = pg_catalog, public, pg_temp (pg_temp explicito y al final) (V010)'
+SELECT count(*) = 31
    AND bool_and(EXISTS (SELECT 1 FROM unnest(p.proconfig) x WHERE x = 'search_path=pg_catalog, public, pg_temp')) AS ok
 FROM   pg_proc p
 JOIN   pg_namespace n ON n.oid = p.pronamespace
