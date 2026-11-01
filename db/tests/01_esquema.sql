@@ -4,9 +4,9 @@
 \ir incluir/inicio.sql
 \echo '### 01 Esquema'
 
-\set prueba 'ESQ-01 hay 23 tablas y 2 vistas en public'
+\set prueba 'ESQ-01 hay 24 tablas y 2 vistas en public'
 SELECT (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = 'public' AND c.relkind = 'r') = 23
+        WHERE n.nspname = 'public' AND c.relkind = 'r') = 24
    AND (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
         WHERE n.nspname = 'public' AND c.relkind = 'v' AND c.relname LIKE 'v\_%') = 2 AS ok \gset
 \ir incluir/afirmar.sql
@@ -40,7 +40,7 @@ SELECT (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relname
 \ir incluir/afirmar.sql
 
 \set prueba 'ESQ-06 toda tabla con taller_id, mas taller y usuario_credencial, tiene RLS activo y forzado'
-SELECT count(*) = 16 AND bool_and(c.relrowsecurity AND c.relforcerowsecurity) AS ok
+SELECT count(*) = 17 AND bool_and(c.relrowsecurity AND c.relforcerowsecurity) AS ok
 FROM   pg_class c
 JOIN   pg_namespace n ON n.oid = c.relnamespace
 WHERE  n.nspname = 'public' AND c.relkind = 'r'
@@ -156,8 +156,8 @@ WHERE  n.nspname = 'public' AND c.contype = 'c'
 AND    pg_get_constraintdef(c.oid) ~* '(now\(\)|current_date|current_timestamp|clock_timestamp|select )' \gset
 \ir incluir/afirmar.sql
 
-\set prueba 'ESQ-21 las 12 FK entre tablas de taller son compuestas e incluyen taller_id (aislamiento estructural)'
-SELECT count(*) = 12 AND bool_and(EXISTS (
+\set prueba 'ESQ-21 las 15 FK entre tablas de taller son compuestas e incluyen taller_id (aislamiento estructural)'
+SELECT count(*) = 15 AND bool_and(EXISTS (
          SELECT 1 FROM pg_attribute a
          WHERE a.attrelid = c.conrelid AND a.attname = 'taller_id' AND a.attnum = ANY (c.conkey))) AS ok
 FROM   pg_constraint c
@@ -189,7 +189,7 @@ SELECT (SELECT bool_and(c.conname ~ ('^' || CASE c.contype WHEN 'p' THEN 'pk' WH
 \ir incluir/afirmar.sql
 
 \set prueba 'ESQ-24 las entidades expuestas tienen id_publico UUID NOT NULL con default y UNIQUE'
-SELECT count(*) = 13
+SELECT count(*) = 14
    AND bool_and(c.data_type = 'uuid' AND c.is_nullable = 'NO' AND c.column_default = 'gen_random_uuid()')
    AND bool_and(EXISTS (SELECT 1 FROM pg_constraint k
                         WHERE k.conname = 'uq_' || c.table_name || '_id_publico' AND k.contype = 'u')) AS ok
@@ -198,12 +198,12 @@ WHERE c.table_schema='public' AND c.column_name='id_publico'
 AND c.table_name IN (SELECT tablename FROM pg_tables WHERE schemaname='public') \gset
 \ir incluir/afirmar.sql
 
-\set prueba 'ESQ-25 objetos del esquema: 29 funciones fn_, 41 triggers, 52 politicas'
+\set prueba 'ESQ-25 objetos del esquema: 30 funciones fn_, 43 triggers, 54 politicas'
 SELECT (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-        WHERE n.nspname = 'public' AND p.proname LIKE 'fn\_%') = 29
+        WHERE n.nspname = 'public' AND p.proname LIKE 'fn\_%') = 30
    AND (SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = 'public' AND NOT t.tgisinternal) = 41
-   AND (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') = 52 AS ok \gset
+        WHERE n.nspname = 'public' AND NOT t.tgisinternal) = 43
+   AND (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') = 54 AS ok \gset
 \ir incluir/afirmar.sql
 
 \set prueba 'ESQ-26 servidor: PostgreSQL 16, UTC, READ COMMITTED, scram-sha-256, log_statement none'
@@ -245,8 +245,8 @@ AND    indexdef ~ 'WHERE \(estado = ''(pendiente|cotizado)''::tipo_estado_atenci
 -- Resguardo del hallazgo de la Fase 7 (V010): si pg_temp no se nombra en el
 -- search_path de una funcion, se busca PRIMERO para tablas, y una tabla temporal
 -- homonima suplanta a la real incluso dentro de una funcion SECURITY DEFINER.
-\set prueba 'ESQ-30 las 29 funciones fn_ fijan search_path = pg_catalog, public, pg_temp (pg_temp explicito y al final) (V010)'
-SELECT count(*) = 29
+\set prueba 'ESQ-30 las 30 funciones fn_ fijan search_path = pg_catalog, public, pg_temp (pg_temp explicito y al final) (V010)'
+SELECT count(*) = 30
    AND bool_and(EXISTS (SELECT 1 FROM unnest(p.proconfig) x WHERE x = 'search_path=pg_catalog, public, pg_temp')) AS ok
 FROM   pg_proc p
 JOIN   pg_namespace n ON n.oid = p.pronamespace

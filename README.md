@@ -173,3 +173,15 @@ Es un prototipo. Los principales (lista completa en `docs/dictamen.md` §4 y §6
 - Cuatro reglas que la base no hace cumplir y quedan a cargo de la API y de la configuración de producción (temas T-63 a T-66, `docs/decisiones.md` §12.6).
 - Los supuestos legales (Ley N° 21.719, plazos de retención) están marcados **validar**: no es asesoría legal.
 - `make` no se probó literalmente en este equipo; la evidencia ejecuta las recetas del `Makefile`.
+
+## V013: alternativas guardadas
+
+`V013__repuestos_guardados.sql` incorpora referencias seleccionadas por propietario/mecánico, con RLS, autor, contexto DTC/componente, idempotencia y auditoría. No modifica el estado de diagnósticos ni crea cotizaciones. No conserva precios, títulos, imágenes ni stock externos.
+
+V014 completa las convenciones del esquema: nombres explícitos de restricciones/políticas, comentarios de columnas y claves foráneas con `ON DELETE RESTRICT`. Conserva los datos y la migración V013 original.
+
+En una base existente hasta V012, aplicar `bash db/scripts/migrate.sh V013` y después `bash db/scripts/migrate.sh V014`. Si V013 ya está aplicada, ejecutar solamente V014. Respaldar antes. No volver a ejecutar todas las migraciones sobre una base existente.
+
+Revisión del incremento: 517 comprobaciones de los doce archivos SQL aprobadas sobre una copia aislada; pruebas de backend adicionales cubren guardado, idempotencia, RLS y contexto cambiado. Las pruebas de esquema y auditoría ahora incluyen los objetos de V013.
+
+[Flujo y evidencia de validación](../Backend_Repuestos_Exactos/docs/integracion_mercadolibre.md).
