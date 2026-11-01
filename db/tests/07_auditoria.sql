@@ -32,8 +32,8 @@ SELECT count(*) = 0 AS ok FROM pg_constraint c
 WHERE  c.contype = 'f' AND (c.conrelid = 'auditoria_operacion'::regclass OR c.confrelid = 'auditoria_operacion'::regclass) \gset
 \ir incluir/afirmar.sql
 
-\set prueba 'Los 16 triggers de captura auditados tienen trigger de captura; usuario_credencial y auditoria no'
-SELECT count(*) = 16
+\set prueba 'Los 17 triggers de captura auditados tienen trigger de captura; usuario_credencial y auditoria no'
+SELECT count(*) = 17
    AND count(*) FILTER (WHERE c.relname IN ('usuario_credencial', 'auditoria_operacion')) = 0 AS ok
 FROM   pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
 WHERE  NOT t.tgisinternal AND t.tgname LIKE 'trg\_%\_auditar' \gset

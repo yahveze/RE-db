@@ -4,9 +4,9 @@
 \ir incluir/inicio.sql
 \echo '### 01 Esquema'
 
-\set prueba 'ESQ-01 hay 24 tablas y 2 vistas en public'
+\set prueba 'ESQ-01 hay 25 tablas y 2 vistas en public'
 SELECT (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = 'public' AND c.relkind = 'r') = 24
+        WHERE n.nspname = 'public' AND c.relkind = 'r') = 25
    AND (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
         WHERE n.nspname = 'public' AND c.relkind = 'v' AND c.relname LIKE 'v\_%') = 2 AS ok \gset
 \ir incluir/afirmar.sql
@@ -40,7 +40,7 @@ SELECT (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relname
 \ir incluir/afirmar.sql
 
 \set prueba 'ESQ-06 toda tabla con taller_id, mas taller y usuario_credencial, tiene RLS activo y forzado'
-SELECT count(*) = 17 AND bool_and(c.relrowsecurity AND c.relforcerowsecurity) AS ok
+SELECT count(*) = 18 AND bool_and(c.relrowsecurity AND c.relforcerowsecurity) AS ok
 FROM   pg_class c
 JOIN   pg_namespace n ON n.oid = c.relnamespace
 WHERE  n.nspname = 'public' AND c.relkind = 'r'
@@ -156,8 +156,8 @@ WHERE  n.nspname = 'public' AND c.contype = 'c'
 AND    pg_get_constraintdef(c.oid) ~* '(now\(\)|current_date|current_timestamp|clock_timestamp|select )' \gset
 \ir incluir/afirmar.sql
 
-\set prueba 'ESQ-21 las 15 FK entre tablas de taller son compuestas e incluyen taller_id (aislamiento estructural)'
-SELECT count(*) = 15 AND bool_and(EXISTS (
+\set prueba 'ESQ-21 las 16 FK entre tablas de taller son compuestas e incluyen taller_id (aislamiento estructural)'
+SELECT count(*) = 16 AND bool_and(EXISTS (
          SELECT 1 FROM pg_attribute a
          WHERE a.attrelid = c.conrelid AND a.attname = 'taller_id' AND a.attnum = ANY (c.conkey))) AS ok
 FROM   pg_constraint c
@@ -198,12 +198,12 @@ WHERE c.table_schema='public' AND c.column_name='id_publico'
 AND c.table_name IN (SELECT tablename FROM pg_tables WHERE schemaname='public') \gset
 \ir incluir/afirmar.sql
 
-\set prueba 'ESQ-25 objetos del esquema: 30 funciones fn_, 43 triggers, 54 politicas'
+\set prueba 'ESQ-25 objetos del esquema: 30 funciones fn_, 44 triggers, 56 politicas'
 SELECT (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
         WHERE n.nspname = 'public' AND p.proname LIKE 'fn\_%') = 30
    AND (SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = 'public' AND NOT t.tgisinternal) = 43
-   AND (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') = 54 AS ok \gset
+        WHERE n.nspname = 'public' AND NOT t.tgisinternal) = 44
+   AND (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') = 56 AS ok \gset
 \ir incluir/afirmar.sql
 
 \set prueba 'ESQ-26 servidor: PostgreSQL 16, UTC, READ COMMITTED, scram-sha-256, log_statement none'

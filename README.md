@@ -185,3 +185,21 @@ En una base existente hasta V012, aplicar `bash db/scripts/migrate.sh V013` y de
 Revisión del incremento: 517 comprobaciones de los doce archivos SQL aprobadas sobre una copia aislada; pruebas de backend adicionales cubren guardado, idempotencia, RLS y contexto cambiado. Las pruebas de esquema y auditoría ahora incluyen los objetos de V013.
 
 [Flujo y evidencia de validación](../Backend_Repuestos_Exactos/docs/integracion_mercadolibre.md).
+
+## V015: captura OBD2 con observaciones por ECU
+
+V015__captura_obd.sql permite registrar lógicamente un adaptador sin una MAC inventada y añade metadatos de captura e idempotencia a sesion_diagnostico. observacion_obd conserva código, ECU y categoría (almacenado/pendiente/permanente), incluidos códigos que no existen en dtc_catalogo. El vínculo compuesto sesión/taller, RLS forzada, permisos y auditoría siguen las convenciones existentes. Las sesiones y fallas previas se conservan.
+
+El propietario registra adaptadores; propietario y mecánico pueden registrar diagnósticos con su identidad y taller. La API crea también falla_sesion para los códigos catalogados. Guardar una captura no crea cotizaciones ni modifica estados de reparación. El reintento usa una clave única por taller y una huella del contenido; la API comprueba además autor y contexto.
+
+Para una base existente en V014: respaldar y ejecutar bash db/scripts/migrate.sh V015 desde RE-db. No volver a ejecutar todas las migraciones ni eliminar el volumen. La base local de este workspace ya tiene V015 aplicada y cuenta con un respaldo previo fuera de Git.
+
+Validación: 517 comprobaciones de los doce archivos db/tests sobre una copia aislada y pruebas Dart de captura/idempotencia/RLS con PostgreSQL real. Los conteos de esquema y auditoría incluyen observacion_obd. Las lecturas físicas del vLinker MC están pendientes; estas pruebas no verifican radio Bluetooth ni comportamiento de un vehículo real.
+
+[Traza](../Backend_Repuestos_Exactos/docs/evidencia/traza_bluetooth_obd2.json) · [Evidencia](../Backend_Repuestos_Exactos/docs/evidencia/bluetooth_validacion.json).
+
+## V016: Peugeot 3008 y uso del VIN existente
+
+V016__catalogo_peugeot_3008.sql añade de forma idempotente Peugeot / 3008 al catálogo global. El año 2017 se declara al registrar el vehículo; la migración no crea un vehículo, VIN, motor, falla ni compatibilidad de repuesto de ejemplo. Aplicar sobre V015 con respaldo: bash db/scripts/migrate.sh V016.
+
+El VIN automático usa vehiculo.vin, su índice único por taller, permisos, RLS y exclusión de identificadores de auditoría ya existentes. No necesita columnas nuevas. La API completa un VIN vacío y guarda la captura en la misma transacción; rechaza identidades distintas y no conserva copias adicionales del VIN. El detalle del diagnóstico muestra la identidad actual del vehículo, no una copia histórica inmutable. La anonimización existente continúa eliminando el VIN.
