@@ -203,3 +203,15 @@ Validación: 517 comprobaciones de los doce archivos db/tests sobre una copia ai
 V016__catalogo_peugeot_3008.sql añade de forma idempotente Peugeot / 3008 al catálogo global. El año 2017 se declara al registrar el vehículo; la migración no crea un vehículo, VIN, motor, falla ni compatibilidad de repuesto de ejemplo. Aplicar sobre V015 con respaldo: bash db/scripts/migrate.sh V016.
 
 El VIN automático usa vehiculo.vin, su índice único por taller, permisos, RLS y exclusión de identificadores de auditoría ya existentes. No necesita columnas nuevas. La API completa un VIN vacío y guarda la captura en la misma transacción; rechaza identidades distintas y no conserva copias adicionales del VIN. El detalle del diagnóstico muestra la identidad actual del vehículo, no una copia histórica inmutable. La anonimización existente continúa eliminando el VIN.
+
+## V017: sesiones persistentes de la API
+
+V017__sesiones_persistentes.sql incorpora sesion_acceso y renovacion_consumida, con RLS forzada y sin acceso directo para roles operativos. fn_sesion_acceso es SECURITY DEFINER de app_funciones, con search_path fijo y EXECUTE sólo para app_backend_user. Guarda únicamente hashes de tokens opacos; no contiene contraseñas, tokens Google ni copias de perfiles personales. La actividad y el perfil de usuario/taller se revalidan al resolver y renovar.
+
+Cada familia tiene acceso corto de una hora y expiración absoluta de siete días. La rotación invalida el acceso anterior y registra el hash de renovación consumido; una repetición fuera de la tolerancia concurrente revoca la familia. Logout revoca toda la familia. La limpieza de familias vencidas y sus hijos usa lotes bloqueados con SKIP LOCKED para no interferir con emisiones concurrentes. No hay cambios a datos de diagnósticos ni a permisos de trabajo de propietario/mecánico.
+
+Sobre una base en V016, respaldar y aplicar sólo bash db/scripts/migrate.sh V017. No reinicializar el volumen. La aplicación requiere esta migración y su salud comprueba los objetos de sesión. La base local de este workspace ya tiene V017 aplicada y un respaldo previo fuera de Git. Las sesiones antiguas en memoria requieren un nuevo login inicial.
+
+Las pruebas de esquema contemplan las dos tablas privadas y la función de autenticación. db/tests/13_sesiones_persistentes.sql verifica emisión, identidad, rotación, tolerancia concurrente sin emisión, repetición, revocación, expiración, baja de usuario, permisos, RLS y limpieza con ROLLBACK. Más detalles en la [guía de autenticación](../Backend_Repuestos_Exactos/docs/autenticacion.md).
+
+La emisión de sesiones respeta un límite predeterminado de 10.000 familias activas compartidas entre instancias; al alcanzarlo rechaza nuevas emisiones sin expulsar sesiones existentes. `SES-12` verifica este caso.
