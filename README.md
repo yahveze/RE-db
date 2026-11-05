@@ -215,3 +215,9 @@ Sobre una base en V016, respaldar y aplicar sólo bash db/scripts/migrate.sh V01
 Las pruebas de esquema contemplan las dos tablas privadas y la función de autenticación. db/tests/13_sesiones_persistentes.sql verifica emisión, identidad, rotación, tolerancia concurrente sin emisión, repetición, revocación, expiración, baja de usuario, permisos, RLS y limpieza con ROLLBACK. Más detalles en la [guía de autenticación](../Backend_Repuestos_Exactos/docs/autenticacion.md).
 
 La emisión de sesiones respeta un límite predeterminado de 10.000 familias activas compartidas entre instancias; al alcanzarlo rechaza nuevas emisiones sin expulsar sesiones existentes. `SES-12` verifica este caso.
+
+## V018: referencias eBay por proveedor y entorno
+
+`V018__referencias_ebay.sql` amplía `repuesto_guardado` para Mercado Libre y eBay. Agrega `entorno_proveedor`, con valor Production para las referencias existentes; eBay admite Sandbox/Production y sólo publicaciones. IDs y enlaces HTTPS se validan por proveedor y entorno. No se mezclan enlaces Sandbox con referencias Production. Conserva RLS forzada, dos políticas, autor, restricciones entre talleres e idempotencia; no almacena contenido comercial ni modifica diagnósticos o cotizaciones.
+
+Sobre V017: respaldar y aplicar únicamente `bash db/scripts/migrate.sh V018`. No reinicializar el volumen. El backend comprueba el objeto nuevo al consultar salud. `db/tests/14_referencias_ebay.sql` verifica inserciones por mecánico/propietario, Mercado Libre previo, rechazo de referencias adulteradas, inmutabilidad, auditoría y aislamiento; termina con ROLLBACK.
